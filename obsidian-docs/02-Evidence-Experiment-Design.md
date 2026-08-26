@@ -100,6 +100,12 @@ graph TD
 
 Harness: **lmms-eval** for POPE / ScienceQA / TextVQA (`pope`, `scienceqa_img`, `textvqa_val`); **custom CHAIR harness** built on `LisaAnne/Hallucination` `utils/chair.py` — CHAIR is *not* in lmms-eval ([[06-Supporting-Evidence#lmms-eval Coverage]]).
 
+> [!note] POPE is a contrastive prior-vs-visual probe *by construction*
+> Per image: 3 "yes" questions (objects in the image) + 3 "no" questions (objects absent, 1:1 balanced). The "no" objects maximize linguistic-prior interference — **popular** split = globally frequent objects; **adversarial** split = objects co-occurring with the image's objects in captions. The language prior says *yes*, the image says *no*: exactly the pairs needed to detect lexical fallback (yes-ratio ↑, F1 ↓, worst on popular/adversarial). Verified in the published question files (all 3 splits share the same 500 images).
+
+> [!note] Benchmark conventions — each benchmark keeps its own official image set
+> POPE's 500 images (>3 GT objects, fixed published set) and the CHAIR-500 (random sample of val2014) are **different sets by design** — as in the original papers (LLaVA-1.5, VCD, OPERA). Keep them separate: comparability with published numbers (reproduce-before-trust) requires each benchmark's official protocol. The pairing that matters is *within* each benchmark: same question files, same prompts, same per-image seeds across FP16→W4A4. **CHAIR-500 is seed-dependent** (OPERA's `chair_eval.py`: `random.shuffle(val2014); take 500`) → fix our own seed and log the 500 image IDs in `configs/`. Both sets are subsets of val2014; compute their intersection post-hoc only if a cross-benchmark joint analysis is ever needed.
+
 ## 7. Controlled Variables
 
 - Identical prompts per image across all cells; system prompts frozen.
@@ -107,6 +113,7 @@ Harness: **lmms-eval** for POPE / ScienceQA / TextVQA (`pope`, `scienceqa_img`, 
 - Same image preprocessing (336px / dynamic resolution per model, unchanged by quantization).
 - All 3 seeds share the same per-image seed; results reported per cell with standard error.
 - Quantizer calibration set disjoint from all evaluation splits.
+- **CHAIR-500 fixed by our own seed**; the 500 image IDs logged in `configs/` (POPE's 500 come from the published files).
 
 ## 8. Support Experiments (strengthen the causal claim)
 
@@ -115,6 +122,8 @@ Harness: **lmms-eval** for POPE / ScienceQA / TextVQA (`pope`, `scienceqa_img`, 
 
 > [!example] S2 — Linguistic-prior probe (proves fallback to language prior)
 > Run the model with the image masked (text-only condition). For each hallucinated mention from the quantized run, check whether it is high-probability under the text-only distribution. If yes → the token came from the linguistic prior, i.e., lexical fallback.
+>
+> **S2a — Prior-strength stratification (makes POPE contrast explicit):** compute the text-only model's P(yes) for every POPE question → bin questions by prior strength → plot the FP16→W4A4 hallucination gap (yes-ratio / F1 delta) per bin. If the gap grows monotonically with prior strength, that is quantitative lexical-fallback evidence, not a generic accuracy drop. This turns POPE's co-occurrence-based negatives into a *measured* prior axis.
 
 > [!example] S3 — Layer-depth attention profile
 > Report visual attention mass per LLM layer. RBD-style finding: attention imbalance intensifies in deeper layers ([[06-Supporting-Evidence#Attention-Hallucination Evidence]]); quantization is expected to steepen this. Informs which layers carry the fallback signal.

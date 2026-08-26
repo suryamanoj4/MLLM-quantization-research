@@ -34,12 +34,14 @@ status: verified
 ### POPE (EMNLP 2023)
 - Official repo: **https://github.com/RUCAIBox/POPE** (shikohome/POPE is a dead 404). Paper: arXiv:2305.10355.
 - Protocol: **500 MSCOCO val2014 images** (>3 GT objects) × 6 questions (3 yes / 3 no, 1:1 GT:non-existent) = **3,000 questions** per split; splits: **random / popular / adversarial**; metrics Accuracy, Precision, Recall, **F1** (major) + yes-ratio.
+- **Contrastive by construction** (verified in the published question files): all 3 splits share the same 500 images; the "no" objects are high-prior traps — popular = globally frequent objects, adversarial = objects co-occurring with the image's objects in captions.
 - Also available as `pope` task in lmms-eval.
 
 ### CHAIR (Rohrbach et al., EMNLP 2018)
 - Official repo: **https://github.com/LisaAnne/Hallucination** (`utils/chair.py`); paper arXiv:1809.02156.
 - Matching: tokenize + singularize, map to the **80 MSCOCO segmentation-challenge classes** via a synonym list (Lu et al. 2018); GT = **union of instance segmentations and reference captions**.
 - The paper's original protocol was the Karpathy test split (beam-5); the **500-image MSCOCO val2014, one detailed caption per image** protocol is the **MLLM-era community convention** (used by VCD, ReWEIGH, SelfVal, FocusMatters) — state it as such in methods.
+- **Image selection (verified in OPERA's `chair_eval.py`):** `random.shuffle(all val2014 files); take first 500` — an *unfiltered* random sample, seed-dependent per paper. **This is a different set from POPE's 500 (which require >3 GT objects).** Consequence: keep each benchmark on its own official image set for comparability; fix our own CHAIR-500 seed and log the image IDs; compute the val2014 intersection post-hoc only if cross-benchmark joint analysis is needed.
 
 ### ScienceQA & TextVQA
 - ScienceQA: arXiv:2209.09513, NeurIPS 2022, ~21k multimodal multiple-choice, accuracy; official site https://scienceqa.github.io.
