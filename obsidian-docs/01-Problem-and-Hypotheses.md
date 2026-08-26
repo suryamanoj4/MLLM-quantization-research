@@ -72,7 +72,7 @@ graph LR
     C -.-> F
 ```
 
-Each arrow is testable: B→C via embedding-error profiles (S1), C→D via attention metrics (H2), D→E via temporal collapse (H4), E→F via linguistic-prior probe (S2). See [[02-Evidence-Experiment-Design#Support Experiments]].
+Each arrow is testable: B→C via embedding-error profiles (S1), C→D via attention metrics (H2), D→E via temporal collapse (H4), E→F via linguistic-prior probe (S2) and distributional convergence to the text-only prior (S2b, [[03-Metrics-Definitions#2.6]]). See [[02-Evidence-Experiment-Design#Support Experiments]].
 
 ## Related Notes
 

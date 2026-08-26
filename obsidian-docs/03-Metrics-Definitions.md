@@ -97,6 +97,16 @@ For each (model, precision, quantizer, seed):
 - **Step-window profile**: $\bar{a}_v$ per decile of generation length — the raw material for the fallback timeline (H4).
 - **Mention-level**: for each noun/object mention $m$ in the caption (CHAIR-matched), the mean $\bar{a}_v$ over the mention's tokens, labeled grounded/hallucinated.
 
+### 2.6 Distributional convergence to the language prior (S2b)
+
+Same prompt $x$, with image $v$ vs image masked: $P_{img}(y \mid x, v)$ and $P_{txt}(y \mid x)$. Lexical fallback = the quantized distribution drifts toward the text-only distribution:
+
+$$
+\Delta\text{KL}_c = \text{KL}\big(P_c(\cdot \mid x, v) \,\|\, P_{txt}(\cdot \mid x)\big) - \text{KL}\big(P_{FP16}(\cdot \mid x, v) \,\|\, P_{txt}(\cdot \mid x)\big)
+$$
+
+Expected $\Delta\text{KL} < 0$ under fallback (convergence). Reported per step (over the vocabulary, at each decoding step) and aggregated per cell. Token-level companion: $P_{txt}(\text{hallucinated mention})$ high, $P_{txt}(\text{grounded mention})$ low.
+
 ## 3. Correlation & Statistical Protocol
 
 ### 3.1 Token-level coupling (tests H3)

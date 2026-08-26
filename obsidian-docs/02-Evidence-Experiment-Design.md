@@ -124,6 +124,10 @@ Harness: **lmms-eval** for POPE / ScienceQA / TextVQA (`pope`, `scienceqa_img`, 
 > Run the model with the image masked (text-only condition). For each hallucinated mention from the quantized run, check whether it is high-probability under the text-only distribution. If yes → the token came from the linguistic prior, i.e., lexical fallback.
 >
 > **S2a — Prior-strength stratification (makes POPE contrast explicit):** compute the text-only model's P(yes) for every POPE question → bin questions by prior strength → plot the FP16→W4A4 hallucination gap (yes-ratio / F1 delta) per bin. If the gap grows monotonically with prior strength, that is quantitative lexical-fallback evidence, not a generic accuracy drop. This turns POPE's co-occurrence-based negatives into a *measured* prior axis.
+>
+> **S2b — Distributional convergence (the cleanest statement of fallback):** same prompt, run with image (→ $P_{img}$) and image masked (→ $P_{txt}$). Lexical fallback predicts the quantized distribution drifts toward the text-only distribution:
+> $$\text{KL}\big(P_{W4A4}(\cdot \mid x, v) \,\|\, P_{txt}(\cdot \mid x)\big) < \text{KL}\big(P_{FP16}(\cdot \mid x, v) \,\|\, P_{txt}(\cdot \mid x)\big)$$
+> Report per-step and per-cell; token-level variant: hallucinated mentions are high-probability under $P_{txt}$, grounded mentions are not. Reuses S2's text-only logits — near-zero extra compute.
 
 > [!example] S3 — Layer-depth attention profile
 > Report visual attention mass per LLM layer. RBD-style finding: attention imbalance intensifies in deeper layers ([[06-Supporting-Evidence#Attention-Hallucination Evidence]]); quantization is expected to steepen this. Informs which layers carry the fallback signal.
