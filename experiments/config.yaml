@@ -1,0 +1,27 @@
+model_id: liuhaotian/llava-v1.5-7b
+variants: [fp16, w8, w4]
+sample_images: null
+seed: 42
+device: auto
+
+data_dir: data
+checkpoints_dir: checkpoints
+output_dir: results
+
+calibration_samples: 128
+calibration_source: coco_train_captions
+gptq_group_size: 128
+gptq_backend: auto_gptq
+
+max_new_tokens_pope: 8
+max_new_tokens_chair: 256
+temperature: 1.0
+top_p: 0.9
+do_sample: true
+
+capture_attention: true
+store_full_rows: false
+run_probe: true
+probe_chair_subset: 100
+bootstrap_iters: 2000
+download_workers: 8
