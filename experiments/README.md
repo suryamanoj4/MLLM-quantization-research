@@ -58,6 +58,10 @@ export HF_HOME=~/hf-cache          # where checkpoints download
 # resampled run (~3-3.5 h on a T4) — recommended first
 uv run experiments --root . --sample-images 100
 
+# fallback if the console script / editable install is broken (e.g., after an
+# interrupted `uv sync` in a notebook): run the module directly from src
+PYTHONPATH=src uv run python -m experiments.cli --root . --sample-images 100
+
 # full study (~13-14 h on a T4; fits Kaggle 30 h/wk)
 uv run experiments --root .
 

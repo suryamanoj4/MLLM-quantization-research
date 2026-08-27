@@ -36,10 +36,10 @@ The 7B self-quantized route keeps the documented model family ([[Research Ideati
 
 ## 3. Datasets & Decoding — Full Sets
 
-| Benchmark | Protocol | Decoding |
-|---|---|---|
-| **POPE — full** | **All 3 splits** (random / popular / adversarial) × 500 images × 6 questions = **9,000 questions**; question files from RUCAIBox/POPE | Nucleus (top-p=0.9, temp=1), per-image seed |
-| **CHAIR — full** | 500 MSCOCO val2014 images, one detailed caption each; GT = instance seg ∪ reference captions | Greedy, max 256 tokens |
+| Benchmark        | Protocol                                                                                                                              | Decoding                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| **POPE — full**  | **All 3 splits** (random / popular / adversarial) × 500 images × 6 questions = **9,000 questions**; question files from RUCAIBox/POPE | Nucleus (top-p=0.9, temp=1), per-image seed |
+| **CHAIR — full** | 500 MSCOCO val2014 images, one detailed caption each; GT = instance seg ∪ reference captions                                          | Greedy, max 256 tokens                      |
 
 Fixed seed per image, identical prompts across all three precision versions — the pairing that matters ([[Research Ideation#Key Verified Facts]]). POPE's three splits give the full prior-strength axis: random (weak traps) → popular (frequent-object traps) → adversarial (co-occurring-object traps, strongest).
 
@@ -54,14 +54,14 @@ Fixed seed per image, identical prompts across all three precision versions — 
 
 ## 5. Hypothesis Coverage
 
-| Hypothesis | Signal | Figure ([[Research Ideation]]) |
-|---|---|---|
-| H1 — monotone rise | CHAIR_s/i and POPE-F1 ordered FP16 < W8 < W4, per split | F1 |
-| H2 — attention degradation | $\bar{a}_v$ ↓, $H_v$ ↑ with precision loss | F2, F5 |
-| H3 — token coupling | r_pb < 0 on mention-level grounding | F3, F4 |
-| H4 — temporal fallback | attention decay earlier/steeper for W4 | F2 |
-| S2/S2a/S2b — prior attribution | yes-rate tracks $P_{txt}(\text{yes})$; ΔKL < 0 | F4-style curve |
-| S3 — layer profile | per-layer visual attention mass | panel in F2 |
+| Hypothesis                     | Signal                                                  | Figure ([[Research Ideation]]) |
+| ------------------------------ | ------------------------------------------------------- | ------------------------------ |
+| H1 — monotone rise             | CHAIR_s/i and POPE-F1 ordered FP16 < W8 < W4, per split | F1                             |
+| H2 — attention degradation     | $\bar{a}_v$ ↓, $H_v$ ↑ with precision loss              | F2, F5                         |
+| H3 — token coupling            | r_pb < 0 on mention-level grounding                     | F3, F4                         |
+| H4 — temporal fallback         | attention decay earlier/steeper for W4                  | F2                             |
+| S2/S2a/S2b — prior attribution | yes-rate tracks $P_{txt}(\text{yes})$; ΔKL < 0          | F4-style curve                 |
+| S3 — layer profile             | per-layer visual attention mass                         | panel in F2                    |
 
 ## 6. Time Budget (1× T4 free tier, full sets)
 
