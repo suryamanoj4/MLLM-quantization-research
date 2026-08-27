@@ -52,8 +52,17 @@ def download_annotations(ann_dir: pathlib.Path) -> dict[str, pathlib.Path]:
     zip_path = ann_dir / "annotations_trainval2014.zip"
     _download(ANNOTATIONS_URL, zip_path)
     with zipfile.ZipFile(zip_path) as zf:
+        names = set(zf.namelist())
         for name in NEEDED_ANNOTATIONS:
-            zf.extract(name, ann_dir)
+            member = f"annotations/{name}"
+            if member not in names:
+                member = next((n for n in names if n.endswith("/" + name)), None)
+            if member is None:
+                raise KeyError(f"{name!r} not found in {zip_path} (archive has: {sorted(names)[:5]}...)")
+            with zf.open(member) as src, open(ann_dir / name, "wb") as dst:
+                import shutil
+
+                shutil.copyfileobj(src, dst)
     return {n: ann_dir / n for n in NEEDED_ANNOTATIONS}
 
 
