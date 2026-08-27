@@ -57,6 +57,6 @@ class Config:
 
     def resolve_paths(self, root: pathlib.Path) -> "Config":
         for f in ("data_dir", "checkpoints_dir", "output_dir"):
-            p = getattr(self, f)
+            p = pathlib.Path(getattr(self, f))
             setattr(self, f, p if p.is_absolute() else root / p)
         return self
