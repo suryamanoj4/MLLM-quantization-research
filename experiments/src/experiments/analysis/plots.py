@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import os
 import pathlib
 
+os.environ["MPLBACKEND"] = "Agg"
 import matplotlib
 
 matplotlib.use("Agg")
