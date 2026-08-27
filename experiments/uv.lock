@@ -517,6 +517,7 @@ dependencies = [
     { name = "huggingface-hub" },
     { name = "matplotlib" },
     { name = "numpy" },
+    { name = "peft" },
     { name = "pillow" },
     { name = "protobuf" },
     { name = "pyyaml" },
@@ -532,6 +533,7 @@ dependencies = [
 [package.optional-dependencies]
 quantize = [
     { name = "gptqmodel" },
+    { name = "logbar" },
 ]
 
 [package.metadata]
@@ -540,8 +542,10 @@ requires-dist = [
     { name = "auto-gptq", specifier = ">=0.7.1" },
     { name = "gptqmodel", marker = "extra == 'quantize'", specifier = ">=1.5.0" },
     { name = "huggingface-hub", specifier = ">=0.24,<1.0" },
+    { name = "logbar", marker = "extra == 'quantize'", specifier = ">=0.4" },
     { name = "matplotlib", specifier = ">=3.8" },
     { name = "numpy", specifier = ">=1.26,<2.0" },
+    { name = "peft", specifier = "==0.12.0" },
     { name = "pillow", specifier = ">=10.0" },
     { name = "protobuf", specifier = ">=4.25,<5.0" },
     { name = "pyyaml", specifier = ">=6.0" },
@@ -956,6 +960,12 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/52/7d/7157f9bba6b455cfb4632ed411e199fc8b8977642c2b12082e1bd9e6d173/kiwisolver-1.5.0-pp311-pypy311_pp73-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:daae526907e262de627d8f70058a0f64acc9e2641c164c99c8f594b34a799a16", size = 77603, upload-time = "2026-03-09T13:15:50.945Z" },
     { url = "https://files.pythonhosted.org/packages/0a/dd/8050c947d435c8d4bc94e3252f4d8bb8a76cfb424f043a8680be637a57f1/kiwisolver-1.5.0-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:59cd8683f575d96df5bb48f6add94afc055012c29e28124fcae2b63661b9efb1", size = 73558, upload-time = "2026-03-09T13:15:52.112Z" },
 ]
+
+[[package]]
+name = "logbar"
+version = "0.4.13"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/38/48/d201291ec19eb2e91a2ebfa146aef62ecbfd4b1703d3d9ca744983b18996/logbar-0.4.13.tar.gz", hash = "sha256:1bcc7b3fb5c87e8af735ecccec6317d5654d841f0c532dc8322ea096506cae8d", size = 113545, upload-time = "2026-08-23T02:01:04.883Z" }
 
 [[package]]
 name = "markupsafe"
@@ -1516,7 +1526,7 @@ wheels = [
 
 [[package]]
 name = "peft"
-version = "0.20.0"
+version = "0.12.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "accelerate" },
@@ -1530,9 +1540,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "transformers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b4/08/02541a2c29be7c78698f73d438bc0e733b214f3f35ec5db79fca8da8fc61/peft-0.20.0.tar.gz", hash = "sha256:4769c8093a4ca145fd6fb3fd4dd50449675f5fe46434ad1e98b285a132d4b1d0", size = 880503, upload-time = "2026-07-28T13:46:01.85Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/e7/78c28a875fe189be4c34f29f7ac4b33c04ccd7ae5382bbec97fe44205507/peft-0.12.0.tar.gz", hash = "sha256:253205bd478e985ccdc7f04804aab9c95f479130c517bf6e474b8d509db5f4a4", size = 314010, upload-time = "2024-07-24T11:52:54.752Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/28/79/13bcabb8048126422d5c4b880575d40886c726f354db88cfeed4325525bb/peft-0.20.0-py3-none-any.whl", hash = "sha256:0fbba16ffebfad3de96e06f2da6860fd860292324b85b6141909fa1e26ea9233", size = 775777, upload-time = "2026-07-28T13:45:59.809Z" },
+    { url = "https://files.pythonhosted.org/packages/62/72/fcabddf222ec938c3cbd5616e5a72796938b5235897e07a1fcc2a8e7735e/peft-0.12.0-py3-none-any.whl", hash = "sha256:a47915efb08af50e9fda267b7bf1b5b6eff33ccbb08791bdb544dccb8788f674", size = 296377, upload-time = "2024-07-24T11:52:50.214Z" },
 ]
 
 [[package]]
