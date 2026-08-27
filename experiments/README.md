@@ -42,6 +42,8 @@ cd experiments
 uv sync          # creates .venv + installs pinned deps (incl. torch; allow ~10-20 min first time)
 ```
 
+> **Version pins (important):** the lockfile pins the auto_gptq-compatible stack — `transformers 4.46.3`, `torch 2.5.1`, `accelerate 0.34.2`. If you synced with an older lock, re-run `uv sync` after pulling the updated `uv.lock`. Optional gptqmodel fallback backend: `uv sync --extra quantize`.
+
 Optional environment variables (set before any run):
 ```bash
 export HF_HOME=~/hf-cache          # where checkpoints download
@@ -77,7 +79,7 @@ uv run experiments --help
 | `--variants fp16,w8,w4` | from config | which cells to run |
 | `--sample-images N` | `null` (full set) | resample N images per POPE split + N CHAIR images (keeps 6-question blocks) |
 | `--device auto` | `auto` | `auto` \| `cuda` \| `cpu` |
-| `--skip-download` | off | reuse already-downloaded data |
+| `--skip-download` | off | don't fetch data — fails fast if `data/` is incomplete (offline re-runs) |
 | `--skip-quantize` | off | reuse existing quantized checkpoints |
 | `--skip-probe` | off | skip text-only prior probe + ΔKL (saves ~4 h, loses S2 evidence) |
 | `--no-attention` | off | skip attention capture (saves ~1.4× time, loses H2/H3/H4) |
@@ -94,6 +96,8 @@ uv run experiments --help
 | `seed` | `42` | global seed; per-image seeds derived deterministically |
 | `calibration_samples` | `128` | GPTQ calibration size (MSCOCO train2014 captions) |
 | `gptq_group_size` | `128` | GPTQ group size |
+| `gptq_backend` | `auto` | `auto` (auto_gptq → gptqmodel fallback) \| `auto_gptq` \| `gptqmodel` |
+| `keep_base_checkpoint` | `true` | `false` deletes the 14 GB FP16 checkpoint after quantization (fp16 cell then loads from hub) — saves disk on Kaggle |
 | `max_new_tokens_pope/chair` | `8 / 256` | answer/caption length caps |
 | `temperature / top_p / do_sample` | `1.0 / 0.9 / true` | nucleus sampling for POPE; set `do_sample: false` for greedy (CHAIR uses its own greedy path via `cfg.do_sample=false` only if you flip it — see note below) |
 | `capture_attention` | `true` | per-step attention aggregates |
@@ -118,7 +122,7 @@ uv run experiments --help
                       results/summary.md, results/figures/*.png
 ```
 
-Resume behavior: anything already present is skipped (downloads, quantized checkpoints, per-variant artifacts are not re-run; the whole `results/<variant>/` is overwritten if you rerun that variant).
+Resume behavior: anything already present is skipped (downloads, quantized checkpoints). **Per-question/per-image incremental checkpointing**: each POPE/CHAIR record is appended to its jsonl immediately, so a session crash (Kaggle 12 h limit, Colab disconnect) resumes exactly where it stopped — rerun the same command and it continues, then finalizes reports/figures.
 
 ---
 
@@ -163,6 +167,7 @@ results/
 |---|---|
 | `uv sync` slow | torch download is large; allow 10–20 min; or `uv sync --extra-index-url https://download.pytorch.org/whl/cpu` for CPU-only wheels |
 | auto-gptq build fails | needs a C++ toolchain (`gcc`, `python3-dev`); on Colab/Kaggle it's preinstalled — if local, `sudo apt install build-essential` |
+| quantization "model not supported" | auto_gptq doesn't cover a model class → backend `auto` falls back to gptqmodel automatically; install it with `uv sync --extra quantize` |
 | quantize step OOM | reduce `calibration_samples` to 64; run with `--device cuda`; close other GPU processes |
 | GPTQ checkpoint won't load | transformers version mismatch — the lockfile pins it; don't upgrade transformers independently |
 | downloads stall | network to COCO/HF blocked; set `HF_ENDPOINT` mirror, or pre-place files: annotations in `data/annotations/`, images in `data/val2014/`, POPE files in `data/pope/` (filenames `coco_pope_{split}.json`) |

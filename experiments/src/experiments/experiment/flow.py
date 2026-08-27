@@ -32,13 +32,31 @@ def download_pope_questions(data_dir: pathlib.Path) -> None:
         dest = out_dir / f"coco_pope_{split}.json"
         if dest.exists():
             continue
-        r = requests.get(POPE_URL.format(split=split), timeout=120)
-        r.raise_for_status()
-        dest.write_bytes(r.content)
+        url = POPE_URL.format(split=split)
+        for attempt in range(3):
+            try:
+                r = requests.get(url, timeout=120)
+                r.raise_for_status()
+                dest.write_bytes(r.content)
+                break
+            except (requests.RequestException, OSError) as e:
+                if attempt == 2:
+                    raise
+                print(f"[download] retry {attempt + 1}/3 for {url}: {e}")
+                __import__("time").sleep(2 ** attempt)
 
 
-def prepare_data(cfg: Config) -> dict:
-    ann_paths = coco_mod.download_annotations(cfg.data_dir / "annotations")
+def prepare_data(cfg: Config, allow_download: bool = True) -> dict:
+    pope_dir = cfg.data_dir / "pope"
+    has_pope = all((pope_dir / f"coco_pope_{s}.json").exists() for s in ("random", "popular", "adversarial"))
+    ann_dir = cfg.data_dir / "annotations"
+    has_ann = all((ann_dir / n).exists() for n in ("instances_val2014.json", "captions_val2014.json", "captions_train2014.json"))
+    if not (allow_download or (has_pope and has_ann)):
+        raise FileNotFoundError(
+            "data missing and --skip-download was passed; run once without --skip-download to populate data/"
+        )
+
+    ann_paths = coco_mod.download_annotations(ann_dir)
     instances = coco_mod.load_instances(ann_paths["instances_val2014.json"])
     captions = coco_mod.load_captions(ann_paths["captions_val2014.json"])
     download_pope_questions(cfg.data_dir)
@@ -105,6 +123,12 @@ def prepare_quantized(cfg: Config) -> None:
             desc_act=cfg.gptq_desc_act,
         )
 
+    if not cfg.keep_base_checkpoint:
+        import shutil
+
+        shutil.rmtree(base_dir, ignore_errors=True)
+        print("[flow] removed base checkpoint (keep_base_checkpoint=false); fp16 loads from hub")
+
 
 def _resampled_questions(pope: dict[str, list[dict]], cfg: Config) -> dict[str, list[dict]]:
     return {
@@ -116,22 +140,25 @@ def _resampled_questions(pope: dict[str, list[dict]], cfg: Config) -> dict[str, 
 def run_cell(cfg: Config, variant: str, model, processor, device, data) -> dict:
     from ..analysis.metrics import (
         attention_summary_from_records,
-        binned_curve,
         chair_metrics,
         kl_summary,
         pope_metrics,
-        point_biserial,
     )
 
     pope_rs = {}
+    vdir = cfg.output_dir / variant
     for split, qs in _resampled_questions(data["pope"], cfg).items():
-        rs = pope_mod.run_pope(model, processor, processor.tokenizer, qs, cfg, data["image_dir"])
+        out_path = vdir / f"pope_{split}.jsonl"
+        rs = pope_mod.run_pope(
+            model, processor, processor.tokenizer, qs, cfg, data["image_dir"], out_path=out_path
+        )
         pope_rs[split] = rs
 
     chair_items = resample_chair_images(data["chair_images"], cfg.sample_images, cfg.seed)
     tokenizer = processor.tokenizer
     chair_rs = chair_mod.run_chair(
-        model, processor, tokenizer, chair_items, cfg, data["image_dir"], data["instances"], data["captions"]
+        model, processor, tokenizer, chair_items, cfg, data["image_dir"], data["instances"],
+        data["captions"], out_path=vdir / "chair_captions.jsonl",
     )
 
     cell = {

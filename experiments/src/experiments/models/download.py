@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pathlib
-from typing import Callable
 
 import torch
 from huggingface_hub import snapshot_download
@@ -12,10 +11,6 @@ def download_checkpoint(model_id: str, local_dir: pathlib.Path) -> pathlib.Path:
     local_dir.mkdir(parents=True, exist_ok=True)
     snapshot_download(repo_id=model_id, local_dir=str(local_dir))
     return local_dir
-
-
-def download_processor(model_id: str, local_dir: pathlib.Path) -> AutoProcessor:
-    return AutoProcessor.from_pretrained(str(local_dir))
 
 
 def resolve_device(device: str) -> str:
@@ -36,6 +31,3 @@ def load_torch(model_id: str, device: str, dtype: torch.dtype, quant_config=None
         kwargs["quantization_config"] = quant_config
         kwargs["torch_dtype"] = torch.float16
     return LlavaForConditionalGeneration.from_pretrained(model_id, **kwargs)
-
-
-Callable = Callable

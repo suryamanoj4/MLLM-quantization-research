@@ -37,7 +37,7 @@ def build_calibration(
     )
 
 
-def quantize_auto_gptq(
+def _quantize_auto_gptq(
     model_id: str,
     out_dir: pathlib.Path,
     bits: int,
@@ -65,6 +65,33 @@ def quantize_auto_gptq(
     return out_dir
 
 
+def _quantize_gptqmodel(
+    model_id: str,
+    out_dir: pathlib.Path,
+    bits: int,
+    group_size: int,
+    damp_percent: float,
+    desc_act: bool,
+    calibration: list[dict],
+    device: str,
+) -> pathlib.Path:
+    from gptqmodel import GPTQModel, QuantizeConfig
+
+    quant_config = QuantizeConfig(
+        bits=bits,
+        group_size=group_size,
+        desc_act=desc_act,
+        damp_percent=damp_percent,
+    )
+    model = GPTQModel.from_pretrained(
+        model_id, quantize_config=quant_config, torch_dtype=torch.float16, device_map=device
+    )
+    model.quantize(calibration)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    model.save_quantized(str(out_dir), safetensors=True)
+    return out_dir
+
+
 def quantize(
     model_id: str,
     out_dir: pathlib.Path,
@@ -76,12 +103,26 @@ def quantize(
     damp_percent: float = 0.1,
     desc_act: bool = True,
 ) -> pathlib.Path:
-    if device.startswith("cuda"):
-        pass
-    else:
-        print(f"[quantize] WARNING: quantizing on CPU is very slow; prefer CUDA.")
-    if backend == "auto_gptq":
-        return quantize_auto_gptq(
-            model_id, out_dir, bits, group_size, damp_percent, desc_act, calibration, device
-        )
-    raise ValueError(f"Unknown gptq_backend {backend!r} (supported: auto_gptq)")
+    if not device.startswith("cuda"):
+        print("[quantize] WARNING: quantizing on CPU is very slow; prefer CUDA.")
+
+    if backend in ("auto_gptq", "auto"):
+        try:
+            return _quantize_auto_gptq(
+                model_id, out_dir, bits, group_size, damp_percent, desc_act, calibration, device
+            )
+        except (ImportError, ValueError, KeyError, NotImplementedError) as e:
+            if backend == "auto_gptq":
+                raise
+            print(f"[quantize] auto_gptq failed ({e}); falling back to gptqmodel...")
+    if backend in ("gptqmodel", "auto"):
+        try:
+            return _quantize_gptqmodel(
+                model_id, out_dir, bits, group_size, damp_percent, desc_act, calibration, device
+            )
+        except ImportError as e:
+            raise ImportError(
+                "gptqmodel not installed — run `uv sync --extra quantize` "
+                "(or `uv add gptqmodel`) to enable the fallback backend"
+            ) from e
+    raise ValueError(f"Unknown gptq_backend {backend!r} (supported: auto, auto_gptq, gptqmodel)")

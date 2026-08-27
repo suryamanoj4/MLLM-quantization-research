@@ -40,13 +40,15 @@ def main(argv=None) -> None:
 
     if not args.skip_download:
         print("[flow] preparing data (POPE, CHAIR, COCO subset, annotations)...")
-        data = flow.prepare_data(cfg)
+        data = flow.prepare_data(cfg, allow_download=True)
     else:
         data = None
 
-    if not args.skip_quantize:
+    if not args.skip_quantize and any(v in cfg.variants for v in ("w4", "w8")):
         print("[flow] preparing checkpoints (FP16 + GPTQ W8/W4)...")
         flow.prepare_quantized(cfg)
+    else:
+        print("[flow] skipping quantization")
 
     reports = []
     cells_extra = {}
@@ -56,7 +58,7 @@ def main(argv=None) -> None:
         model, processor, device, _ = load_variant(cfg, variant)
         model.eval()
         if data is None:
-            data = flow.prepare_data(cfg)
+            data = flow.prepare_data(cfg, allow_download=not args.skip_download)
         cell = flow.run_cell(cfg, variant, model, processor, device, data)
         export_mod.write_cell(cell, cfg.output_dir)
         reports.append(export_mod.cell_report(cell))

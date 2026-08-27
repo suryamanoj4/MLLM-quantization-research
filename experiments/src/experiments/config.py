@@ -22,10 +22,11 @@ class Config:
     calibration_samples: int = 128
     calibration_source: str = "coco_train_captions"
     gptq_group_size: int = 128
-    gptq_backend: str = "auto_gptq"
+    gptq_backend: str = "auto"
     gptq_damp_percent: float = 0.1
     gptq_desc_act: bool = True
     gptq_seq_len: int = 2048
+    keep_base_checkpoint: bool = True
 
     max_new_tokens_pope: int = 8
     max_new_tokens_chair: int = 256
