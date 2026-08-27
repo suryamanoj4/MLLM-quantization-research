@@ -42,7 +42,7 @@ cd experiments
 uv sync          # creates .venv + installs pinned deps (incl. torch; allow ~10-20 min first time)
 ```
 
-> **Version pins (important):** the lockfile pins the auto_gptq-compatible stack — `transformers 4.46.3`, `torch 2.5.1`, `accelerate 0.34.2`. If you synced with an older lock, re-run `uv sync` after pulling the updated `uv.lock`. Optional gptqmodel fallback backend: `uv sync --extra quantize`.
+> **Version pins (important):** the lockfile pins the auto_gptq-compatible stack — `transformers 4.46.3`, `torch 2.5.1`, `accelerate 0.34.2`. If you synced with an older lock, re-run `uv sync` after pulling the updated `uv.lock`.
 
 Optional environment variables (set before any run):
 ```bash
@@ -95,9 +95,8 @@ uv run experiments --help
 | `sample_images` | `null` | `null` = full set (500/500) |
 | `seed` | `42` | global seed; per-image seeds derived deterministically |
 | `calibration_samples` | `128` | GPTQ calibration size (MSCOCO train2014 captions) |
-| `gptq_group_size` | `128` | GPTQ group size |
-| `gptq_backend` | `auto` | `auto` (auto_gptq → gptqmodel fallback) \| `auto_gptq` \| `gptqmodel` |
-| `keep_base_checkpoint` | `true` | `false` deletes the 14 GB FP16 checkpoint after quantization (fp16 cell then loads from hub) — saves disk on Kaggle |
+| `gptq_group_size` | `128` | GPTQ group size (W4) |
+| `keep_base_checkpoint` | `false` | `true` keeps the 14 GB FP16 checkpoint after quantization; `false` deletes it (fp16/w8 load from hub) — required on Kaggle's ~30 GB disk |
 | `max_new_tokens_pope/chair` | `8 / 256` | answer/caption length caps |
 | `temperature / top_p / do_sample` | `1.0 / 0.9 / true` | nucleus sampling for POPE; set `do_sample: false` for greedy (CHAIR uses its own greedy path via `cfg.do_sample=false` only if you flip it — see note below) |
 | `capture_attention` | `true` | per-step attention aggregates |
@@ -167,7 +166,8 @@ results/
 |---|---|
 | `uv sync` slow | torch download is large; allow 10–20 min; or `uv sync --extra-index-url https://download.pytorch.org/whl/cpu` for CPU-only wheels |
 | auto-gptq build fails | needs a C++ toolchain (`gcc`, `python3-dev`); on Colab/Kaggle it's preinstalled — if local, `sudo apt install build-essential` |
-| quantization "model not supported" | auto_gptq doesn't cover a model class → backend `auto` falls back to gptqmodel automatically; install it with `uv sync --extra quantize` |
+| "CUDA extension not installed" (auto_gptq) | **expected, non-fatal** — auto_gptq's fused kernels need compilation at install; on notebooks it falls back to pure-torch ops. Quantization still runs on the GPU, just slower (one-time, ~10-30 min) |
+| W8 cell fails to load | bitsandbytes needs the CUDA runtime + libcudnn — present on Kaggle/Colab; on custom machines `pip install bitsandbytes` may need `LD_LIBRARY_PATH` set |
 | quantize step OOM | reduce `calibration_samples` to 64; run with `--device cuda`; close other GPU processes |
 | GPTQ checkpoint won't load | transformers version mismatch — the lockfile pins it; don't upgrade transformers independently |
 | downloads stall | network to COCO/HF blocked; set `HF_ENDPOINT` mirror, or pre-place files: annotations in `data/annotations/`, images in `data/val2014/`, POPE files in `data/pope/` (filenames `coco_pope_{split}.json`) |
@@ -182,6 +182,7 @@ results/
 - Calibration data (train2014) is disjoint from evaluation (val2014) — by design.
 - After a run, log the numbers into `../obsidian-docs/Results.md` (entry template there), including `--sample-images` if used and the seed.
 - For the paper/proposal, always state: model, variant set, sample sizes, seed, calibration size, and the figures F1–F5.
+- **Variant mechanics (state in methods):** `w8` = bitsandbytes Int8 (no calibration); `w4` = GPTQ g128 on the extracted Vicuna LLM (auto_gptq can't quantize the `llava` wrapper class directly, so the `llama`-type LM is quantized standalone and swapped into the fp16 LLaVA at load time). Both weight-only.
 
 ---
 

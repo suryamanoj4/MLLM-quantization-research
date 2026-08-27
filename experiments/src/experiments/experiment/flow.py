@@ -93,7 +93,6 @@ def prepare_quantized(cfg: Config) -> None:
         download_checkpoint(cfg.model_id, base_dir)
 
     ann = coco_mod.download_annotations(cfg.data_dir / "annotations")
-    captions_train = coco_mod.load_captions(ann["captions_train2014.json"])
 
     from transformers import AutoTokenizer
 
@@ -107,27 +106,30 @@ def prepare_quantized(cfg: Config) -> None:
         cfg.seed,
     )
 
-    for bits in (8, 4):
-        out_dir = cfg.checkpoints_dir / f"gptq-w{bits}"
-        if (out_dir / "config.json").exists():
-            continue
-        quant_mod.quantize(
-            str(base_dir),
+    out_dir = cfg.checkpoints_dir / "gptq-llm-w4"
+    if not (out_dir / "config.json").exists():
+        tmp_llm = cfg.checkpoints_dir / "llm-extracted"
+        quant_mod.extract_llm(base_dir, tmp_llm, resolve_device(cfg.device))
+        quant_mod.quantize_llm(
+            tmp_llm,
             out_dir,
-            bits,
-            cfg.gptq_backend,
+            4,
             calib,
             resolve_device(cfg.device),
             group_size=cfg.gptq_group_size,
             damp_percent=cfg.gptq_damp_percent,
             desc_act=cfg.gptq_desc_act,
         )
+        import shutil
+
+        shutil.rmtree(tmp_llm, ignore_errors=True)
+        print("[flow] removed extracted LLM temp checkpoint")
 
     if not cfg.keep_base_checkpoint:
         import shutil
 
         shutil.rmtree(base_dir, ignore_errors=True)
-        print("[flow] removed base checkpoint (keep_base_checkpoint=false); fp16 loads from hub")
+        print("[flow] removed base checkpoint (keep_base_checkpoint=false); fp16/w8 load from hub")
 
 
 def _resampled_questions(pope: dict[str, list[dict]], cfg: Config) -> dict[str, list[dict]]:

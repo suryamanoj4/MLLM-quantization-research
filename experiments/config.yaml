@@ -11,8 +11,7 @@ output_dir: results
 calibration_samples: 128
 calibration_source: coco_train_captions
 gptq_group_size: 128
-gptq_backend: auto
-keep_base_checkpoint: true
+keep_base_checkpoint: false
 
 max_new_tokens_pope: 8
 max_new_tokens_chair: 256
