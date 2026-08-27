@@ -18,10 +18,13 @@ status: in-progress
 
 ```mermaid
 graph TD
-    A["README (Index)"] --> B["01-Research-Ideation"]
-    B --> C["02-Main-Study"]
-    C --> D["07-Results-Log"]
+    A["README (Index)"] --> B["Research Ideation"]
+    A --> E["Claims & Evidence Chain"]
+    B --> E
+    B --> C["Study Experiment"]
+    C --> D["Results"]
     B --> D
+    E --> C
 ```
 
 ## Notes
@@ -29,6 +32,7 @@ graph TD
 | Note | Contents | Status |
 |---|---|---|
 | [[Research Ideation]] | **The quick-read:** research topic, lexical fallback, gaps, RQs, hypotheses H1–H4 + probes S1–S3, key verified facts, plan, metrics, figures, references | ✅ Base for all phases |
+| [[Claims & Evidence Chain]] | The argumentative spine: 4 claims (hallucination is measurable → the head carries the bias → quantization inflates it → no bridging work exists) with primary sources | ✅ Verified |
 | [[Study Experiment]] | The main study: 7B GPTQ self-quantized (FP16/W8/W4) on full POPE (3 splits) + CHAIR with attention capture and text-only probe | ⏳ Planned |
 | [[Results]] | Append-only experiment log + hypothesis verdict tracker | ⏳ Pending |
 

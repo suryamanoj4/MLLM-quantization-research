@@ -33,7 +33,7 @@ Deploying MLLMs on edge hardware requires aggressive Post-Training Quantization 
 | Hallucination mitigations assume full precision | VCD, OPERA, DoLa benchmarked on uncompressed models |
 | **No hallucination-focused study across precision levels** | LUQ reports POPE as one column among 9 benchmarks; no attention-mechanism analysis |
 
-**Novelty:** first same-dataset, same-prompt ablation of hallucination across a precision grid (FP16→W4A4) on LLaVA-1.5 and Qwen2.5-VL *with* attention-mechanism analysis. Differentiators vs LUQ (sub-4-bit, POPE as one column): hallucination as object of study, full precision grid, attention mechanism, two model families. Related reliability work: arXiv:2602.13289 (PTQ × reliable VQA, no hallucination metrics).
+**Novelty:** first same-dataset, same-prompt ablation of hallucination across a precision grid (FP16→W4A4) on LLaVA-1.5 and Qwen2.5-VL *with* attention-mechanism analysis. Differentiators vs LUQ (sub-4-bit, POPE as one column): hallucination as object of study, full precision grid, attention mechanism, two model families. Related reliability work: arXiv:2602.13289 (PTQ × reliable VQA, no hallucination metrics). Full evidence chain with primary sources: [[Claims & Evidence Chain]]. Closest decoding-time prior: UHMF-V (thesis, quantized-VLM decoding mitigation) — positioned against in [[Claims & Evidence Chain#Claim 4]].
 
 ## 3. Research Questions
 
@@ -46,6 +46,8 @@ Deploying MLLMs on edge hardware requires aggressive Post-Training Quantization 
 
 > [!example] H1 — Precision monotonicity
 > Hallucination rate (CHAIR_s, CHAIR_i, POPE-F1) increases monotonically with precision reduction: FP16 < W8A8 < W4A8 < W4A4, consistently across models and quantizers.
+>
+> Prior-support audit (what literature already establishes vs what we add): [[Claims & Evidence Chain#Where We Start — Hypothesis × Prior-Support Audit]]
 
 > [!example] H2 — Attention degradation
 > Quantization reduces visual attention mass $\bar{a}_v$ and increases attention entropy over visual tokens, with the largest drop at W4A4.
@@ -66,6 +68,8 @@ Deploying MLLMs on edge hardware requires aggressive Post-Training Quantization 
 > **S2a — Prior-strength stratification:** bin POPE questions by text-only $P_{txt}(\text{yes})$; the FP16→W4 hallucination gap should grow monotonically with prior strength — quantitative fallback, not generic accuracy loss.
 > **S2b — Distributional convergence:** the quantized output distribution should converge toward the text-only distribution:
 > $$\Delta\text{KL}_c = \text{KL}\big(P_c(\cdot \mid x, v) \,\|\, P_{txt}(\cdot \mid x)\big) - \text{KL}\big(P_{FP16}(\cdot \mid x, v) \,\|\, P_{txt}(\cdot \mid x)\big) < 0$$
+>
+> Prior-support audit: [[Claims & Evidence Chain#Where We Start — Hypothesis × Prior-Support Audit]]
 
 > [!example] S3 — Layer-depth attention profile
 > Visual attention imbalance intensifies in deeper layers (RBD-style finding); quantization is expected to steepen this — informs which layers carry the fallback signal.
@@ -148,7 +152,7 @@ F1 hallucination-vs-precision bars · F2 fallback timeline (attention over decod
 
 ## 9. References & Verified Facts
 
-**Primary sources (verified 2026-08-25):**
+**Primary sources (verified 2026-08-25; new claims-level sources 2026-08-27 in [[Claims & Evidence Chain]]):**
 
 - Ashkboos, S., et al. 2024. QuaRot: Outlier-free 4-bit inference in rotated LLMs. arXiv:2404.00456 · github.com/spcl/QuaRot (LLM-only)
 - Belsare, S., et al. 2026. GridVQA-X. arXiv:2606.14740 · github.com/AikyamLab/grid-vqax (synthetic contrastive-generation template)
@@ -164,12 +168,17 @@ F1 hallucination-vs-precision bars · F2 fallback timeline (attention over decod
 - Wang, P., et al. 2024. Qwen2-VL. arXiv:2409.12191 (Qwen2.5-VL same family; repo redirects to QwenLM/Qwen3-VL)
 - Yu, J., et al. 2025. MQuant. ACM MM. arXiv:2502.00425 · github.com/StiphyJay/MQuant
 
-**Attention↔hallucination anchors:** OPERA (arXiv:2311.17911, summary tokens neglect image), VCD (arXiv:2311.16922, unimodal priors), RBD (arXiv:2409.06485, visual tokens ~25% of attention, deeper layers worse), ASCD (arXiv:2506.14766, contrastive decoding lowers visual attention), MIHBench (arXiv:2508.00726), HDPO (arXiv:2411.10436).
+**Attention↔hallucination anchors:** OPERA (arXiv:2311.17911, summary tokens neglect image), VCD (arXiv:2311.16922, unimodal priors), RBD (arXiv:2409.06485, visual tokens ~25% of attention, deeper layers worse), ASCD (arXiv:2506.14766, contrastive decoding lowers visual attention), MIHBench (arXiv:2508.00726), HDPO (arXiv:2411.10436), **POPEv2 probing** (arXiv:2508.04567, AAAI 2026 — bias resides in the LM head; visual info present in hidden states but generation ignores it).
+
+**Quantization × hallucination (claim-level evidence):** **ImpQuant** (ICML 2026 poster 64367 — explicitly reduces *quantization-induced object hallucinations*), **LUQ** (arXiv:2509.23729, POPE among 9 benchmarks), **PTQ × reliable VQA** (arXiv:2602.13289, accuracy + ECE degradation), **UHMF-V** (hdl.handle.net/10356/213843 — decode-time mitigation for 4-bit LLaVA-1.5), **QIG** (arXiv:2603.17809) and **VLMQ** (arXiv:2508.03351) (visual-token fragility under PTQ), **Quantized but Deceptive?** (aclanthology.org/2025.emnlp-main.1548), **Tethered Reasoning** (arXiv:2602.17691).
+
+**Hallucination benchmark landscape:** POPEv2 (arXiv:2508.04567, counterfactual pairs), HOPE (arXiv:2508.06530, harder distractors — POPE caveat), HallusionBench (arXiv:2310.18834), TGIF (arXiv:2601.03100, POPE+HallusionBench adoption).
 
 **Correction log (assumptions overturned by verification):** Qwen2-VL has no cross-attention; POPE repo is RUCAIBox (shikohome dead); QuaRot repo is spcl (LLM-only); AutoGPTQ archived; AWQ is W4A16 weight-only; TextVQA repo dead (textvqa.org + lmms-eval); CHAIR not in lmms-eval; LUQ used Qwen2.5-VL; TheBloke 7B GPTQ deleted (13B survives).
 
 ## Related Notes
 
+- [[Claims & Evidence Chain]] — the claims → evidence → hypotheses spine
 - [[Study Experiment]] — the main study experiment
 - [[Results]] — results, appended as experiments complete
 - [[README]] — vault index
