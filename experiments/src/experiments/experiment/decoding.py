@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import gc
+
 import torch
 
 from ..config import Config
@@ -107,6 +109,7 @@ def sample_token(logits: torch.Tensor, cfg: Config, step: int) -> torch.Tensor:
     return torch.multinomial(probs, num_samples=1)
 
 
+@torch.inference_mode()
 def decode(
     model,
     processor,
@@ -155,12 +158,17 @@ def decode(
                 output_attentions=tracker is not None,
             )
         else:
+            # Prefill. The last attention row here belongs to the final PROMPT
+            # token, not to a generated one -- generated-token rows come from the
+            # cached steps above. Capturing it put a prompt token at position 0 of
+            # the per-generated-token decay curve H4 rests on, and materialising
+            # the full [1, heads, seq, seq] stack cost ~3 GB.
             out = model(
                 input_ids=ids,
                 attention_mask=attention_mask,
                 pixel_values=pixel_values,
                 use_cache=True,
-                output_attentions=tracker is not None,
+                output_attentions=False,
             )
         cache = out.past_key_values
         if tracker is not None and out.attentions is not None and tracker.span is not None:
@@ -169,9 +177,18 @@ def decode(
         next_id = sample_token(logits, cfg, step)
         sampled.append(int(next_id))
         ids = next_id.unsqueeze(0)
+        del out
         attention_mask = torch.cat([attention_mask, torch.ones(1, 1, device=device)], dim=-1)
         if eos is not None and int(next_id) == eos:
             break
 
     text_out = tokenizer.decode(sampled, skip_special_tokens=True).strip()
+    # Release the KV cache before returning: `out` and `cache` form a reference
+    # cycle that Python does not collect promptly, so without this the cache of
+    # every prior generation can stay resident across a long run.
+    cache = None
+    ids = None
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
     return text_out, sampled

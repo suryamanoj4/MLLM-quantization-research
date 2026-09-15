@@ -149,6 +149,7 @@ def run_cell(cfg: Config, variant: str, model, processor, device, data) -> dict:
 
     pope_rs = {}
     vdir = cfg.output_dir / variant
+    vdir.mkdir(parents=True, exist_ok=True)
     for split, qs in _resampled_questions(data["pope"], cfg).items():
         out_path = vdir / f"pope_{split}.jsonl"
         rs = pope_mod.run_pope(

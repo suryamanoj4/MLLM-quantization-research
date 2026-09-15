@@ -75,7 +75,7 @@ def main(argv=None) -> None:
             torch.cuda.empty_cache()
 
     ablation = {"cells": reports}
-    export_mod.write_ablation(ablation, cfg.output_dir)
+    export_mod.write_ablation(reports, cfg.output_dir)
     export_mod.write_summary_md(ablation, cfg.output_dir)
     plots_mod.make_all(ablation, cells_extra, cells_binned, cfg.output_dir / "figures")
     print(f"[flow] done — artifacts in {cfg.output_dir}")

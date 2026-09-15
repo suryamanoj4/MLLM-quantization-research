@@ -46,8 +46,16 @@ def extract_llm(base_dir: pathlib.Path, tmp_dir: pathlib.Path, device: str) -> p
     llm = LlamaForCausalLM(llm_cfg)
     llm.to("meta")
     prefix = "language_model."
-    for shard in sorted(base_dir.glob("pytorch_model-*.bin")):
-        sd = torch.load(shard, map_location="cpu", weights_only=True)
+    shards = sorted(base_dir.glob("*.safetensors")) or sorted(base_dir.glob("pytorch_model-*.bin"))
+    if not shards:
+        raise FileNotFoundError(f"no weight shards found in {base_dir}")
+    for shard in shards:
+        if shard.suffix == ".safetensors":
+            from safetensors.torch import load_file
+
+            sd = load_file(str(shard))
+        else:
+            sd = torch.load(shard, map_location="cpu", weights_only=True)
         filtered = {
             k[len(prefix):]: v
             for k, v in sd.items()
@@ -88,7 +96,21 @@ def quantize_llm(
     model = AutoGPTQForCausalLM.from_pretrained(
         str(llm_dir), quantize_config=quant_config, torch_dtype=torch.float16, device_map=device
     )
+    # transformers >= 4.43 hoisted the rotary embedding from the decoder layers up
+    # to LlamaModel (`model.rotary_emb`). auto_gptq 0.7.1 predates that and never
+    # relocates it, so inv_freq stays on the CPU while the calibration forward runs
+    # on the GPU. Move it there and leave it -- auto_gptq does not touch modules
+    # outside its own lists.
+    #
+    # It must NOT be added to `outside_layer_modules`: the module holds no
+    # parameters, only the inv_freq buffer, and auto_gptq calls
+    # get_device() -> next(module.parameters()) on every entry, which raises
+    # StopIteration on a parameterless module.
+    inner = getattr(getattr(model, "model", None), "model", None)
+    if inner is not None and hasattr(inner, "rotary_emb"):
+        inner.rotary_emb.to(device)
+
     model.quantize(calibration)
     out_dir.mkdir(parents=True, exist_ok=True)
-    model.save_quantized(str(out_dir), safetensors=True, use_safetensors=True)
+    model.save_quantized(str(out_dir), use_safetensors=True)
     return out_dir
