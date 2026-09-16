@@ -1,4 +1,4 @@
-model_id: liuhaotian/llava-v1.5-7b
+model_id: llava-hf/llava-1.5-7b-hf
 variants: [fp16, w8, w4]
 sample_images: null
 seed: 42

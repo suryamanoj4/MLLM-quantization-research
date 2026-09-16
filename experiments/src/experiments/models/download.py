@@ -23,10 +23,17 @@ def resolve_dtype(device: str) -> torch.dtype:
     return torch.float16 if device.startswith("cuda") else torch.float32
 
 
-def load_torch(model_id: str, device: str, dtype: torch.dtype, quant_config=None) -> torch.nn.Module:
+def load_torch(
+    model_id: str, device: str, dtype: torch.dtype, quant_config=None, device_map=None
+) -> torch.nn.Module:
     from transformers import LlavaForConditionalGeneration
 
-    kwargs = dict(torch_dtype=dtype, device_map=device, low_cpu_mem_usage=True)
+    kwargs = dict(torch_dtype=dtype, device_map=device_map or device, low_cpu_mem_usage=True)
+    if (device_map or device) == "auto" and torch.cuda.is_available():
+        # accelerate's "auto" fills GPU 0 to capacity before spilling over, which
+        # leaves no room for activations. Cap each device so the weights split and
+        # headroom remains.
+        kwargs["max_memory"] = {i: "10GiB" for i in range(torch.cuda.device_count())}
     if quant_config is not None:
         kwargs["quantization_config"] = quant_config
         kwargs["torch_dtype"] = torch.float16

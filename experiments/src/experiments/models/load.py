@@ -14,7 +14,8 @@ def load_variant(cfg: Config, variant: str):
     dtype = resolve_dtype(device)
 
     if variant == "fp16":
-        model = load_torch(cfg.model_id, device, dtype)
+        dmap = "auto" if device.startswith("cuda") else device
+        model = load_torch(cfg.model_id, device, dtype, device_map=dmap)
         processor = AutoProcessor.from_pretrained(cfg.model_id)
         return model, processor, device, None
 
@@ -22,7 +23,10 @@ def load_variant(cfg: Config, variant: str):
         from transformers import BitsAndBytesConfig
 
         bnb = BitsAndBytesConfig(load_in_8bit=True)
-        model = load_torch(cfg.model_id, device, torch.float16, quant_config=bnb)
+        dmap = "auto" if device.startswith("cuda") else device
+        model = load_torch(
+            cfg.model_id, device, torch.float16, quant_config=bnb, device_map=dmap
+        )
         processor = AutoProcessor.from_pretrained(cfg.model_id)
         return model, processor, device, None
 
@@ -44,7 +48,7 @@ def load_variant(cfg: Config, variant: str):
         bits=4,
         group_size=cfg.gptq_group_size,
         desc_act=cfg.gptq_desc_act,
-        disable_exllama=True,
+        use_exllama=False,
         use_cuda_fp16=device.startswith("cuda"),
     )
     qllm = LlamaForCausalLM.from_pretrained(

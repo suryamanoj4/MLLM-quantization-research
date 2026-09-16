@@ -52,7 +52,7 @@ def write_summary_md(ablation: dict, out_dir: pathlib.Path) -> None:
         lines.append(f"- CHAIR: s = {c['chair_s']:.3f}, i = {c['chair_i']:.3f}")
         a = cell["attention"]
         lines.append(f"- Attention: mean mass = {a['chair']['mean_mass']:.4f}, entropy = {a['chair']['mean_entropy']:.3f}")
-        if cell.get("dkl_mean"):
-            lines.append(f"- DKL mean = {cell['dkl_mean']:.4f}")
+        if cell.get("dkl"):
+            lines.append(f"- DKL: {cell['dkl']}")
         lines.append("")
     (out_dir / "summary.md").write_text("\n".join(lines))

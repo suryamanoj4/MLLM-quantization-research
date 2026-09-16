@@ -42,13 +42,13 @@ def run_pope(
     done: set[str] = set()
     if out_path is not None and out_path.exists():
         records = load_jsonl(out_path)
-        done = {r["image"] for r in records}
+        done = {(r["image"], r["question"]) for r in records}
         print(f"[pope] resuming: {len(done)} images already done")
 
     fh = open(out_path, "a") if out_path is not None else None
     try:
         for q in tqdm(questions, desc="pope", unit="q"):
-            if q["image"] in done:
+            if (q["image"], q["text"]) in done:
                 continue
             from PIL import Image
 
