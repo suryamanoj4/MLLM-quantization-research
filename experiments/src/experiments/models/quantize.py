@@ -113,4 +113,16 @@ def quantize_llm(
     model.quantize(calibration)
     out_dir.mkdir(parents=True, exist_ok=True)
     model.save_quantized(str(out_dir), use_safetensors=True)
+
+    # auto_gptq writes gptq_model-<bits>bit-<group>g.safetensors, a name
+    # transformers' from_pretrained does not recognise -- it looks only for
+    # model.safetensors / pytorch_model.bin and otherwise raises
+    # "no file named model.safetensors found in directory". Rename so the
+    # checkpoint loads as-is.
+    target = out_dir / "model.safetensors"
+    if not target.exists():
+        cands = sorted(out_dir.glob("*.safetensors"))
+        if cands:
+            cands[0].rename(target)
+
     return out_dir
