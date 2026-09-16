@@ -33,12 +33,12 @@ graph TD
 |---|---|---|
 | [[Research Ideation]] | **The quick-read:** research topic, lexical fallback, gaps, RQs, hypotheses H1–H4 + probes S1–S3, key verified facts, plan, metrics, figures, references | ✅ Base for all phases |
 | [[Claims & Evidence Chain]] | The argumentative spine: 4 claims (hallucination is measurable → the head carries the bias → quantization inflates it → no bridging work exists) with primary sources | ✅ Verified |
-| [[Study Experiment]] | The main study: 7B GPTQ self-quantized (FP16/W8/W4) on full POPE (3 splits) + CHAIR with attention capture and text-only probe | ⏳ Planned |
+| [[Study Experiment]] | The main study: 7B self-quantized precision ladder (FP16/W8A8/W4A16/W4A8/W4A4) on full POPE (3 splits) + CHAIR with attention capture and text-only probe | ⏳ Planned |
 | [[Results]] | Append-only experiment log + hypothesis verdict tracker | ⏳ Pending |
 
 ## One-Paragraph Pitch
 
-Extreme precision reduction (W4A8/W4A4) disproportionately corrupts the cross-modal representations of MLLMs — multimodal token activations carry significantly higher entropy than text (LUQ), so low-bit rounding damages visual conditioning before it damages language fluency. Our hypothesis: the quantized decoder then **falls back to statistical language priors**, producing tokens that are linguistically plausible but visually ungrounded — i.e., object hallucinations. The research establishes this with a same-dataset ablation of hallucination and cross-modal attention across weight-precision versions (FP16 → W8 → W4) on LLaVA-1.5-7B: full POPE (all 3 contrastive splits) + CHAIR, with per-step attention and text-only prior attribution. No published work performs this ablation with attention-mechanism analysis; our study establishes the phenomenon and its mechanism.
+Extreme precision reduction (W4A8/W4A4) disproportionately corrupts the cross-modal representations of MLLMs — multimodal token activations carry significantly higher entropy than text (LUQ), so low-bit rounding damages visual conditioning before it damages language fluency. Our hypothesis: the quantized decoder then **falls back to statistical language priors**, producing tokens that are linguistically plausible but visually ungrounded — i.e., object hallucinations. The research establishes this with a same-dataset ablation of hallucination and cross-modal attention across a five-rung precision ladder (FP16 → W8A8 → W4A16 → W4A8 → W4A4) on LLaVA-1.5-7B: full POPE (all 3 contrastive splits) + CHAIR, with per-step attention and text-only prior attribution. No published work performs this ablation with attention-mechanism analysis; our study establishes the phenomenon and its mechanism.
 
 ## Deliverables
 

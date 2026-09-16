@@ -45,7 +45,7 @@ Deploying MLLMs on edge hardware requires aggressive Post-Training Quantization 
 ## 4. Hypotheses
 
 > [!example] H1 — Precision monotonicity
-> Hallucination rate (CHAIR_s, CHAIR_i, POPE-F1) increases monotonically with precision reduction: FP16 < W8A8 < W4A8 < W4A4, consistently across models and quantizers.
+> Hallucination rate (CHAIR_s, CHAIR_i, POPE-F1) increases monotonically with precision reduction: FP16 < W8A8 < W4A16 < W4A8 < W4A4, consistently across models and quantizers.
 >
 > Prior-support audit (what literature already establishes vs what we add): [[Claims & Evidence Chain#Where We Start — Hypothesis × Prior-Support Audit]]
 
@@ -65,7 +65,7 @@ Deploying MLLMs on edge hardware requires aggressive Post-Training Quantization 
 
 > [!example] S2 — Linguistic-prior probe
 > Run the model with image masked (text-only condition). Hallucinated mentions should be high-probability under the text-only distribution; grounded mentions should not.
-> **S2a — Prior-strength stratification:** bin POPE questions by text-only $P_{txt}(\text{yes})$; the FP16→W4 hallucination gap should grow monotonically with prior strength — quantitative fallback, not generic accuracy loss.
+> **S2a — Prior-strength stratification:** bin POPE questions by text-only $P_{txt}(\text{yes})$; the FP16→W4A4 hallucination gap should grow monotonically with prior strength — quantitative fallback, not generic accuracy loss.
 > **S2b — Distributional convergence:** the quantized output distribution should converge toward the text-only distribution:
 > $$\Delta\text{KL}_c = \text{KL}\big(P_c(\cdot \mid x, v) \,\|\, P_{txt}(\cdot \mid x)\big) - \text{KL}\big(P_{FP16}(\cdot \mid x, v) \,\|\, P_{txt}(\cdot \mid x)\big) < 0$$
 >
@@ -99,6 +99,7 @@ Deploying MLLMs on edge hardware requires aggressive Post-Training Quantization 
 | **GPTQ** (arXiv:2210.17323) | W4/W8 weight-only | AutoGPTQ archived Apr 2025 → use **GPTQModel**; transformers `GPTQConfig`; CPU-inference capable; TheBloke's 7B GPTQ repo deleted (13B branches survive) |
 | **AWQ** (arXiv:2306.00978) | W4 weight-only (g128) | CUDA kernels; W4A16 only |
 | **MQuant** (arXiv:2502.00425, MM'25) | W4A8/W4A4 weight+activation | Official code (StiphyJay/MQuant); CUDA-only kernels → CPU fallback = fake-quant simulation; built on QuaRot rotations (QuaRot itself is LLM-only) |
+| **Quanto / TorchAO** (in-study rungs) | W8A8 / W4A8 / W4A4 weight+activation | transformers-native (`QuantoConfig`, `TorchAoConfig`); RTN-style, no calibration; layer-swap quantizers keep attention hooks intact — the rungs of the [[Study Experiment]] ladder |
 | QuaRot (arXiv:2404.00456) | LLM-only W4A4 | Not applicable to MLLMs per MQuant |
 
 ### Model feasibility (compute)
@@ -113,21 +114,21 @@ Deploying MLLMs on edge hardware requires aggressive Post-Training Quantization 
 
 ```mermaid
 graph LR
-    P0["P0 Setup & quantization<br/>FP16 + GPTQ W4/W8"] --> P1["P1 POPE (3 splits) + CHAIR<br/>× FP16 / W8 / W4"]
+    P0["P0 Setup & quantization<br/>FP16 + W8A8 + GPTQ W4A16 + W4A8/W4A4"] --> P1["P1 POPE (3 splits) + CHAIR<br/>× FP16 / W8A8 / W4A16 / W4A8 / W4A4"]
     P1 --> P2["P2 Attention capture<br/>+ text-only probe"]
     P2 --> P3["P3 Analysis<br/>H1–H4 + S2/S3 verdicts"]
     P3 --> P4["P4 Evidence write-up<br/>+ methods phase"]
 ```
 
-- **P0 — Setup & quantization:** download official LLaVA-1.5-7B; self-quantize GPTQ W4 (g128) + W8 via GPTQModel on T4 (~30 min); calibration ~128 MSCOCO train2014 samples, disjoint from eval; configs logged.
-- **P1 — Evaluation grid:** POPE (all 3 splits, 9,000 questions) + CHAIR (500 captions) on FP16 / W8 / W4 — identical prompts, per-image seeds. Full protocol in [[Study Experiment]]. Resampling is a code-config option (`sample_images`, default = full set); docs track the full set unless a resampled run becomes the record.
-- **P2 — Mechanism & attribution:** per-step attention capture (all layers/heads over the 576-token visual span); text-only probe on FP16 + W4 (per-question $P_{txt}$, per-step logits for ΔKL).
+- **P0 — Setup & quantization:** download official LLaVA-1.5-7B; build the five-rung ladder: TorchAO W8A8 (dynamic int8), self-quantized GPTQ W4A16 (g128), Quanto W4A8 + W4A4 (~35 min total); GPTQ calibration ~128 MSCOCO train2014 samples, disjoint from eval; configs logged.
+- **P1 — Evaluation grid:** POPE (all 3 splits, 9,000 questions) + CHAIR (500 captions) on FP16 / W8A8 / W4A16 / W4A8 / W4A4 — identical prompts, per-image seeds. Full protocol in [[Study Experiment]]. Resampling is a code-config option (`sample_images`, default = full set); docs track the full set unless a resampled run becomes the record.
+- **P2 — Mechanism & attribution:** per-step attention capture (all layers/heads over the 576-token visual span); text-only probe on FP16 + W4A16 + W4A4 (per-question $P_{txt}$, per-step logits for ΔKL).
 - **P3 — Analysis:** per-split POPE F1/yes-ratio, CHAIR_s/i, r_pb with bootstrap CIs, binned grounding curves, fallback timeline, ΔKL → verdicts for H1–H4, S2, S3.
 - **P4 — Evidence & methods phase:** figures F1–F8, evidence write-up (feeds the proposal); decoding-time countermeasures begin in later research phases, documented here as they start.
 
 ### Compute budget (T4 free tier, full sets)
 
-**~13–14 GPU-h** on one T4: POPE ~3.3 h + CHAIR ~4.7 h (×3 variants) + text-only probe ~4 h + quantization ~0.5 h + analysis ~1 h. ≈ 1 Kaggle week (30 h/wk) or ~6–8 h wall-clock on both T4s in parallel; ~2 Colab sessions. A resampled config (e.g., 100 images/split + CHAIR-100) cuts to ~3–3.5 h.
+**~18–19 GPU-h** on one T4: POPE ~5.5 h + CHAIR ~7.8 h (×5 rungs) + text-only probe ~4 h + quantization ~0.6 h + analysis ~1 h. ≈ 1 Kaggle week (30 h/wk) or ~9–10 h wall-clock on both T4s in parallel; ~2 Colab sessions. A resampled config (e.g., 100 images/split + CHAIR-100) cuts to ~4–5 h.
 
 ### Key risks
 
@@ -137,7 +138,7 @@ graph LR
 | CHAIR not in lmms-eval | Custom harness on LisaAnne chair.py, validated on published FP16 numbers |
 | Quantized model degenerates at W4 | Mark cell "collapsed" and report it as a finding (collapse is evidence) |
 | H3 coupling weak at token level | Sentence/step-window-level coupling (H4) as hedge; report honestly |
-| Future extension to W4A4/activation quantization | Inherits AWQ/MQuant CUDA-only constraints → fake-quant simulation fallback |
+| Activation-quant rungs (W4A8/W4A4) depend on quanto/torchao support for LLaVA-1.5 | Pre-flight smoke test per rung; Quanto `modules_to_not_quantize` for the vision tower if it collapses first (vision-collapse is itself a finding, logged separately) |
 
 ## 7. Metrics at a Glance
 

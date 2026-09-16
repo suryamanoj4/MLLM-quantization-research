@@ -15,9 +15,11 @@ status: in-progress
 ## 1. Cell Checklist (pending)
 
 - [ ] LLaVA-1.5-7B / **FP16** / POPE (3 splits) + CHAIR (500)
-- [ ] LLaVA-1.5-7B / **W8** (GPTQ) / POPE (3 splits) + CHAIR (500)
-- [ ] LLaVA-1.5-7B / **W4** (GPTQ) / POPE (3 splits) + CHAIR (500)
-- [ ] Text-only probe (S2/S2a/S2b) — FP16 + W4, POPE + CHAIR
+- [ ] LLaVA-1.5-7B / **W8A8** (TorchAO) / POPE (3 splits) + CHAIR (500)
+- [ ] LLaVA-1.5-7B / **W4A16** (GPTQ) / POPE (3 splits) + CHAIR (500)
+- [ ] LLaVA-1.5-7B / **W4A8** (Quanto) / POPE (3 splits) + CHAIR (500)
+- [ ] LLaVA-1.5-7B / **W4A4** (Quanto) / POPE (3 splits) + CHAIR (500)
+- [ ] Text-only probe (S2/S2a/S2b) — FP16 + W4A16 + W4A4, POPE + CHAIR
 - [ ] S3 — layer-depth attention profile (derived from captured attention)
 
 > [!note] Resampling
@@ -25,7 +27,7 @@ status: in-progress
 
 ## 2. Entry Template
 
-> [!todo] Entry — `LLaVA-1.5-7B / <precision> / GPTQ / full|resampled`
+> [!todo] Entry — `LLaVA-1.5-7B / <precision> / <method> / full|resampled`
 > - **Date / status:** YYYY-MM-DD / complete | partial | collapsed
 > - **CHAIR:** CHAIR_s = _ , CHAIR_i = _ (n = 500 images)
 > - **POPE F1:** random _ · popular _ · adversarial _ (yes-ratio _ per split)
