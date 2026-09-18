@@ -8,6 +8,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "src"))
 
 from experiments.analysis import metrics as m
 from experiments.analysis import plots
+from experiments.config import Config
 from experiments.data import coco
 from experiments.data import datasets as ds
 from experiments.experiment import chair_utils as cu
@@ -19,6 +20,13 @@ def check(name, cond):
     print(("PASS" if cond else "FAIL"), name)
     if not cond:
         FAIL.append(name)
+
+
+# --- config ---
+check(
+    "default variants is the five-rung ladder",
+    Config().variants == ["fp16", "w8a8", "w4a16", "w4a8", "w4a4"],
+)
 
 
 # --- chair_utils ---
@@ -86,7 +94,16 @@ ablation = {
             },
         },
         {
-            "variant": "w8",
+            "variant": "w8a8",
+            "pope": {s: {"f1": 0.86 - 0.01 * i} for i, s in enumerate(("random", "popular", "adversarial"))},
+            "chair": {"chair_s": 0.14, "chair_i": 0.06},
+            "attention": {
+                "chair": {"mean_mass": 0.23, "mean_entropy": 4.3, "decile_profile": [0.28] * 10},
+                "pope": {},
+            },
+        },
+        {
+            "variant": "w4a16",
             "pope": {s: {"f1": 0.84 - 0.01 * i} for i, s in enumerate(("random", "popular", "adversarial"))},
             "chair": {"chair_s": 0.20, "chair_i": 0.09},
             "attention": {
@@ -95,7 +112,16 @@ ablation = {
             },
         },
         {
-            "variant": "w4",
+            "variant": "w4a8",
+            "pope": {s: {"f1": 0.80 - 0.01 * i} for i, s in enumerate(("random", "popular", "adversarial"))},
+            "chair": {"chair_s": 0.26, "chair_i": 0.12},
+            "attention": {
+                "chair": {"mean_mass": 0.16, "mean_entropy": 4.9, "decile_profile": [0.19] * 10},
+                "pope": {},
+            },
+        },
+        {
+            "variant": "w4a4",
             "pope": {s: {"f1": 0.78 - 0.01 * i} for i, s in enumerate(("random", "popular", "adversarial"))},
             "chair": {"chair_s": 0.32, "chair_i": 0.16},
             "attention": {
@@ -105,6 +131,7 @@ ablation = {
         },
     ]
 }
+check("palette covers all ladder rungs", set(plots.PALETTE) == {c["variant"] for c in ablation["cells"]})
 with tempfile.TemporaryDirectory() as td:
     out_dir = pathlib.Path(td) / "figures"
     plots.make_all(

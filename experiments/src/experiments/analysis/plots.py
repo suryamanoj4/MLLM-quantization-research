@@ -10,7 +10,13 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-PALETTE = {"fp16": "#2e8b57", "w8": "#e6a817", "w4": "#c0392b"}
+PALETTE = {
+    "fp16": "#2e8b57",
+    "w8a8": "#8fae1b",
+    "w4a16": "#e6a817",
+    "w4a8": "#e07b39",
+    "w4a4": "#c0392b",
+}
 SPLITS = ("random", "popular", "adversarial")
 
 

@@ -14,7 +14,9 @@ from .models.load import load_variant
 def parse_args(argv=None) -> argparse.Namespace:
     p = argparse.ArgumentParser(prog="experiments", description="Lexical fallback evidence study")
     p.add_argument("--config", type=str, default="config.yaml")
-    p.add_argument("--variants", type=str, default=None, help="comma list, e.g. fp16,w8,w4")
+    p.add_argument(
+        "--variants", type=str, default=None, help="comma list, e.g. fp16,w8a8,w4a16,w4a8,w4a4"
+    )
     p.add_argument("--sample-images", type=int, default=None, help="resample images per benchmark (None = full set)")
     p.add_argument("--device", type=str, default=None, choices=["auto", "cuda", "cpu"])
     p.add_argument("--root", type=str, default=".", help="project root for data/checkpoints/results")
@@ -44,8 +46,8 @@ def main(argv=None) -> None:
     else:
         data = None
 
-    if not args.skip_quantize and any(v in cfg.variants for v in ("w4", "w8")):
-        print("[flow] preparing checkpoints (FP16 + GPTQ W8/W4)...")
+    if not args.skip_quantize and "w4a16" in cfg.variants:
+        print("[flow] preparing checkpoints (GPTQ W4, group_size=%d)..." % cfg.gptq_group_size)
         flow.prepare_quantized(cfg)
     else:
         print("[flow] skipping quantization")
