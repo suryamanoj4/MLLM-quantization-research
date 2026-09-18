@@ -62,7 +62,7 @@ graph LR
 - **Supporting mechanism (weight-space literature)**: **QIG** ([arXiv:2603.17809](https://arxiv.org/abs/2603.17809)) and **VLMQ** ([arXiv:2508.03351](https://arxiv.org/abs/2508.03351)) show visual tokens are the fragile ones under quantization (visual over-representation, modality gap, token-level sensitivity) — consistent with visual grounding being the first casualty.
 
 > [!note] Strength of the claim
-> Best-supported version: *quantization degrades MLLM reliability and hallucination measures, with visual tokens disproportionately fragile; dedicated weight-space fixes (ImpQuant, LUQ, QIG, VLMQ) partially recover it.* What NO published work provides: a same-dataset precision-grid (FP16→W4) ablation of POPE/CHAIR **with attention-level mechanism analysis** — that is [[Study Experiment]].
+> Best-supported version: *quantization degrades MLLM reliability and hallucination measures, with visual tokens disproportionately fragile; dedicated weight-space fixes (ImpQuant, LUQ, QIG, VLMQ) partially recover it.* What NO published work provides: a same-dataset precision-grid (FP16→W4A4, weight- and activation-quantized) ablation of POPE/CHAIR **with attention-level mechanism analysis** — that is [[Study Experiment]].
 
 ## Claim 4 — No attention-level, decoding-time study bridges compression and generation
 
@@ -80,12 +80,12 @@ graph LR
 
 | Hypothesis | Prior support (from claims above) | Established? | What our study adds |
 |---|---|---|---|
-| **H1 — monotone hallucination rise with precision loss** | Claim 3: quantization degrades hallucination measures — LUQ (sub-4-bit POPE), ImpQuant ("quantization-induced object hallucinations"), UHMF-V (4-bit assumption), PTQ×reliability (accuracy+ECE) | ⚠️ **Qualitatively yes** (precision ↓ → hallucination ↑), *shape unknown* | The **first FP16→W8→W4 same-prompt ladder** on POPE/CHAIR: monotone vs cliff, effect sizes per split |
+| **H1 — monotone hallucination rise with precision loss** | Claim 3: quantization degrades hallucination measures — LUQ (sub-4-bit POPE), ImpQuant ("quantization-induced object hallucinations"), UHMF-V (4-bit assumption), PTQ×reliability (accuracy+ECE) | ⚠️ **Qualitatively yes** (precision ↓ → hallucination ↑), *shape unknown* | The **first FP16→W8A8→W4A16→W4A8→W4A4 same-prompt ladder** on POPE/CHAIR: monotone vs cliff, effect sizes per split, weight-axis vs activation-axis attribution |
 | **H2 — attention degradation with precision** | Claim 2 (FP16): attention↔hallucination coupling (OPERA, RBD, ASCD, HDPO); Claim 3: visual tokens fragile under PTQ (QIG, VLMQ) | ❌ No | First attention metrics (mass/entropy/drift) **on quantized models** |
 | **H3 — token-level grounding coupling** | Claim 2 (FP16): hallucinated mentions are attentionally ungrounded (ASCD, HDPO, OPERA); POPEv2: head-level failure | ❌ No | Whether the coupling **persists/strengthens under quantization** — and whether grounding is a usable decoding signal |
 | **H4 — temporal fallback** | Claim 2 (FP16): OPERA summary-token overtrust; RBD layer-depth imbalance | ❌ No | The named **fallback timeline**: attention decay over decoding steps in quantized models |
 | **S1 — noise-injection control** | ImpQuant/VLMQ: quantization-error distribution matters (indirect) | ❌ No | Direct control: matched noise at FP16 reproduces fallback → noise (not quantizer artifacts) is the trigger |
-| **S2/S2a/S2b — prior attribution** | Claim 2: unimodal priors drive hallucination (VCD); POPEv2: LM-head training bias; POPE's popular/adversarial splits are prior traps by construction | ⚠️ Concept yes (priors dominate under degradation), **measurement no** | Per-question text-only P(yes), prior-strength gradient FP16→W4, and **KL convergence to the text-only distribution** (novel) |
+| **S2/S2a/S2b — prior attribution** | Claim 2: unimodal priors drive hallucination (VCD); POPEv2: LM-head training bias; POPE's popular/adversarial splits are prior traps by construction | ⚠️ Concept yes (priors dominate under degradation), **measurement no** | Per-question text-only P(yes), prior-strength gradient FP16→W4A4, and **KL convergence to the text-only distribution** (novel) |
 | **S3 — layer-depth profile** | Claim 2 (FP16): RBD — attention imbalance intensifies in deeper layers | ⚠️ FP16 only | The quantized layer profile — which layers carry the fallback signal (future decoding monitor) |
 
 > [!success] Why this matters for the proposal
