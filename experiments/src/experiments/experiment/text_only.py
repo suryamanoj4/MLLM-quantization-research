@@ -24,7 +24,9 @@ def probe_prior_pope(model, processor, tokenizer, questions: list[dict], cfg: Co
         torch.manual_seed(seed)
         inputs = processor(text=prompt, return_tensors="pt").to(next(model.parameters()).device)
         with torch.inference_mode():
-            logits = model(input_ids=inputs["input_ids"], attention_mask=inputs["attention_mask"]).logits[0, -1].float()
+            logits = model.language_model(
+                input_ids=inputs["input_ids"], attention_mask=inputs["attention_mask"]
+            ).logits[0, -1].float()
         p = torch.softmax(logits, dim=-1)
         p_yes = float(p[yes_id])
         p_no = float(p[no_id])
@@ -93,9 +95,11 @@ def _lockstep_kl(model, processor, tokenizer, text: str, image, cfg: Config, max
             else:
                 oi = model(input_ids=img_ids, attention_mask=img_mask, past_key_values=img_cache, use_cache=True)
             if txt_cache is None:
-                ot = model(input_ids=txt_ids, attention_mask=txt_mask, use_cache=True)
+                ot = model.language_model(input_ids=txt_ids, attention_mask=txt_mask, use_cache=True)
             else:
-                ot = model(input_ids=txt_ids, attention_mask=txt_mask, past_key_values=txt_cache, use_cache=True)
+                ot = model.language_model(
+                    input_ids=txt_ids, attention_mask=txt_mask, past_key_values=txt_cache, use_cache=True
+                )
         img_cache, txt_cache = oi.past_key_values, ot.past_key_values
         p_img = torch.softmax(oi.logits[0, -1].float(), dim=-1)
         p_txt = torch.softmax(ot.logits[0, -1].float(), dim=-1)
