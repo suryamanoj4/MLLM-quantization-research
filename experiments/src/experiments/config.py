@@ -10,7 +10,9 @@ import yaml
 @dataclasses.dataclass
 class Config:
     model_id: str = "liuhaotian/llava-v1.5-7b"
-    variants: list[str] = dataclasses.field(default_factory=lambda: ["fp16", "w8", "w4"])
+    variants: list[str] = dataclasses.field(
+        default_factory=lambda: ["fp16", "w8a8", "w4a16", "w4a8", "w4a4"]
+    )
     sample_images: int | None = None
     seed: int = 42
     device: str = "auto"

@@ -129,7 +129,10 @@ def prepare_quantized(cfg: Config) -> None:
         import shutil
 
         shutil.rmtree(base_dir, ignore_errors=True)
-        print("[flow] removed base checkpoint (keep_base_checkpoint=false); fp16/w8 load from hub")
+        print(
+            "[flow] removed base checkpoint (keep_base_checkpoint=false); "
+            "fp16/w8a8/w4a8/w4a4 load straight from the hub, only w4a16 (GPTQ) needs it"
+        )
 
 
 def _resampled_questions(pope: dict[str, list[dict]], cfg: Config) -> dict[str, list[dict]]:
