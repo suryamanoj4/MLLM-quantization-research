@@ -20,6 +20,21 @@ def _dmap(device: str) -> str:
     return "auto" if device.startswith("cuda") else device
 
 
+def _single_gpu_dmap(device: str) -> str:
+    """Pin to one GPU instead of accelerate's multi-GPU "auto" split.
+
+    TorchAO's and Quanto's quantized weight tensors (AffineQuantizedTensor /
+    QBytesTensor) carry the quantized data and its per-channel scale as
+    separate sub-tensors. accelerate's cross-device hooks move the "visible"
+    parameter but don't reliably keep those sub-tensors together across a
+    cuda:0/cuda:1 boundary, which surfaces as a bare
+    "Expected all tensors to be on the same device" deep inside the kernel
+    (e.g. torchao's int_scaled_matmul). Quantized weights are small enough to
+    not need the multi-GPU headroom fp16 does, so just avoid the split.
+    """
+    return "cuda:0" if device.startswith("cuda") else device
+
+
 def _warn_if_vision_tower_quantized(model) -> None:
     """Vision-tower carve-out is a config request, not a guarantee -- confirm it held.
 
@@ -57,7 +72,7 @@ def _load_w8a8(cfg: Config, device: str):
         "int8_dynamic_activation_int8_weight",
         modules_to_not_convert=NOT_QUANTIZE_MODULES,
     )
-    model = load_torch(cfg.model_id, device, torch.float16, quant_config=qcfg, device_map=_dmap(device))
+    model = load_torch(cfg.model_id, device, torch.float16, quant_config=qcfg, device_map=_single_gpu_dmap(device))
     _warn_if_vision_tower_quantized(model)
     return model
 
@@ -99,7 +114,7 @@ def _load_quanto(cfg: Config, device: str, activations: str | None):
         activations=activations,
         modules_to_not_convert=NOT_QUANTIZE_MODULES,
     )
-    model = load_torch(cfg.model_id, device, torch.float16, quant_config=qcfg, device_map=_dmap(device))
+    model = load_torch(cfg.model_id, device, torch.float16, quant_config=qcfg, device_map=_single_gpu_dmap(device))
     _warn_if_vision_tower_quantized(model)
     return model
 
