@@ -22,9 +22,11 @@ def probe_prior_pope(model, processor, tokenizer, questions: list[dict], cfg: Co
         prompt = chat_prompt(q["text"], with_image=False)
         seed = base_seed_for(q["image"], cfg.seed)
         torch.manual_seed(seed)
-        inputs = processor(text=prompt, return_tensors="pt").to(next(model.parameters()).device)
+        inputs = processor(text=prompt, return_tensors="pt").to(next(model.language_model.parameters()).device)
         with torch.inference_mode():
-            logits = model(input_ids=inputs["input_ids"], attention_mask=inputs["attention_mask"]).logits[0, -1].float()
+            logits = model.language_model(
+                input_ids=inputs["input_ids"], attention_mask=inputs["attention_mask"]
+            ).logits[0, -1].float()
         p = torch.softmax(logits, dim=-1)
         p_yes = float(p[yes_id])
         p_no = float(p[no_id])
@@ -80,7 +82,9 @@ def _lockstep_kl(model, processor, tokenizer, text: str, image, cfg: Config, max
 
     img_in = build(True)
     txt_in = build(False)
-    img_ids, txt_ids = img_in["input_ids"], txt_in["input_ids"]
+    img_ids = img_in["input_ids"]
+    lm_device = next(model.language_model.parameters()).device
+    txt_ids = txt_in["input_ids"].to(lm_device)
     img_mask = torch.ones_like(img_ids)
     txt_mask = torch.ones_like(txt_ids)
     img_cache = txt_cache = None
@@ -93,16 +97,18 @@ def _lockstep_kl(model, processor, tokenizer, text: str, image, cfg: Config, max
             else:
                 oi = model(input_ids=img_ids, attention_mask=img_mask, past_key_values=img_cache, use_cache=True)
             if txt_cache is None:
-                ot = model(input_ids=txt_ids, attention_mask=txt_mask, use_cache=True)
+                ot = model.language_model(input_ids=txt_ids, attention_mask=txt_mask, use_cache=True)
             else:
-                ot = model(input_ids=txt_ids, attention_mask=txt_mask, past_key_values=txt_cache, use_cache=True)
+                ot = model.language_model(
+                    input_ids=txt_ids, attention_mask=txt_mask, past_key_values=txt_cache, use_cache=True
+                )
         img_cache, txt_cache = oi.past_key_values, ot.past_key_values
         p_img = torch.softmax(oi.logits[0, -1].float(), dim=-1)
         p_txt = torch.softmax(ot.logits[0, -1].float(), dim=-1)
-        kls.append(_kl(p_img, p_txt))
+        kls.append(_kl(p_img, p_txt.to(p_img.device)))
         nxt = torch.argmax(p_img)
         img_ids = nxt.unsqueeze(0).unsqueeze(0)
-        txt_ids = torch.argmax(p_txt).unsqueeze(0).unsqueeze(0)
+        txt_ids = torch.argmax(p_txt).unsqueeze(0).unsqueeze(0).to(lm_device)
         img_mask = torch.cat([img_mask, torch.ones(1, 1, device=img_mask.device)], dim=-1)
         txt_mask = torch.cat([txt_mask, torch.ones(1, 1, device=txt_mask.device)], dim=-1)
         if int(nxt) == eos:

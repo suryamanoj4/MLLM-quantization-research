@@ -87,6 +87,18 @@ def prepare_data(cfg: Config, allow_download: bool = True) -> dict:
     }
 
 
+def _cleanup_base_checkpoint(cfg: Config, base_dir: pathlib.Path) -> None:
+    if cfg.keep_base_checkpoint or not base_dir.exists():
+        return
+    import shutil
+
+    shutil.rmtree(base_dir, ignore_errors=True)
+    print(
+        "[flow] removed base checkpoint (keep_base_checkpoint=false); "
+        "fp16/w8a8/w4a8/w4a4 load straight from the hub, only w4a16 (GPTQ) needs it"
+    )
+
+
 def prepare_quantized(cfg: Config) -> None:
     base_dir = cfg.checkpoints_dir / "base"
     if not (base_dir / "config.json").exists():
@@ -110,6 +122,7 @@ def prepare_quantized(cfg: Config) -> None:
     if not (out_dir / "config.json").exists():
         tmp_llm = cfg.checkpoints_dir / "llm-extracted"
         quant_mod.extract_llm(base_dir, tmp_llm, resolve_device(cfg.device))
+        _cleanup_base_checkpoint(cfg, base_dir)
         quant_mod.quantize_llm(
             tmp_llm,
             out_dir,
@@ -125,11 +138,7 @@ def prepare_quantized(cfg: Config) -> None:
         shutil.rmtree(tmp_llm, ignore_errors=True)
         print("[flow] removed extracted LLM temp checkpoint")
 
-    if not cfg.keep_base_checkpoint:
-        import shutil
-
-        shutil.rmtree(base_dir, ignore_errors=True)
-        print("[flow] removed base checkpoint (keep_base_checkpoint=false); fp16/w8 load from hub")
+    _cleanup_base_checkpoint(cfg, base_dir)
 
 
 def _resampled_questions(pope: dict[str, list[dict]], cfg: Config) -> dict[str, list[dict]]:

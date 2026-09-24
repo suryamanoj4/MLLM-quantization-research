@@ -1,5 +1,5 @@
 model_id: llava-hf/llava-1.5-7b-hf
-variants: [fp16, w8, w4]
+variants: [fp16, w8a8, w4a16, w4a8, w4a4]
 sample_images: null
 seed: 42
 device: auto
