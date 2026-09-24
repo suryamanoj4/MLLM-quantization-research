@@ -99,7 +99,7 @@ Deploying MLLMs on edge hardware requires aggressive Post-Training Quantization 
 | **GPTQ** (arXiv:2210.17323) | W4/W8 weight-only | AutoGPTQ archived Apr 2025 → use **GPTQModel**; transformers `GPTQConfig`; CPU-inference capable; TheBloke's 7B GPTQ repo deleted (13B branches survive) |
 | **AWQ** (arXiv:2306.00978) | W4 weight-only (g128) | CUDA kernels; W4A16 only |
 | **MQuant** (arXiv:2502.00425, MM'25) | W4A8/W4A4 weight+activation | Official code (StiphyJay/MQuant); CUDA-only kernels → CPU fallback = fake-quant simulation; built on QuaRot rotations (QuaRot itself is LLM-only) |
-| **Quanto / TorchAO** (in-study rungs) | W8A8 / W4A8 / W4A4 weight+activation | transformers-native (`QuantoConfig`, `TorchAoConfig`); RTN-style, no calibration; layer-swap quantizers keep attention hooks intact — the rungs of the [[Study Experiment]] ladder |
+| **Quanto / TorchAO** (in-study rungs) | W8A8 / W4A8 real; W4A4 weights real + **simulated int4 activations** | transformers-native (`QuantoConfig`, `TorchAoConfig`); RTN-style, no calibration; layer-swap quantizers keep attention hooks intact — the rungs of the [[Study Experiment]] ladder. Quanto caps real activations at int8 → W4A4 uses a fake-quant hook |
 | QuaRot (arXiv:2404.00456) | LLM-only W4A4 | Not applicable to MLLMs per MQuant |
 
 ### Model feasibility (compute)
@@ -120,7 +120,7 @@ graph LR
     P3 --> P4["P4 Evidence write-up<br/>+ methods phase"]
 ```
 
-- **P0 — Setup & quantization:** download official LLaVA-1.5-7B; build the five-rung ladder: TorchAO W8A8 (dynamic int8), self-quantized GPTQ W4A16 (g128), Quanto W4A8 + W4A4 (~35 min total); GPTQ calibration ~128 MSCOCO train2014 samples, disjoint from eval; configs logged.
+- **P0 — Setup & quantization:** download official LLaVA-1.5-7B; build the five-rung ladder: TorchAO W8A8 (dynamic int8), self-quantized GPTQ W4A16 (g128), Quanto W4A8 + W4A4 (~35 min total; W4A4 activations are **simulated** int4 — quanto caps real activations at int8, see [[Study Experiment#2. Precision Ladder & Quantization]]); GPTQ calibration ~128 MSCOCO train2014 samples, disjoint from eval; configs logged.
 - **P1 — Evaluation grid:** POPE (all 3 splits, 9,000 questions) + CHAIR (500 captions) on FP16 / W8A8 / W4A16 / W4A8 / W4A4 — identical prompts, per-image seeds. Full protocol in [[Study Experiment]]. Resampling is a code-config option (`sample_images`, default = full set); docs track the full set unless a resampled run becomes the record.
 - **P2 — Mechanism & attribution:** per-step attention capture (all layers/heads over the 576-token visual span); text-only probe on FP16 + W4A16 + W4A4 (per-question $P_{txt}$, per-step logits for ΔKL).
 - **P3 — Analysis:** per-split POPE F1/yes-ratio, CHAIR_s/i, r_pb with bootstrap CIs, binned grounding curves, fallback timeline, ΔKL → verdicts for H1–H4, S2, S3.

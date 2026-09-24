@@ -18,7 +18,7 @@ status: in-progress
 - [ ] LLaVA-1.5-7B / **W8A8** (TorchAO) / POPE (3 splits) + CHAIR (500)
 - [ ] LLaVA-1.5-7B / **W4A16** (GPTQ) / POPE (3 splits) + CHAIR (500)
 - [ ] LLaVA-1.5-7B / **W4A8** (Quanto) / POPE (3 splits) + CHAIR (500)
-- [ ] LLaVA-1.5-7B / **W4A4** (Quanto) / POPE (3 splits) + CHAIR (500)
+- [ ] LLaVA-1.5-7B / **W4A4** (Quanto weights + simulated int4 activations) / POPE (3 splits) + CHAIR (500)
 - [ ] Text-only probe (S2/S2a/S2b) — FP16 + W4A16 + W4A4, POPE + CHAIR
 - [ ] S3 — layer-depth attention profile (derived from captured attention)
 

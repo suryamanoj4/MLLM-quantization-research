@@ -33,7 +33,10 @@ The 7B self-quantized route keeps the documented model family ([[Research Ideati
 | 2. **W8A8** | weights int8 + activations int8 (dynamic) | TorchAO | ~5 min |
 | 3. **W4A16** | GPTQ W4 (g128), weight-only | self-quantize with auto_gptq | ~15 min |
 | 4. **W4A8** | weights int4 + activations int8 | Quanto | ~5 min |
-| 5. **W4A4** | weights int4 + activations int4 | Quanto | ~5 min |
+| 5. **W4A4** | weights int4 + **simulated** int4 activations | Quanto + fake-quant hooks | ~5 min |
+
+> [!warning] W4A4 activations are simulated
+> `optimum-quanto` caps activation quantization at int8 (hard-rejected `activations="int4"`), and torchao ≤0.8 has no int4-activation path either. The W4A4 rung therefore uses quanto int4 **weights** (real) plus a **fake-quant simulation** of int4 activations: per-token symmetric round-trip (absmax scale, clamp [-8,7], dequantize to fp16) applied as forward pre-hooks on the LM's `Linear` layers. The rounding is value-identical to real int4 activation quantization; only the GEMM accumulation differs (fp16 vs int32) — irrelevant for a behavior/mechanism study. It is **not** a packed int4 kernel. See `experiments/src/experiments/models/load.py:_fake_quantize_int4`.
 
 > [!danger] Calibration discipline
 > GPTQ W4A16 uses ~128 samples from **MSCOCO train2014**, fixed seed, **disjoint from all evaluation splits** (POPE/CHAIR use val2014). Quanto/TorchAO rungs are RTN-style and need no calibration. Log the exact configs in `configs/` ([[Research Ideation#Research Plan]]).
