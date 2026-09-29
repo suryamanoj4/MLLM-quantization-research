@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import dataclasses
+
 import json
 import pathlib
 
@@ -44,7 +46,9 @@ def run_chair(
             seed = base_seed_for(filename, cfg.seed)
             tracker = AttentionTracker(store_full_rows=cfg.store_full_rows) if cfg.capture_attention else None
             text_out, token_ids = decode(
-                model, processor, tokenizer, prompt, image, cfg, cfg.max_new_tokens_chair, seed, tracker=tracker
+                model, processor, tokenizer, prompt, image,
+                dataclasses.replace(cfg, do_sample=False),
+                cfg.max_new_tokens_chair, seed, tracker=tracker
             )
 
             gt = set(instances.get(image_id, set()))

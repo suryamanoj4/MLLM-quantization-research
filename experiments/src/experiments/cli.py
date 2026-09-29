@@ -46,7 +46,7 @@ def main(argv=None) -> None:
     else:
         data = None
 
-    if not args.skip_quantize and "w4a16" in cfg.variants:
+    if not args.skip_quantize and any(v in cfg.variants for v in ("w4a16", "w4a8", "w4a4")):
         print("[flow] preparing checkpoints (GPTQ W4, group_size=%d)..." % cfg.gptq_group_size)
         flow.prepare_quantized(cfg)
     else:
@@ -71,6 +71,9 @@ def main(argv=None) -> None:
         cells_extra[variant] = (attn, [1.0 if g else 0.0 for g in grounded])
         cells_binned[variant] = metrics_mod.binned_curve(attn, grounded)
         del model
+        import gc
+
+        gc.collect()
         if device.startswith("cuda"):
             import torch
 

@@ -96,7 +96,7 @@ def _nucleus(probs: torch.Tensor, top_p: float) -> torch.Tensor:
 
 def sample_token(logits: torch.Tensor, cfg: Config, step: int) -> torch.Tensor:
     if not cfg.do_sample:
-        return logits.argmax(dim=-1)
+        return logits.argmax(dim=-1, keepdim=True)
     probs = torch.softmax(logits / cfg.temperature, dim=-1)
     if cfg.top_k is not None:
         k = min(cfg.top_k, probs.shape[-1])

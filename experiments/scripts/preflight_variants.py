@@ -101,22 +101,36 @@ def load_checks(cfg_path: str, root_path: pathlib.Path, variants: list[str]) -> 
         try:
             model, processor, device, _ = load_variant(cfg, variant)
             model.eval()
-            inputs = processor(text="USER: <image>\nDescribe. ASSISTANT:", return_tensors="pt")
+            from PIL import Image
+
+            img = Image.new("RGB", (336, 336), (127, 127, 127))
+            inputs = processor(text="USER: <image>\nDescribe. ASSISTANT:", images=img, return_tensors="pt")
             input_ids = inputs["input_ids"].to(device)
+            pixel_values = inputs["pixel_values"].to(device, dtype=torch.float16)
             with torch.inference_mode():
                 out = model(
                     input_ids=input_ids,
                     attention_mask=torch.ones_like(input_ids),
+                    pixel_values=pixel_values,
                     use_cache=True,
                     output_attentions=True,
                 )
             check(f"{variant}: loads", True)
             check(f"{variant}: output_attentions works", out.attentions is not None)
+            seq = out.attentions[0].shape[-1] if out.attentions else 0
+            check(f"{variant}: visual tokens in attention (seq={seq})", seq > 576)
+            check(f"{variant}: logits finite", bool(torch.isfinite(out.logits[0, -1]).all()))
             del model, out
-            if device.startswith("cuda"):
-                torch.cuda.empty_cache()
         except Exception as e:  # noqa: BLE001
             check(f"{variant}: loads", False, repr(e))
+        finally:
+            # free this rung before the next one loads (reference cycles need a collection)
+            import gc
+
+            model = out = None
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
 
 if __name__ == "__main__":
@@ -130,7 +144,7 @@ if __name__ == "__main__":
     root_path = pathlib.Path(args.root)
     config_only_checks()
     if args.load:
-        load_checks(args.config, args.root, args.variants.split(","))
+        load_checks(args.config, root_path, args.variants.split(","))
 
     print()
     if FAIL:

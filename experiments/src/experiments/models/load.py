@@ -1,4 +1,51 @@
+"""Model loading for the five-rung precision ladder.
+
+Rungs and how each is realised on this stack (Kaggle T4, sm75, torch 2.5,
+transformers 4.46):
+
+    fp16   plain load
+    w8a8   int8 per-channel RTN weights + int8 per-token activation fake-quant
+    w4a16  GPTQ int4 weights, dequantized once to fp16
+    w4a8   the same GPTQ int4 weights + int8 per-token activation fake-quant
+    w4a4   the same GPTQ int4 weights + int4 per-token activation fake-quant
+
+Every quantized rung is simulated: weights are rounded to their integer grid
+and stored dequantized in fp16, activations are rounded per token on the way
+into each decoder Linear. The numbers are those of the integer scheme; only
+the kernel that multiplies them is fp16.
+
+Why W8A8 is not run through TorchAO: torchao's safe_int_mm sends any int8
+matmul with 16 or fewer rows to a CPU int32 fallback, copying the activation
+and the whole int8 weight to the host. Autoregressive decoding is one row per
+step, so every decode step of every decoder layer ran on the CPU (GPU at ~4%
+utilisation, minutes per POPE question). Only prefill, with ~590 rows, stayed
+on cuBLAS -- which is why a single-forward preflight passed.
+
+Why the three W4 rungs are simulated rather than run on int4 kernels: no int4
+kernel runs on a T4 with this stack. auto_gptq 0.7.1's CUDA extension does not
+build against torch 2.5, so its QuantLinear falls back to a pure-PyTorch
+unpack + dequant + matmul on every forward (the first W4A16 run did not finish
+100 images in four hours); optimum-quanto's int4 kernels (marlin) need sm80 and
+fail to compile; and transformers' QuantoConfig rejects activation
+quantization outright. A W4A16 kernel dequantizes int4 to fp16 and runs an
+fp16 GEMM anyway, so dequantizing the GPTQ weights once up front yields the
+same weights the kernel would multiply by, at fp16 speed.
+
+Sharing one set of GPTQ weights across w4a16 / w4a8 / w4a4 also makes the
+activation axis exact: those three rungs differ only in activation bits, so
+W4A16 -> W4A8 -> W4A4 isolates activation rounding at genuinely fixed weights.
+W8A8 -> W4A8 holds activations at int8 and changes only the weights (int8 RTN
+to int4 GPTQ -- the method differs as well as the bit width).
+
+Scope is identical on every rung: the 224 Linear layers of the 32 decoder
+layers. The CLIP vision tower, the multimodal projector, the embeddings and
+lm_head stay fp16, so the isolated variable is the LLM decoder (H1-H4 are
+about the decoder falling back to language priors).
+"""
+
 from __future__ import annotations
+
+import gc
 
 import torch
 from transformers import AutoProcessor
@@ -6,14 +53,8 @@ from transformers import AutoProcessor
 from ..config import Config
 from .download import load_torch, resolve_device, resolve_dtype
 
-# Submodule name fragments (matched as substrings against dotted parameter
-# names by both TorchAoConfig and QuantoConfig) that must stay unquantized.
-# The study's isolated variable is the LLM decoder (H1-H4 are about the
-# decoder falling back to language priors); quantizing the CLIP tower or the
-# projector would confound that with a vision-side failure. GPTQ already
-# carves the LLM out on its own (extract_llm), so this mirrors that for the
-# two new layer-swap quantizers.
-NOT_QUANTIZE_MODULES = ["vision_tower", "multi_modal_projector"]
+# GPTQ quantizes these seven linears in every Llama decoder layer.
+_GPTQ_LINEARS_PER_LAYER = 7
 
 
 def _dmap(device: str) -> str:
@@ -23,61 +64,64 @@ def _dmap(device: str) -> str:
 def _single_gpu_dmap(device: str) -> str:
     """Pin to one GPU instead of accelerate's multi-GPU "auto" split.
 
-    TorchAO's and Quanto's quantized weight tensors (AffineQuantizedTensor /
-    QBytesTensor) carry the quantized data and its per-channel scale as
-    separate sub-tensors. accelerate's cross-device hooks move the "visible"
-    parameter but don't reliably keep those sub-tensors together across a
-    cuda:0/cuda:1 boundary, which surfaces as a bare
-    "Expected all tensors to be on the same device" deep inside the kernel
-    (e.g. torchao's int_scaled_matmul). Quantized weights are small enough to
-    not need the multi-GPU headroom fp16 does, so just avoid the split.
+    Used for the temporary GPTQ model, whose packed QuantLinear buffers
+    (qweight / qzeros / scales / g_idx) must stay together on one device.
     """
     return "cuda:0" if device.startswith("cuda") else device
-
-
-def _warn_if_vision_tower_quantized(model) -> None:
-    """Vision-tower carve-out is a config request, not a guarantee -- confirm it held.
-
-    If this fires, the run produced a *different* finding (vision-side collapse,
-    not decoder collapse) and must be logged separately rather than folded into
-    the H1-H4 numbers. Detection is best-effort (quantized weights show up as a
-    non-plain-Tensor type, whether that's quanto's QBytesTensor or torchao's
-    AffineQuantizedTensor) -- treat this as a tripwire, not a proof; confirm by
-    eye in a real run if it fires.
-    """
-    hit = []
-    for name, mod in model.named_modules():
-        if not isinstance(mod, torch.nn.Linear):
-            continue
-        if not any(key in name for key in NOT_QUANTIZE_MODULES):
-            continue
-        weight = getattr(mod, "weight", None)
-        if weight is not None and type(weight) is not torch.nn.Parameter and type(weight) is not torch.Tensor:
-            hit.append(name)
-    if hit:
-        print(
-            "[load] WARNING: vision-tower carve-out did not hold, these modules "
-            f"look quantized despite the exclusion list: {hit}"
-        )
 
 
 def _load_fp16(cfg: Config, device: str, dtype: torch.dtype):
     return load_torch(cfg.model_id, device, dtype, device_map=_dmap(device))
 
 
-def _load_w8a8(cfg: Config, device: str):
-    from transformers import TorchAoConfig
+def _copy_gptq_weights_dequantized(qllm, target_lm) -> tuple[int, float]:
+    """Write each GPTQ QuantLinear's dequantized weight into the matching fp16 Linear.
 
-    qcfg = TorchAoConfig(
-        "int8_dynamic_activation_int8_weight",
-        modules_to_not_convert=NOT_QUANTIZE_MODULES,
-    )
-    model = load_torch(cfg.model_id, device, torch.float16, quant_config=qcfg, device_map=_single_gpu_dmap(device))
-    _warn_if_vision_tower_quantized(model)
-    return model
+    The weight is read out by driving the QuantLinear with an identity matrix:
+    for y = x W^T, x = I returns W^T exactly (each output element is a single
+    product with 1.0). That goes through auto_gptq's own dequant path, g_idx /
+    desc_act included, so the packing format is never re-implemented here.
+
+    Every copy is then checked against the QuantLinear itself through the
+    module it was written into, which also catches a wrong name mapping.
+    Returns (modules copied, worst relative error).
+    """
+    n, worst = 0, 0.0
+    with torch.no_grad():
+        for name, qmod in qllm.named_modules():
+            if not hasattr(qmod, "qweight"):
+                continue
+            target = target_lm.get_submodule(name)
+            in_f = getattr(qmod, "infeatures", None) or target.in_features
+            dev = qmod.qweight.device
+
+            eye = torch.eye(in_f, dtype=torch.float16, device=dev)
+            wt = qmod(eye)
+            bias = getattr(qmod, "bias", None)
+            if bias is not None:
+                wt = wt - bias
+            w = wt.t().contiguous()
+            if w.shape != target.weight.shape:
+                raise RuntimeError(f"{name}: dequantized {tuple(w.shape)} != fp16 {tuple(target.weight.shape)}")
+            target.weight.copy_(w.to(device=target.weight.device, dtype=target.weight.dtype))
+
+            # local generator: leave the global RNG (per-image decoding seeds) untouched
+            g = torch.Generator(device=dev).manual_seed(n)
+            x = torch.randn(4, in_f, dtype=torch.float16, device=dev, generator=g)
+            ref = qmod(x).float()
+            if bias is not None:
+                ref = ref - bias.float()
+            got = (x.to(target.weight.device) @ target.weight.t()).float().to(dev)
+            err = ((ref - got).abs().max() / ref.abs().max().clamp_min(1e-6)).item()
+            worst = max(worst, err)
+
+            n += 1
+            del eye, wt, w, x, ref, got
+    return n, worst
 
 
-def _load_w4a16(cfg: Config, device: str, dtype: torch.dtype):
+def _load_w4_gptq(cfg: Config, device: str, dtype: torch.dtype):
+    """fp16 LLaVA whose decoder linears carry the GPTQ int4 weights, dequantized."""
     quant_dir = cfg.checkpoints_dir / "gptq-llm-w4"
     if not (quant_dir / "config.json").exists():
         raise FileNotFoundError(
@@ -85,10 +129,7 @@ def _load_w4a16(cfg: Config, device: str, dtype: torch.dtype):
         )
     from transformers import GPTQConfig, LlamaForCausalLM
 
-    base = load_torch(cfg.model_id, device, dtype)
-    base.language_model.to("cpu")
-    torch.cuda.empty_cache()
-
+    base = _load_fp16(cfg, device, dtype)
     qcfg = GPTQConfig(
         bits=4,
         group_size=cfg.gptq_group_size,
@@ -100,52 +141,82 @@ def _load_w4a16(cfg: Config, device: str, dtype: torch.dtype):
         str(quant_dir),
         quantization_config=qcfg,
         torch_dtype=torch.float16,
-        device_map=device,
+        device_map=_single_gpu_dmap(device),
     )
-    base.language_model = qllm
+    n, worst = _copy_gptq_weights_dequantized(qllm, base.language_model)
+    # del alone does not free it: the GPTQ modules sit in reference cycles, so
+    # without a collection its ~4 GB stays on the GPU for the rest of the run
+    del qllm
+    gc.collect()
+    if device.startswith("cuda"):
+        torch.cuda.empty_cache()
+
+    expected = _GPTQ_LINEARS_PER_LAYER * base.language_model.config.num_hidden_layers
+    print(
+        f"[load] GPTQ int4 weights dequantized into {n}/{expected} decoder linears; "
+        f"worst rel. err vs QuantLinear = {worst:.2e}"
+    )
+    if n != expected:
+        raise RuntimeError(f"expected {expected} GPTQ linears, copied {n}")
+    if worst > 1e-2:
+        raise RuntimeError(f"dequantized weights disagree with the QuantLinear outputs (rel err {worst:.2e})")
     return base, quant_dir
 
 
-def _load_quanto(cfg: Config, device: str, activations: str | None):
-    from transformers import QuantoConfig
+def _round_weights_int8_per_channel(model) -> int:
+    """Round every decoder-layer Linear weight to int8 in place, kept as fp16.
 
-    qcfg = QuantoConfig(
-        weights="int4",
-        activations=activations,
-        modules_to_not_convert=NOT_QUANTIZE_MODULES,
-    )
-    model = load_torch(cfg.model_id, device, torch.float16, quant_config=qcfg, device_map=_single_gpu_dmap(device))
-    _warn_if_vision_tower_quantized(model)
-    return model
-
-
-def _fake_quantize_int4(x: torch.Tensor) -> torch.Tensor:
-    """Simulate int4 activation quantization: round-trip through 4-bit symmetric
-    per-token levels, then dequantize back to fp16.
-
-    optimum-quanto (and transformers' QuantoConfig wrapper) hard-reject real
-    int4 *activation* quantization -- ActivationQBytesTensor only supports
-    8-bit qtypes. This numerically simulates the W4A4 collapse regime the same
-    way the fake-quant fallback already documented for AWQ/MQuant on
-    non-CUDA-kernel hardware does (see Research Ideation.md), rather than
-    claiming a real packed-int4 GEMM kernel that doesn't exist for this stack.
+    Per-output-channel symmetric round-to-nearest -- the weight scheme of
+    TorchAO's int8_dynamic_activation_int8_weight and of LLM.int8/SmoothQuant
+    style W8A8. No calibration.
     """
-    qmax = 7  # signed 4-bit range: [-8, 7]
-    scale = x.detach().abs().amax(dim=-1, keepdim=True).clamp_min(1e-8) / qmax
-    q = torch.clamp(torch.round(x / scale), -qmax - 1, qmax)
-    return q * scale
+    n = 0
+    with torch.no_grad():
+        for sub in model.language_model.model.layers.modules():
+            if isinstance(sub, torch.nn.Linear):
+                w = sub.weight.float()
+                scale = w.abs().amax(dim=1, keepdim=True).clamp_min(1e-8) / 127
+                q = torch.clamp(torch.round(w / scale), -128, 127)
+                sub.weight.copy_((q * scale).to(sub.weight.dtype))
+                n += 1
+                del w, scale, q
+    return n
 
 
-def _attach_int4_activation_fakequant(module: torch.nn.Module) -> None:
+def _fake_quantize_activations(x: torch.Tensor, bits: int) -> torch.Tensor:
+    """Per-token symmetric dynamic activation quantization, round-tripped to x.dtype.
+
+    Per-token absmax scale, symmetric, round-to-nearest -- the activation
+    scheme of TorchAO's int8_dynamic_activation -- at `bits` bits.
+    Computed in float32: in fp16 the 1e-8 floor underflows to zero and an
+    all-zero row would divide 0/0 into NaN.
+    """
+    qmax = 2 ** (bits - 1) - 1  # 127 for int8, 7 for int4
+    xf = x.float()
+    scale = xf.detach().abs().amax(dim=-1, keepdim=True).clamp_min(1e-8) / qmax
+    q = torch.clamp(torch.round(xf / scale), -qmax - 1, qmax)
+    return (q * scale).to(x.dtype)
+
+
+def _attach_activation_fakequant(model, bits: int) -> int:
+    """Quantize the input of every decoder-layer Linear. lm_head stays fp16, as
+    it does under GPTQ, so all rungs quantize the same scope."""
+
     def _pre_hook(mod, args):
         if not args:
             return args
         x, *rest = args
-        return (_fake_quantize_int4(x), *rest)
+        return (_fake_quantize_activations(x, bits), *rest)
 
-    for _, sub in module.named_modules():
+    n = 0
+    for sub in model.language_model.model.layers.modules():
         if isinstance(sub, torch.nn.Linear):
             sub.register_forward_pre_hook(_pre_hook)
+            n += 1
+    return n
+
+
+_W4_ACTIVATION_BITS = {"w4a16": None, "w4a8": 8, "w4a4": 4}
 
 
 def load_variant(cfg: Config, variant: str):
@@ -158,21 +229,26 @@ def load_variant(cfg: Config, variant: str):
         return model, processor, device, None
 
     if variant == "w8a8":
-        model = _load_w8a8(cfg, device)
+        model = _load_fp16(cfg, device, dtype)
+        expected = _GPTQ_LINEARS_PER_LAYER * model.language_model.config.num_hidden_layers
+        nw = _round_weights_int8_per_channel(model)
+        na = _attach_activation_fakequant(model, 8)
+        print(f"[load] w8a8: int8 per-channel weights on {nw}/{expected}, "
+              f"int8 per-token activation fake-quant on {na}/{expected} decoder linears")
+        if nw != expected or na != expected:
+            raise RuntimeError(f"expected {expected} decoder linears, got weights={nw} activations={na}")
         return model, processor, device, None
 
-    if variant == "w4a16":
-        model, quant_dir = _load_w4a16(cfg, device, dtype)
+    if variant in _W4_ACTIVATION_BITS:
+        model, quant_dir = _load_w4_gptq(cfg, device, dtype)
+        bits = _W4_ACTIVATION_BITS[variant]
+        if bits is not None:
+            n = _attach_activation_fakequant(model, bits)
+            expected = _GPTQ_LINEARS_PER_LAYER * model.language_model.config.num_hidden_layers
+            print(f"[load] {variant}: int{bits} per-token activation fake-quant on {n}/{expected} decoder linears")
+            if n != expected:
+                raise RuntimeError(f"expected {expected} hooked linears, got {n}")
         return model, processor, device, quant_dir
-
-    if variant == "w4a8":
-        model = _load_quanto(cfg, device, activations="int8")
-        return model, processor, device, None
-
-    if variant == "w4a4":
-        model = _load_quanto(cfg, device, activations=None)
-        _attach_int4_activation_fakequant(model.language_model)
-        return model, processor, device, None
 
     raise ValueError(
         f"Unsupported variant {variant!r}; expected one of fp16, w8a8, w4a16, w4a8, w4a4"

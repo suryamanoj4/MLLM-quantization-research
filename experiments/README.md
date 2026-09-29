@@ -1,6 +1,6 @@
 # Experiments — Lexical Fallback Evidence Study
 
-Modular, reproducible harness for the main study: **LLaVA-1.5-7B** at **FP16 / GPTQ-W8 / GPTQ-W4** evaluated on **POPE** (all 3 splits) and **CHAIR** (500 captions), with per-step cross-modal attention capture and a text-only prior probe.
+Modular, reproducible harness for the main study: **LLaVA-1.5-7B** across a five-rung precision ladder — **FP16 / W8A8 (TorchAO) / W4A16 (GPTQ) / W4A8 (Quanto) / W4A4 (Quanto + fake-quant activations)** — evaluated on **POPE** (all 3 splits) and **CHAIR** (500 captions), with per-step cross-modal attention capture and a text-only prior probe.
 
 Research context: `../obsidian-docs/` → **Research Ideation** (hypotheses H1–H4, probes S1–S3), **Study Experiment** (protocol), **Results** (log).
 
@@ -21,11 +21,12 @@ Research context: `../obsidian-docs/` → **Research Ideation** (hypotheses H1�
 ## 2. Prerequisites
 
 **Hardware**
-- **GPU (recommended):** 16 GB VRAM (Colab free T4, Kaggle 2×T4). 7B FP16 fits T4 at batch 1; W4/W8 variants fit easily.
+- **GPU (recommended):** 16 GB VRAM (Colab free T4, Kaggle 2×T4). 7B FP16 fits T4 at batch 1; the quantized rungs fit easily.
 - CPU-only: works for `fp16` (slow); GPTQ decode on CPU is ~5× slower — smoke tests only.
 
-**Disk (first run):** ~25 GB total
-- base checkpoint ~14 GB, quantized W8 ~7 GB + W4 ~4.5 GB
+**Disk (first run):** ~20 GB total
+- base checkpoint ~14 GB (only needed for `w4a16`'s GPTQ extraction — deleted after unless `keep_base_checkpoint: true`), quantized W4 (GPTQ) ~4.5 GB
+- `fp16`/`w8a8`/`w4a8`/`w4a4` all load and quantize straight from the hub at run time — no extra checkpoint on disk for those
 - COCO annotations zip ~250 MB (extracted jsons)
 - ~1,000 val2014 images (downloaded selectively, ~0.5–1 GB)
 
@@ -80,7 +81,7 @@ uv run experiments --help
 | Flag | Default | Meaning |
 |---|---|---|
 | `--root .` | `"."` | base dir; `data/`, `checkpoints/`, `results/`, `config.yaml` resolve here |
-| `--variants fp16,w8,w4` | from config | which cells to run |
+| `--variants fp16,w8a8,w4a16,w4a8,w4a4` | from config | which cells to run |
 | `--sample-images N` | `null` (full set) | resample N images per POPE split + N CHAIR images (keeps 6-question blocks) |
 | `--device auto` | `auto` | `auto` \| `cuda` \| `cpu` |
 | `--skip-download` | off | don't fetch data — fails fast if `data/` is incomplete (offline re-runs) |
@@ -95,12 +96,12 @@ uv run experiments --help
 | Key | Default | Notes |
 |---|---|---|
 | `model_id` | `liuhaotian/llava-v1.5-7b` | any HF LLaVA-1.5-style repo |
-| `variants` | `[fp16, w8, w4]` | supported: `fp16`, `w8`, `w4` (GPTQ bits) |
+| `variants` | `[fp16, w8a8, w4a16, w4a8, w4a4]` | supported: `fp16`, `w8a8` (TorchAO int8 dynamic act + int8 weight), `w4a16` (GPTQ W4 g128, weight-only), `w4a8` (Quanto int4 weight + int8 act), `w4a4` (Quanto int4 weight + fake-quant int4 act) |
 | `sample_images` | `null` | `null` = full set (500/500) |
 | `seed` | `42` | global seed; per-image seeds derived deterministically |
-| `calibration_samples` | `128` | GPTQ calibration size (MSCOCO train2014 captions) |
-| `gptq_group_size` | `128` | GPTQ group size (W4) |
-| `keep_base_checkpoint` | `false` | `true` keeps the 14 GB FP16 checkpoint after quantization; `false` deletes it (fp16/w8 load from hub) — required on Kaggle's ~30 GB disk |
+| `calibration_samples` | `128` | GPTQ calibration size (MSCOCO train2014 captions) — only used by `w4a16` |
+| `gptq_group_size` | `128` | GPTQ group size (`w4a16` only) |
+| `keep_base_checkpoint` | `false` | `true` keeps the 14 GB FP16 checkpoint after GPTQ extraction; `false` deletes it — required on Kaggle's ~30 GB disk. Only relevant to `w4a16`; `fp16`/`w8a8`/`w4a8`/`w4a4` always load from the hub regardless of this flag |
 | `max_new_tokens_pope/chair` | `8 / 256` | answer/caption length caps |
 | `temperature / top_p / do_sample` | `1.0 / 0.9 / true` | nucleus sampling for POPE; set `do_sample: false` for greedy (CHAIR uses its own greedy path via `cfg.do_sample=false` only if you flip it — see note below) |
 | `capture_attention` | `true` | per-step attention aggregates |
@@ -117,8 +118,11 @@ uv run experiments --help
 1. prepare data     → downloads COCO annotations (instances/captions val+train),
                       POPE question files (all 3 splits), and only the needed
                       val2014 images (~1,000) into data/
-2. prepare checkpoints → downloads LLaVA-1.5-7B (checkpoints/base),
-                      quantizes GPTQ W8 + W4 (checkpoints/gptq-w8, gptq-w4)
+2. prepare checkpoints → only if `w4a16` is in `variants`: downloads LLaVA-1.5-7B
+                      (checkpoints/base), extracts + GPTQ-quantizes the LLM
+                      (checkpoints/gptq-llm-w4). fp16/w8a8/w4a8/w4a4 quantize
+                      on the fly at load time straight from the hub — nothing
+                      to prepare for them
 3. per variant      → POPE (3 splits) + CHAIR (500 captions) with attention capture
 4. text-only probe  → P_txt(yes) per POPE question (S2a) + lockstep ΔKL (S2b)
 5. analysis         → results/<variant>/report.json, results/ablation.json,
@@ -150,15 +154,17 @@ results/
     └── chair_captions.jsonl         ← captions + mentions (class, grounded, attention) — H3 rows
 ```
 
-**How to read the results (expected under the hypothesis):**
+**How to read the results (expected under the hypothesis — H1 ordering FP16 < W8A8 < W4A16 < W4A8 < W4A4):**
 
-| Signal | FP16 (published anchor) | W8 | W4 |
-|---|---|---|---|
-| POPE-F1 random / popular / adversarial | ~87.3 / 86.1 / 84.2 | ↓ small | ↓ 3–8 pts |
-| yes-ratio on "no" questions | baseline | ↑ | ↑↑ |
-| attention mean mass | ~0.2–0.3 | ↓ | ↓↓ |
-| attention entropy | low | ↑ | ↑↑ |
-| ΔKL (vs text-only) | baseline | ↑ | ↑↑ (converges toward text-only) |
+| Signal | FP16 (published anchor) | W8A8 | W4A16 | W4A8 | W4A4 |
+|---|---|---|---|---|---|
+| POPE-F1 random / popular / adversarial | ~87.3 / 86.1 / 84.2 | ↓ small | ↓ mid | ↓ larger | ↓↓ largest |
+| yes-ratio on "no" questions | baseline | ↑ | ↑ | ↑↑ | ↑↑↑ |
+| attention mean mass | ~0.2–0.3 | ↓ | ↓ | ↓↓ | ↓↓↓ |
+| attention entropy | low | ↑ | ↑ | ↑↑ | ↑↑↑ |
+| ΔKL (vs text-only) | baseline | ↑ | ↑ | ↑↑ | ↑↑↑ (converges toward text-only) |
+
+W4A16→W4A8 isolates the effect of adding activation quantization on top of the same int4 weights; W8A8→W4A16 isolates the effect of dropping weight precision at fixed (near-lossless) activation precision.
 
 **First sanity gate (reproduce-before-trust):** the FP16 cell's POPE-F1 must land within ~1–2 pts of the published 87.3/86.1/84.2 before trusting any quantized cell. If it doesn't, check prompt template / decoding settings first.
 
@@ -171,7 +177,9 @@ results/
 | `uv sync` slow | torch download is large; allow 10–20 min; or `uv sync --extra-index-url https://download.pytorch.org/whl/cpu` for CPU-only wheels |
 | auto-gptq build fails | needs a C++ toolchain (`gcc`, `python3-dev`); on Colab/Kaggle it's preinstalled — if local, `sudo apt install build-essential` |
 | "CUDA extension not installed" (auto_gptq) | **expected, non-fatal** — auto_gptq's fused kernels need compilation at install; on notebooks it falls back to pure-torch ops. Quantization still runs on the GPU, just slower (one-time, ~10-30 min) |
-| W8 cell fails to load | bitsandbytes needs the CUDA runtime + libcudnn — present on Kaggle/Colab; on custom machines `pip install bitsandbytes` may need `LD_LIBRARY_PATH` set |
+| w8a8 cell fails to load / `TorchAoConfig` error | needs `torchao>=0.4.0`; check `python -c "import torchao; print(torchao.__version__)"` in the venv |
+| w4a8/w4a4 cell fails to load / `QuantoConfig` error | needs `optimum-quanto` importable as `optimum.quanto`; `QuantoConfig(activations="int4")` is expected to raise — real int4 activation quant isn't supported by the library, which is why w4a4 uses a fake-quant hook instead (see §10) |
+| vision-tower carve-out warning in logs | `[load] WARNING: vision-tower carve-out did not hold...` means the CLIP tower or projector got quantized despite `modules_to_not_convert` — that run measured a *different* failure mode (vision-side collapse) and should not be folded into the H1–H4 numbers |
 | quantize step OOM | reduce `calibration_samples` to 64; run with `--device cuda`; close other GPU processes |
 | GPTQ checkpoint won't load | transformers version mismatch — the lockfile pins it; don't upgrade transformers independently |
 | downloads stall | network to COCO/HF blocked; set `HF_ENDPOINT` mirror, or pre-place files: annotations in `data/annotations/`, images in `data/val2014/`, POPE files in `data/pope/` (filenames `coco_pope_{split}.json`) |
@@ -186,7 +194,12 @@ results/
 - Calibration data (train2014) is disjoint from evaluation (val2014) — by design.
 - After a run, log the numbers into `../obsidian-docs/Results.md` (entry template there), including `--sample-images` if used and the seed.
 - For the paper/proposal, always state: model, variant set, sample sizes, seed, calibration size, and the figures F1–F5.
-- **Variant mechanics (state in methods):** `w8` = bitsandbytes Int8 (no calibration); `w4` = GPTQ g128 on the extracted Vicuna LLM (auto_gptq can't quantize the `llava` wrapper class directly, so the `llama`-type LM is quantized standalone and swapped into the fp16 LLaVA at load time). Both weight-only.
+- **Variant mechanics (state in methods):**
+  - `w8a8` = TorchAO `int8_dynamic_activation_int8_weight` (no calibration; activations quantized dynamically per forward pass).
+  - `w4a16` = GPTQ g128 on the extracted Vicuna LLM (auto_gptq can't quantize the `llava` wrapper class directly, so the `llama`-type LM is quantized standalone and swapped into the fp16 LLaVA at load time). Weight-only.
+  - `w4a8` = Quanto `QuantoConfig(weights="int4", activations="int8")` — both real quantized dtypes.
+  - `w4a4` = Quanto `QuantoConfig(weights="int4", activations=None)` (real int4 weights) plus a forward-pre-hook on every `Linear` in `language_model` that fake-quantizes activations to int4 (round/clip/dequantize in fp16). **This is a simulation, not a real int4 GEMM kernel** — optimum-quanto and transformers' `QuantoConfig` both hard-reject real int4 activation quantization (`ActivationQBytesTensor` only supports 8-bit qtypes). State this plainly in methods: w4a4 numerically approximates the collapse regime rather than measuring a production int4×int4 kernel.
+  - All four quantized rungs exclude `vision_tower` and `multi_modal_projector` from quantization (`modules_to_not_convert`), so only the LLM decoder's precision changes — consistent with GPTQ's existing extract-and-swap approach and with the study's isolated variable (H1–H4 are about decoder fallback, not vision-tower collapse).
 
 ---
 
@@ -196,11 +209,16 @@ results/
 config.yaml                experiment config
 pyproject.toml / uv.lock   pinned environment
 src/experiments/
-  models/                  checkpoint download, GPTQ quantization (W4/W8), variant loading
+  models/                  checkpoint download, GPTQ quantization (W4), variant loading
+                           (fp16/w8a8/w4a16/w4a8/w4a4 dispatch in load.py)
   data/                    COCO subset downloader, POPE/CHAIR loaders + resamplers, prompts
   experiment/              decode loop w/ attention capture, POPE, CHAIR (+80-class matcher),
                            text-only probe, flow
   analysis/                metrics (F1, CHAIR_s/i, r_pb, binned curves, ΔKL), JSON export, plots
 scripts/smoke_test.py      pure-logic sanity tests (no model needed):
                            uv run python scripts/smoke_test.py
+scripts/preflight_variants.py   per-rung quantizer config validation (no GPU needed), and an
+                           optional --load mode that loads each variant + checks
+                           output_attentions still works (needs GPU/hub access):
+                           uv run python scripts/preflight_variants.py --root .
 ```
