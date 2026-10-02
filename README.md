@@ -30,14 +30,17 @@ Current PTQ frameworks (QSLaw, MQuant, QuaRot, LUQ) optimize hardware-level weig
 
 | Path | Contents |
 |---|---|
-| `obsidian-docs/` | Research vault — problem framing, hypotheses, evidence experiment design, metric definitions, visualization spec, execution plan, supporting evidence, and the running results log |
+| [`evidence-study/`](evidence-study/README.md) | **Evidence Study** (H1–H4): modular, reproducible harness for the precision-ladder ablation — FP16/W8A8/W4A16/W4A8/W4A4 on LLaVA-1.5-7B, POPE + CHAIR, per-step attention capture, text-only prior probe. `uv`-managed package; run via `uv run experiments` |
+| [`method-study/`](method-study/README.md) | **Method Study** (Phoenix, Contributions 2 & 3): LoRAS (low-rank activation steering) + A-CAB (entropy-gated attention biasing) on realistically quantized (NF4/AWQ/GPTQ/SmoothQuant/QuaRot-style) LLaVA-1.5-7B — drift profiling, PTQ validation, 2×2 method ablation. Numbered pipeline scripts (`00_…–10_…`), entry point `run_all.sh` |
+| `obsidian-docs/` | Research vault — problem framing, hypotheses, study design, metric definitions, supporting evidence, and the running results log |
 | `README.md` | This file — global research summary |
 
 Start with [`obsidian-docs/README.md`](obsidian-docs/README.md) for the vault index.
 
 ## Status
 
-- Background research & fact verification: ✅ (see `obsidian-docs/06-Supporting-Evidence.md`)
-- Evidence study design: ✅ (see `obsidian-docs/02-Evidence-Experiment-Design.md`)
-- Experiment execution: ⏳ pending — results logged in `obsidian-docs/07-Results-Log.md`
+- Background research & fact verification: ✅ (see [`obsidian-docs/Claims & Evidence Chain.md`](obsidian-docs/Claims%20%26%20Evidence%20Chain.md))
+- Evidence study design: ✅ (see [`obsidian-docs/Study Experiment.md`](obsidian-docs/Study%20Experiment.md))
+- Evidence study execution: results logged in [`obsidian-docs/Results.md`](obsidian-docs/Results.md)
+- Method study (LoRAS / A-CAB): in progress — see [`method-study/README.md`](method-study/README.md)
 - GAD / QA-CD / prefix filtering: later research phases (documented in the vault as they begin)
