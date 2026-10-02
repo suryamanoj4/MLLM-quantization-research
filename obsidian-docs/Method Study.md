@@ -16,6 +16,9 @@ status: in-progress
 > [!abstract] Purpose
 > The **methods phase** of the research (Contributions 2 & 3): once the [[Study Experiment]] establishes the evidence (H1–H4), this study develops and tests two training-free countermeasures on **practically quantized** MLLMs — **LoRAS** (low-rank activation steering, closed-form ridge fit on K/V outputs) and **A-CAB** (entropy-gated additive bias on visual attention logits) — plus the profiling (drift, token probe) and validation (WikiText PPL, Gate 1/2 classification) needed to show either one works. Everything runs on one A6000, nothing is trained.
 
+> [!seealso] Reading the results
+> For the synthesis across both studies (verdicts, cross-study inference, cheat-sheet), read [[Results Summary]]. This note holds the per-rung detail.
+
 **Code:** [`method-study/`](../method-study/) — pipeline scripts `00_…–12_…`, entry point `run_all.sh`, artifacts in `method-study/runs/`. Environment: torch 2.6.0+cu124, transformers 4.53.3, CUDA 12.4, LLaVA-1.5-7B (`llava-hf/llava-1.5-7b-hf`), mini-COCO (`data/coco-mini`, 500 eval / 256 calib images, disjoint splits enforced).
 
 ---

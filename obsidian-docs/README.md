@@ -19,14 +19,14 @@ status: in-progress
 ```mermaid
 graph TD
     A["README (Index)"] --> B["Research Ideation"]
-    A --> E["Claims & Evidence Chain"]
-    B --> E
+    A --> R["Results Summary"]
+    B --> E["Claims & Evidence Chain"]
     B --> C["Study Experiment"]
     C --> D["Results"]
     B --> D
-    E --> C
-    D --> M["Method Study"]
-    C --> M
+    D --> R
+    C --> M["Method Study"]
+    M --> R
 ```
 
 ## Notes
@@ -38,6 +38,7 @@ graph TD
 | [[Study Experiment]] | The main study: 7B self-quantized precision ladder (FP16/W8A8/W4A16/W4A8/W4A4) on full POPE (3 splits) + CHAIR with attention capture and text-only probe | ✅ Resampled-100 run complete; full 500 pending |
 | [[Results]] | Append-only experiment log + hypothesis verdict tracker | ⏳ Running (100-img run logged) |
 | [[Method Study]] | **Methods phase (Phoenix, C2 & C3):** LoRAS + A-CAB on practically quantized LLaVA — PTQ validation, Gate 1/2 verdicts, drift profiling, 2×2 ablation, A-CAB sweep, token probe, LoRAS ceilings | ⏳ In progress (n=100 probe complete) |
+| [[Results Summary]] | **The one-place synthesis:** verdict dashboard for both studies, the cross-study inference (omission vs fallback, W4A4 reconciliation, decoding as the strongest lever), cheat-sheet numbers | 🔒 Synced with the two detail notes |
 
 ## One-Paragraph Pitch
 

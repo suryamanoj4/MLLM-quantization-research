@@ -12,6 +12,9 @@ status: in-progress
 > [!info] Purpose
 > Append-only log for every cell of the main study ([[Study Experiment]]). Each completed cell gets an entry below; hypothesis verdicts are tracked in the tracker at the bottom. Entries are added as experiments complete — this note is the growth point of the vault.
 
+> [!seealso] Reading the results
+> For the combined picture (verdicts + inference + cheat-sheet), read [[Results Summary]] — this note is the raw log it summarizes.
+
 ## 1. Cell Checklist
 
 - [x] LLaVA-1.5-7B / **FP16** / POPE (3 splits) + CHAIR — resampled 100 img (2026-09-29); full 500 pending
