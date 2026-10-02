@@ -21,7 +21,7 @@ status: in-progress
 - [x] LLaVA-1.5-7B / **W8A8** (simulated) / POPE (3 splits) + CHAIR — resampled 100 img (2026-09-29); full 500 pending
 - [x] LLaVA-1.5-7B / **W4A16** (GPTQ, dequantized) / POPE (3 splits) + CHAIR — resampled 100 img (2026-09-29); full 500 pending
 - [x] LLaVA-1.5-7B / **W4A8** (GPTQ + simulated A8) / POPE (3 splits) + CHAIR — resampled 100 img (2026-09-29); full 500 pending
-- [x] LLaVA-1.5-7B / **W4A4** (GPTQ + simulated A4) / POPE (3 splits) + CHAIR — resampled 100 img (2026-09-29): **collapsed**
+- [x] LLaVA-1.5-7B / **W4A4** (GPTQ weights + **simulated** int4 activations) / POPE (3 splits) + CHAIR — resampled 100 img (2026-09-29): **collapsed**
 - [ ] Text-only probe (S2/S2a/S2b) — FP16 + W4A16 + W4A4, POPE + CHAIR
 - [ ] S3 — layer-depth attention profile (derived from captured attention)
 

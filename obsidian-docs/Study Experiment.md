@@ -36,10 +36,13 @@ The 7B self-quantized route keeps the documented model family ([[Research Ideati
 | 2. **W8A8** | weights int8 per-channel + activations int8 per-token | simulated: RTN weight rounding + activation fake-quant | ~1 min |
 | 3. **W4A16** | GPTQ W4 (g128), weight-only | self-quantize with auto_gptq, then dequantized to fp16 | ~15 min |
 | 4. **W4A8** | the **same** GPTQ W4 weights + activations int8 per-token | simulated activation fake-quant | — |
-| 5. **W4A4** | the **same** GPTQ W4 weights + activations int4 per-token | simulated activation fake-quant | — |
+| 5. **W4A4** | the **same** GPTQ W4 weights + **simulated** int4 activations | simulated activation fake-quant | — |
 
 > [!warning] Implementation (2026-09-29): every quantized rung is simulated quantization
 > Weights are rounded to their integer grid and stored dequantized in fp16; activations are rounded per token on entry to each of the 224 decoder Linears. Vision tower, projector, embeddings and lm_head stay fp16 on every rung. Numerically this is the quantized model; only speed/memory differ. Reason: on a T4 (sm75) no int4 kernel runs with this stack (auto_gptq's extension does not build against torch 2.5, quanto's marlin kernel needs sm80, transformers rejects quanto activation quant), and TorchAO's int8 matmul falls back to CPU for ≤16 rows — every decode step (~110 s per POPE question). W4A16 → W4A8 → W4A4 therefore differ **only** in activation bits.
+
+> [!warning] W4A4 activations are simulated
+> `optimum-quanto` caps activation quantization at int8 (hard-rejected `activations="int4"`), and torchao ≤0.8 has no int4-activation path either. The W4A4 rung therefore uses int4 **weights** (real) plus a **fake-quant simulation** of int4 activations: per-token symmetric round-trip (absmax scale, clamp [-8,7], dequantize to fp16) applied as forward pre-hooks on the LM's `Linear` layers. The rounding is value-identical to real int4 activation quantization; only the GEMM accumulation differs (fp16 vs int32) — irrelevant for a behavior/mechanism study. It is **not** a packed int4 kernel. See `evidence-study/src/experiments/models/load.py:_fake_quantize_int4`. (The [[Method Study]] now provides the realistic W4A4 recipe — rotation + GPTQ, WikiText PPL 8.53 — where the model stays fluent.)
 
 > [!danger] Calibration discipline
 > GPTQ W4A16 uses ~128 samples from **MSCOCO train2014**, fixed seed, **disjoint from all evaluation splits** (POPE/CHAIR use val2014). W8A8 weights and all activation quantization are RTN-style and need no calibration; W4A8/W4A4 reuse the calibrated GPTQ weights. Log the exact configs in `configs/` ([[Research Ideation#Research Plan]]).
