@@ -4,10 +4,13 @@ date: 2026-08-26
 tags:
   - experiment/design
   - project/main-study
-status: planned
+status: in-progress
 ---
 
 # Main Study — 7B Precision Ladder (FP16 → W4A4)
+
+> [!success] Status (updated 2026-10-02)
+> **Resampled-100 run complete** (2026-09-29, all 5 rungs) — full numbers and H1–H4 verdicts in [[Results]]; artifacts in `obsidian-docs/results/100img-5rung-2026-09-29/`. **Full 500-image sets and the S2/S3 probes remain pending.** The methods phase that builds on this study is [[Method Study]].
 
 > [!abstract] Purpose
 > The **main study** of this research: run **POPE (all 3 splits, full 9,000 questions) + CHAIR (full 500 captions)** on one model across a five-rung precision ladder (FP16 / W8A8 / W4A16 / W4A8 / W4A4) with per-step attention capture and a text-only prior probe. Verifies **all four hypotheses (H1–H4)** plus S2 and S3 — the full mechanism story, not just "quantization hurts accuracy."

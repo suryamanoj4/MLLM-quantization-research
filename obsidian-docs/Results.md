@@ -197,4 +197,5 @@ W4 weights make image attention more scattered (+0.8 bits entropy) and less stab
 
 - [[Study Experiment]] — the cells this log tracks
 - [[Research Ideation]] — hypotheses, metrics, figures
+- [[Method Study]] — the methods phase (LoRAS / A-CAB): PTQ validation, Gate 1/2 verdicts, 2×2 ablation, A-CAB sweep — artifacts in `method-study/runs/`
 - [[README]] — vault index

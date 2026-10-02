@@ -42,5 +42,5 @@ Start with [`obsidian-docs/README.md`](obsidian-docs/README.md) for the vault in
 - Background research & fact verification: ✅ (see [`obsidian-docs/Claims & Evidence Chain.md`](obsidian-docs/Claims%20%26%20Evidence%20Chain.md))
 - Evidence study design: ✅ (see [`obsidian-docs/Study Experiment.md`](obsidian-docs/Study%20Experiment.md))
 - Evidence study execution: results logged in [`obsidian-docs/Results.md`](obsidian-docs/Results.md)
-- Method study (LoRAS / A-CAB): in progress — see [`method-study/README.md`](method-study/README.md)
+- Method study (LoRAS / A-CAB): in progress — PTQ validation + Gate 1/2 probes complete, results in [`obsidian-docs/Method Study.md`](obsidian-docs/Method%20Study.md); see [`method-study/README.md`](method-study/README.md)
 - GAD / QA-CD / prefix filtering: later research phases (documented in the vault as they begin)
