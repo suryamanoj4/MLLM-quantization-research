@@ -1,0 +1,32 @@
+# Pinned for the A6000 box (torch <= 2.6). Install torch first, from the CUDA
+# index that matches your driver, then the rest:
+#
+#   pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu126
+#   (cu126 needs a driver reporting CUDA >= 12.6; `python scripts/check_env.py` tells you)
+#   pip install -r requirements.txt
+#
+# The code is written against the transformers 4.49 - 4.57 attention API
+# (LlamaAttention.forward(hidden_states, position_embeddings, attention_mask, ...)
+# and ALL_ATTENTION_FUNCTIONS). 4.53.3 is what it was developed and tested against.
+# Both test suites also pass on transformers 5.17 (5.x renamed the attention
+# cache argument and switched SDPA to boolean masks; acab.py handles both).
+
+transformers==4.53.3
+accelerate>=1.0.0
+tokenizers>=0.21.0
+safetensors>=0.4.0
+numpy>=1.26
+pillow>=10.0
+matplotlib>=3.8
+tqdm>=4.66
+
+# optional but recommended: lets scripts/fetch_data.py stream the 221 MB
+# instances_val2014.json instead of parsing it into ~2 GB of RAM
+ijson>=3.2
+
+# WikiText-2 for scripts/09_validate_ptq.py and calib=wiki
+pyarrow>=14
+
+# optional, only if you later add a real-kernel W4A16 validation row:
+# autoawq==0.2.9
+# gptqmodel>=1.7

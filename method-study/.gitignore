@@ -1,0 +1,19 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# --- Virtual environment (built by scripts/setup_env.sh -> .venv-phoenix) ---
+.venv/
+.venv*/
+venv/
+
+# --- Data (mini-COCO built by scripts/fetch_data.py) ---
+/data/
+
+# --- Run artifacts ---
+runs/
+*.log
+
+# --- Editors & OS ---
+.DS_Store

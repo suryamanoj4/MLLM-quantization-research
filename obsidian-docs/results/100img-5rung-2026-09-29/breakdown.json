@@ -1,0 +1,492 @@
+{
+  "run": "100img-5rung-2026-09-29",
+  "source": "per-question jsonl from the run's results zip",
+  "pope": {
+    "fp16": {
+      "random": {
+        "n": 600,
+        "accuracy": 0.8966666666666666,
+        "f1": 0.8990228013029316,
+        "precision": 0.8789808917197452,
+        "recall": 0.92,
+        "yes_ratio": 0.5233333333333333,
+        "acc_yes_questions": 0.92,
+        "acc_no_questions": 0.8733333333333333,
+        "attention_mass": 0.1021387488315148,
+        "attention_entropy_bits": 5.619006154664926,
+        "attention_drift": 0.26047119140625
+      },
+      "popular": {
+        "n": 600,
+        "accuracy": 0.8383333333333334,
+        "f1": 0.8505392912172572,
+        "precision": 0.7908309455587392,
+        "recall": 0.92,
+        "yes_ratio": 0.5816666666666667,
+        "acc_yes_questions": 0.92,
+        "acc_no_questions": 0.7566666666666667,
+        "attention_mass": 0.10320884708231981,
+        "attention_entropy_bits": 5.632908347477871,
+        "attention_drift": 0.2643291558159722
+      },
+      "adversarial": {
+        "n": 600,
+        "accuracy": 0.78,
+        "f1": 0.8070175438596492,
+        "precision": 0.71875,
+        "recall": 0.92,
+        "yes_ratio": 0.64,
+        "acc_yes_questions": 0.92,
+        "acc_no_questions": 0.64,
+        "attention_mass": 0.10456713379127905,
+        "attention_entropy_bits": 5.642420928522589,
+        "attention_drift": 0.2674666341145833
+      }
+    },
+    "w8a8": {
+      "random": {
+        "n": 600,
+        "accuracy": 0.905,
+        "f1": 0.9054726368159204,
+        "precision": 0.900990099009901,
+        "recall": 0.91,
+        "yes_ratio": 0.505,
+        "acc_yes_questions": 0.91,
+        "acc_no_questions": 0.9,
+        "attention_mass": 0.10426340263199693,
+        "attention_entropy_bits": 5.24018831224846,
+        "attention_drift": 0.24410319010416667
+      },
+      "popular": {
+        "n": 600,
+        "accuracy": 0.8433333333333334,
+        "f1": 0.8531250000000001,
+        "precision": 0.8029411764705883,
+        "recall": 0.91,
+        "yes_ratio": 0.5666666666666667,
+        "acc_yes_questions": 0.91,
+        "acc_no_questions": 0.7766666666666666,
+        "attention_mass": 0.10533779473980844,
+        "attention_entropy_bits": 5.259317991680332,
+        "attention_drift": 0.24801540798611113
+      },
+      "adversarial": {
+        "n": 600,
+        "accuracy": 0.785,
+        "f1": 0.8088888888888889,
+        "precision": 0.728,
+        "recall": 0.91,
+        "yes_ratio": 0.625,
+        "acc_yes_questions": 0.91,
+        "acc_no_questions": 0.66,
+        "attention_mass": 0.10666628211451185,
+        "attention_entropy_bits": 5.271404776842822,
+        "attention_drift": 0.2510736762152778
+      }
+    },
+    "w4a16": {
+      "random": {
+        "n": 600,
+        "accuracy": 0.8833333333333333,
+        "f1": 0.8878205128205129,
+        "precision": 0.8549382716049383,
+        "recall": 0.9233333333333333,
+        "yes_ratio": 0.54,
+        "acc_yes_questions": 0.9233333333333333,
+        "acc_no_questions": 0.8433333333333334,
+        "attention_mass": 0.08748827652545602,
+        "attention_entropy_bits": 6.402316746970728,
+        "attention_drift": 0.3245548502604167
+      },
+      "popular": {
+        "n": 600,
+        "accuracy": 0.8283333333333334,
+        "f1": 0.8432267884322681,
+        "precision": 0.7759103641456583,
+        "recall": 0.9233333333333333,
+        "yes_ratio": 0.595,
+        "acc_yes_questions": 0.9233333333333333,
+        "acc_no_questions": 0.7333333333333333,
+        "attention_mass": 0.0890543060980244,
+        "attention_entropy_bits": 6.40937126281893,
+        "attention_drift": 0.3282223849826389
+      },
+      "adversarial": {
+        "n": 600,
+        "accuracy": 0.77,
+        "f1": 0.8005780346820809,
+        "precision": 0.7066326530612245,
+        "recall": 0.9233333333333333,
+        "yes_ratio": 0.6533333333333333,
+        "acc_yes_questions": 0.9233333333333333,
+        "acc_no_questions": 0.6166666666666667,
+        "attention_mass": 0.0901009866638924,
+        "attention_entropy_bits": 6.411550000659412,
+        "attention_drift": 0.3307180447048611
+      }
+    },
+    "w4a8": {
+      "random": {
+        "n": 600,
+        "accuracy": 0.895,
+        "f1": 0.8982229402261712,
+        "precision": 0.8714733542319749,
+        "recall": 0.9266666666666666,
+        "yes_ratio": 0.5316666666666666,
+        "acc_yes_questions": 0.9266666666666666,
+        "acc_no_questions": 0.8633333333333333,
+        "attention_mass": 0.08845106298663831,
+        "attention_entropy_bits": 6.121825687204088,
+        "attention_drift": 0.3095421006944445
+      },
+      "popular": {
+        "n": 600,
+        "accuracy": 0.8383333333333334,
+        "f1": 0.8514548238897397,
+        "precision": 0.7875354107648725,
+        "recall": 0.9266666666666666,
+        "yes_ratio": 0.5883333333333334,
+        "acc_yes_questions": 0.9266666666666666,
+        "acc_no_questions": 0.75,
+        "attention_mass": 0.09009030782501214,
+        "attention_entropy_bits": 6.1328690196697915,
+        "attention_drift": 0.31352783203125
+      },
+      "adversarial": {
+        "n": 600,
+        "accuracy": 0.77,
+        "f1": 0.8005780346820809,
+        "precision": 0.7066326530612245,
+        "recall": 0.9233333333333333,
+        "yes_ratio": 0.6533333333333333,
+        "acc_yes_questions": 0.9233333333333333,
+        "acc_no_questions": 0.6166666666666667,
+        "attention_mass": 0.09125892491878143,
+        "attention_entropy_bits": 6.138450168766791,
+        "attention_drift": 0.3164773220486111
+      }
+    },
+    "w4a4": {
+      "random": {
+        "n": 600,
+        "accuracy": 0.5083333333333333,
+        "f1": 0.06940063091482651,
+        "precision": 0.6470588235294118,
+        "recall": 0.03666666666666667,
+        "yes_ratio": 0.028333333333333332,
+        "acc_yes_questions": 0.03666666666666667,
+        "acc_no_questions": 0.98,
+        "attention_mass": 0.17133927463610713,
+        "attention_entropy_bits": 5.83820214912869,
+        "attention_drift": 0.2410137261284722
+      },
+      "popular": {
+        "n": 600,
+        "accuracy": 0.5016666666666667,
+        "f1": 0.06853582554517135,
+        "precision": 0.5238095238095238,
+        "recall": 0.03666666666666667,
+        "yes_ratio": 0.035,
+        "acc_yes_questions": 0.03666666666666667,
+        "acc_no_questions": 0.9666666666666667,
+        "attention_mass": 0.1714439240576559,
+        "attention_entropy_bits": 5.844147702888187,
+        "attention_drift": 0.24133083767361113
+      },
+      "adversarial": {
+        "n": 600,
+        "accuracy": 0.5,
+        "f1": 0.0625,
+        "precision": 0.5,
+        "recall": 0.03333333333333333,
+        "yes_ratio": 0.03333333333333333,
+        "acc_yes_questions": 0.03333333333333333,
+        "acc_no_questions": 0.9666666666666667,
+        "attention_mass": 0.17197143206996374,
+        "attention_entropy_bits": 5.862723907971104,
+        "attention_drift": 0.24245198567708334
+      }
+    }
+  },
+  "chair": {
+    "fp16": {
+      "n_captions": 100,
+      "chair_s": 0.39,
+      "chair_i": 0.13549337260677466,
+      "total_mentions": 679,
+      "total_hallucinated": 92,
+      "mentions_per_caption": 6.79,
+      "attention_mass": 0.09973933590352604,
+      "attention_entropy_bits": 5.492925822112515,
+      "attention_drift": 0.2696695528815517,
+      "attention_decile_profile": [
+        0.15330616095044167,
+        0.13687886002307392,
+        0.11403633357203435,
+        0.10287730593757839,
+        0.09669491122703303,
+        0.09357873396501848,
+        0.08471205981073568,
+        0.07637266553766911,
+        0.07416914635387935,
+        0.06802089940610478
+      ]
+    },
+    "w8a8": {
+      "n_captions": 100,
+      "chair_s": 0.46,
+      "chair_i": 0.15326251896813353,
+      "total_mentions": 659,
+      "total_hallucinated": 101,
+      "mentions_per_caption": 6.59,
+      "attention_mass": 0.1036599357333135,
+      "attention_entropy_bits": 5.152352173612895,
+      "attention_drift": 0.25223087191946897,
+      "attention_decile_profile": [
+        0.15906240384588077,
+        0.14109305976987266,
+        0.11842137554974051,
+        0.10686468249064168,
+        0.09984667392359464,
+        0.09418092409953811,
+        0.088618954664244,
+        0.08154051142170467,
+        0.07809282719441399,
+        0.07242427547876973
+      ]
+    },
+    "w4a16": {
+      "n_captions": 100,
+      "chair_s": 0.32,
+      "chair_i": 0.11467889908256881,
+      "total_mentions": 654,
+      "total_hallucinated": 75,
+      "mentions_per_caption": 6.54,
+      "attention_mass": 0.08148273094995162,
+      "attention_entropy_bits": 6.287336382234747,
+      "attention_drift": 0.33166461198639985,
+      "attention_decile_profile": [
+        0.13260819679248778,
+        0.11742415345145715,
+        0.09604756561354927,
+        0.08241110879473912,
+        0.07594033384836224,
+        0.07178548491612306,
+        0.0659873169546262,
+        0.06218010466433693,
+        0.0601360462425772,
+        0.05386073382591393
+      ]
+    },
+    "w4a8": {
+      "n_captions": 100,
+      "chair_s": 0.39,
+      "chair_i": 0.14488188976377953,
+      "total_mentions": 635,
+      "total_hallucinated": 92,
+      "mentions_per_caption": 6.35,
+      "attention_mass": 0.08231365273949294,
+      "attention_entropy_bits": 5.997857884909553,
+      "attention_drift": 0.31512729582432447,
+      "attention_decile_profile": [
+        0.13298134315405805,
+        0.11867764385963069,
+        0.09722482942096394,
+        0.0840009244501516,
+        0.07642747156963245,
+        0.07282655161190618,
+        0.06690650214830841,
+        0.06144213936505312,
+        0.061079241714644274,
+        0.05524505532332799
+      ]
+    },
+    "w4a4": {
+      "n_captions": 100,
+      "chair_s": 0.03,
+      "chair_i": 1.0,
+      "total_mentions": 3,
+      "total_hallucinated": 3,
+      "mentions_per_caption": 0.03,
+      "attention_mass": NaN,
+      "attention_entropy_bits": NaN,
+      "attention_drift": 0.2060482295001314,
+      "attention_decile_profile": [
+        0.14920728360005922,
+        0.15157887110163987,
+        0.146842719342215,
+        0.13837255044593555,
+        0.13282489440791997,
+        0.11736273671893592,
+        0.1140351162751443,
+        0.11469384294970757,
+        NaN,
+        NaN
+      ]
+    }
+  },
+  "attention_paired_vs_fp16": {
+    "pope": {
+      "w8a8": {
+        "random": {
+          "pct_change": 2.0801643105956047,
+          "ci95": [
+            1.7381622799050107,
+            2.4082804546606966
+          ]
+        },
+        "popular": {
+          "pct_change": 2.062756941554158,
+          "ci95": [
+            1.7133013724597554,
+            2.4314380245200566
+          ]
+        },
+        "adversarial": {
+          "pct_change": 2.0074647234978924,
+          "ci95": [
+            1.6533481757325976,
+            2.3708517795676363
+          ]
+        },
+        "all": {
+          "pct_change": 2.04983796260602,
+          "ci95": [
+            1.7214418535242348,
+            2.3806587897054023
+          ]
+        }
+      },
+      "w4a16": {
+        "random": {
+          "pct_change": -14.343696661318711,
+          "ci95": [
+            -15.086339845091015,
+            -13.587138763378693
+          ]
+        },
+        "popular": {
+          "pct_change": -13.714464781304628,
+          "ci95": [
+            -14.47065943133635,
+            -12.957635096625019
+          ]
+        },
+        "adversarial": {
+          "pct_change": -13.834315432477714,
+          "ci95": [
+            -14.5035342722211,
+            -13.109111677809562
+          ]
+        },
+        "all": {
+          "pct_change": -13.962279385337514,
+          "ci95": [
+            -14.707296936106703,
+            -13.242537063218249
+          ]
+        }
+      },
+      "w4a8": {
+        "random": {
+          "pct_change": -13.40107060392462,
+          "ci95": [
+            -14.205848321998321,
+            -12.603041962589117
+          ]
+        },
+        "popular": {
+          "pct_change": -12.710673191460206,
+          "ci95": [
+            -13.527729241172665,
+            -11.846793463669297
+          ]
+        },
+        "adversarial": {
+          "pct_change": -12.726951949415955,
+          "ci95": [
+            -13.509132633162263,
+            -11.938577100421508
+          ]
+        },
+        "all": {
+          "pct_change": -12.94370035682087,
+          "ci95": [
+            -13.692209733462809,
+            -12.166768336490078
+          ]
+        }
+      },
+      "w4a4": {
+        "random": {
+          "pct_change": 67.75149157029887,
+          "ci95": [
+            64.25020740710445,
+            71.55088992200244
+          ]
+        },
+        "popular": {
+          "pct_change": 66.11359287921454,
+          "ci95": [
+            62.773125565219836,
+            69.64731948883295
+          ]
+        },
+        "adversarial": {
+          "pct_change": 64.46030969274419,
+          "ci95": [
+            61.37101159372275,
+            67.66675673135292
+          ]
+        },
+        "all": {
+          "pct_change": 66.09556804657818,
+          "ci95": [
+            62.98623735174671,
+            69.41599768858168
+          ]
+        }
+      }
+    },
+    "chair": {
+      "w8a8": {
+        "n": 100,
+        "pct_change": 3.930846134347331,
+        "ci95": [
+          2.5642242129567467,
+          5.327308236816934
+        ]
+      },
+      "w4a16": {
+        "n": 100,
+        "pct_change": -18.30431773802197,
+        "ci95": [
+          -19.569355024742492,
+          -16.987468716067866
+        ]
+      },
+      "w4a8": {
+        "n": 100,
+        "pct_change": -17.47122437318842,
+        "ci95": [
+          -18.795235236630955,
+          -16.10865859522862
+        ]
+      },
+      "w4a4": {
+        "n": 99,
+        "pct_change": 35.31010551170059,
+        "ci95": [
+          31.224088059680575,
+          39.6460441926299
+        ]
+      }
+    }
+  },
+  "ci_method": "image-cluster bootstrap, 2000 resamples, random.seed(0), 2.5-97.5 percentiles; change = (sum rung - sum fp16)/sum fp16 over identical items",
+  "notes": [
+    "w4a4 is a collapsed model (garbage text); its numbers are not interpretable",
+    "w4a4 acc_no_questions is inflated: the parser scores any non-'yes' output as 'no'",
+    "POPE per-question attention mass tracks the yes/no answer; do not use POPE attention buckets as grounding evidence"
+  ]
+}

@@ -4,10 +4,13 @@ date: 2026-08-26
 tags:
   - experiment/design
   - project/main-study
-status: planned
+status: in-progress
 ---
 
 # Main Study — 7B Precision Ladder (FP16 → W4A4)
+
+> [!success] Status (updated 2026-10-02)
+> **Resampled-100 run complete** (2026-09-29, all 5 rungs) — full numbers and H1–H4 verdicts in [[Results]]; artifacts in `obsidian-docs/results/100img-5rung-2026-09-29/`. **Full 500-image sets and the S2/S3 probes remain pending.** The methods phase that builds on this study is [[Method Study]].
 
 > [!abstract] Purpose
 > The **main study** of this research: run **POPE (all 3 splits, full 9,000 questions) + CHAIR (full 500 captions)** on one model across a five-rung precision ladder (FP16 / W8A8 / W4A16 / W4A8 / W4A4) with per-step attention capture and a text-only prior probe. Verifies **all four hypotheses (H1–H4)** plus S2 and S3 — the full mechanism story, not just "quantization hurts accuracy."
@@ -23,23 +26,26 @@ status: planned
 The 7B self-quantized route keeps the documented model family ([[Research Ideation#Key Verified Facts]]) and gains attention access — H3/H4 are what make the lexical-fallback claim meaningful. TheBloke's 7B GPTQ repo is deleted (verified); 13B is the only pre-quantized GPTQ survivor.
 
 > [!note] Scope decision
-> This single-model, five-rung precision grid is the complete experiment of record. Rungs are chosen from the literature's information-rich set: **W8A8** (near-lossless control), **W4A16** (the weight-only deployment standard), **W4A8** (the activation-quant frontier), **W4A4** (the aggressive collapse regime). The ladder spans two clean axes — weight bits (16 → 8 → 4) and activation bits (16 → 8 → 4) — so each rung adds exactly one source of collapse. It does **not** compare quantization *methods* at the same bit-width (method is fixed per rung: GPTQ for the W4 weight scheme, quanto/torchao for activation quant), and does **not** scale the model or dataset. Decoding-time countermeasures are future phases ([[Research Ideation#Research Plan]]).
+> This single-model, five-rung precision grid is the complete experiment of record. Rungs are chosen from the literature's information-rich set: **W8A8** (near-lossless control), **W4A16** (the weight-only deployment standard), **W4A8** (the activation-quant frontier), **W4A4** (the aggressive collapse regime). The ladder spans two clean axes — weight bits (16 → 8 → 4) and activation bits (16 → 8 → 4) — so each rung adds exactly one source of collapse. It does **not** compare quantization *methods* at the same bit-width (method is fixed per rung: GPTQ for the W4 weights, RTN for W8 weights, per-token RTN for activations — all simulated, see §2), and does **not** scale the model or dataset. Decoding-time countermeasures are future phases ([[Research Ideation#Research Plan]]).
 
 ## 2. Precision Ladder & Quantization
 
 | Rung | Config | Method | Cost |
 |---|---|---|---|
 | 1. **FP16** | `llava-hf/llava-1.5-7b-hf` (official, ~14 GB) | plain load | — |
-| 2. **W8A8** | weights int8 + activations int8 (dynamic) | TorchAO | ~5 min |
-| 3. **W4A16** | GPTQ W4 (g128), weight-only | self-quantize with auto_gptq | ~15 min |
-| 4. **W4A8** | weights int4 + activations int8 | Quanto | ~5 min |
-| 5. **W4A4** | weights int4 + **simulated** int4 activations | Quanto + fake-quant hooks | ~5 min |
+| 2. **W8A8** | weights int8 per-channel + activations int8 per-token | simulated: RTN weight rounding + activation fake-quant | ~1 min |
+| 3. **W4A16** | GPTQ W4 (g128), weight-only | self-quantize with auto_gptq, then dequantized to fp16 | ~15 min |
+| 4. **W4A8** | the **same** GPTQ W4 weights + activations int8 per-token | simulated activation fake-quant | — |
+| 5. **W4A4** | the **same** GPTQ W4 weights + **simulated** int4 activations | simulated activation fake-quant | — |
+
+> [!warning] Implementation (2026-09-29): every quantized rung is simulated quantization
+> Weights are rounded to their integer grid and stored dequantized in fp16; activations are rounded per token on entry to each of the 224 decoder Linears. Vision tower, projector, embeddings and lm_head stay fp16 on every rung. Numerically this is the quantized model; only speed/memory differ. Reason: on a T4 (sm75) no int4 kernel runs with this stack (auto_gptq's extension does not build against torch 2.5, quanto's marlin kernel needs sm80, transformers rejects quanto activation quant), and TorchAO's int8 matmul falls back to CPU for ≤16 rows — every decode step (~110 s per POPE question). W4A16 → W4A8 → W4A4 therefore differ **only** in activation bits.
 
 > [!warning] W4A4 activations are simulated
-> `optimum-quanto` caps activation quantization at int8 (hard-rejected `activations="int4"`), and torchao ≤0.8 has no int4-activation path either. The W4A4 rung therefore uses quanto int4 **weights** (real) plus a **fake-quant simulation** of int4 activations: per-token symmetric round-trip (absmax scale, clamp [-8,7], dequantize to fp16) applied as forward pre-hooks on the LM's `Linear` layers. The rounding is value-identical to real int4 activation quantization; only the GEMM accumulation differs (fp16 vs int32) — irrelevant for a behavior/mechanism study. It is **not** a packed int4 kernel. See `experiments/src/experiments/models/load.py:_fake_quantize_int4`.
+> `optimum-quanto` caps activation quantization at int8 (hard-rejected `activations="int4"`), and torchao ≤0.8 has no int4-activation path either. The W4A4 rung therefore uses int4 **weights** (real) plus a **fake-quant simulation** of int4 activations: per-token symmetric round-trip (absmax scale, clamp [-8,7], dequantize to fp16) applied as forward pre-hooks on the LM's `Linear` layers. The rounding is value-identical to real int4 activation quantization; only the GEMM accumulation differs (fp16 vs int32) — irrelevant for a behavior/mechanism study. It is **not** a packed int4 kernel. See `evidence-study/src/experiments/models/load.py:_fake_quantize_int4`. (The [[Method Study]] now provides the realistic W4A4 recipe — rotation + GPTQ, WikiText PPL 8.53 — where the model stays fluent.)
 
 > [!danger] Calibration discipline
-> GPTQ W4A16 uses ~128 samples from **MSCOCO train2014**, fixed seed, **disjoint from all evaluation splits** (POPE/CHAIR use val2014). Quanto/TorchAO rungs are RTN-style and need no calibration. Log the exact configs in `configs/` ([[Research Ideation#Research Plan]]).
+> GPTQ W4A16 uses ~128 samples from **MSCOCO train2014**, fixed seed, **disjoint from all evaluation splits** (POPE/CHAIR use val2014). W8A8 weights and all activation quantization are RTN-style and need no calibration; W4A8/W4A4 reuse the calibrated GPTQ weights. Log the exact configs in `configs/` ([[Research Ideation#Research Plan]]).
 
 ## 3. Datasets & Decoding — Full Sets
 
@@ -71,7 +77,7 @@ Fixed seed per image, identical prompts across all five rungs — the pairing th
 | S3 — layer profile             | per-layer visual attention mass                                         | panel in F2                    |
 
 > [!note] Attribution between the axes
-> The W4A16→W4A8 step isolates **activation collapse** at fixed W4; W8A8→W4A16 isolates **weight collapse** at fixed activations (modulo method, see [[#1. Why this setup]]). If hallucination tracks the weight axis (W8A8 ≈ FP16, W4A16 ↑) the trigger is weight noise; if it tracks the activation axis (W4A8 ≈ W4A16, W4A4 ↑↑) the trigger is activation rounding of visual tokens (LUQ's high-entropy claim).
+> The W4A16→W4A8 step isolates **activation collapse** at fixed W4; W8A8→W4A16 isolates **weight collapse** (modulo method, see [[#1. Why this setup]]; note W8A8 also carries int8 activations, so W8A8→W4A16 changes both axes). If hallucination tracks the weight axis (W8A8 ≈ FP16, W4A16 ↑) the trigger is weight noise; if it tracks the activation axis (W4A8 ≈ W4A16, W4A4 ↑↑) the trigger is activation rounding of visual tokens (LUQ's high-entropy claim).
 
 ## 6. Time Budget (1× T4 free tier, full sets)
 
