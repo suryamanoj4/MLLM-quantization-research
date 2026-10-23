@@ -149,6 +149,9 @@ def main():
     p.add_argument("--pope-splits", default="random,popular,adversarial")
     p.add_argument("--n-pope-images", type=int, default=60)
     p.add_argument("--n-chair-images", type=int, default=40)
+    p.add_argument("--pope-batch-size", type=int, default=8,
+                   help="reduce this if variable-resolution images OOM")
+    p.add_argument("--chair-batch-size", type=int, default=4)
     p.add_argument("--max-new-tokens", type=int, default=128)
     p.add_argument("--n-boot", type=int, default=2000)
     p.add_argument("--dtype", default="float16")
@@ -243,7 +246,8 @@ def main():
         for split in splits:
             samples = get_pope(args.coco_root, args.eval_subset, split,
                                n_images=args.n_pope_images, seed=args.seed, verbose=False)
-            m = run_pope(lm, samples, None, batch_size=8, desc=f"{prec} pope/{split}")
+            m = run_pope(lm, samples, None, batch_size=args.pope_batch_size,
+                         desc=f"{prec} pope/{split}")
             row[f"pope_{split}_f1"] = m["f1"]
             row[f"pope_{split}_acc"] = m["accuracy"]
             row[f"pope_{split}_yes"] = m["yes_ratio"]
@@ -262,7 +266,7 @@ def main():
 
         cap = build_caption_set(args.coco_root, args.eval_subset,
                                 n_images=args.n_chair_images, seed=args.seed)
-        r = run_captions(lm, cap, None, batch_size=4,
+        r = run_captions(lm, cap, None, batch_size=args.chair_batch_size,
                          max_new_tokens=args.max_new_tokens, desc=f"{prec} captions")
         sc = scorer.score(r["records"])
         row.update({"CHAIR_s": sc["CHAIR_s"], "CHAIR_i": sc["CHAIR_i"],

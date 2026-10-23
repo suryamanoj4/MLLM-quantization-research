@@ -20,7 +20,7 @@ from pathlib import Path
 import torch
 
 from ..data import build_calibration_set, load_captions, open_image
-from ..model import CAPTION_PROMPT, SYSTEM, build_prompt
+from ..model import CAPTION_PROMPT, build_prompt, build_text_prompt
 
 
 def _tok(lm):
@@ -63,7 +63,9 @@ def text_sequences(lm, root, n: int, seed: int = 0, target_len: int | None = Non
     rng.shuffle(pool)
     tok = _tok(lm)
     target_len = target_len or 640
-    head = f"{SYSTEM} USER: {CAPTION_PROMPT} ASSISTANT:"
+    # with_system=True reproduces the original LLaVA text-calibration prefix;
+    # Qwen ignores it and uses its chat template.
+    head = build_text_prompt(CAPTION_PROMPT, with_system=True)
     out, k = [], 0
     for _ in range(n):
         parts = []

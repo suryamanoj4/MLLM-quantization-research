@@ -230,13 +230,14 @@ def blind_fluency(lm, captions: list[str], max_new_tokens: int = 64) -> dict:
     import math
     from .acab import generate
     from .metrics import fluency_report
+    from .model import build_text_prompt
     tok = lm.processor.tokenizer
-    prompts = [f"USER: {q} ASSISTANT:" for q in BLIND_PROMPTS]
+    prompts = [build_text_prompt(q) for q in BLIND_PROMPTS]
     enc = tok(prompts, return_tensors="pt", padding=True).to(lm.device)
     r = generate(lm, {"input_ids": enc["input_ids"], "attention_mask": enc["attention_mask"]},
                  None, max_new_tokens=max_new_tokens)
     nll, ntok = 0.0, 0
-    head = "USER: Write a one-sentence description of a photo. ASSISTANT:"
+    head = build_text_prompt("Write a one-sentence description of a photo.")
     ids_head = tok(head, return_tensors="pt")["input_ids"].to(lm.device)
     for c in captions:
         ids_all = tok(head + " " + c.strip(), return_tensors="pt")["input_ids"].to(lm.device)

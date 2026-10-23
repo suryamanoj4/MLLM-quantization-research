@@ -67,12 +67,49 @@ def expected_calibration_error(probs: Sequence[float], correct: Sequence[bool],
     return ece
 
 
+_LLAVA_YES = ("▁Yes", "Yes", "▁yes", "yes")
+_LLAVA_NO = ("▁No", "No", "▁no", "no")
+_QWEN_YES = ("Yes", "yes", "▁Yes", "▁yes", "ĠYes", "Ġyes")
+_QWEN_NO = ("No", "no", "▁No", "▁no", "ĠNo", "Ġno")
+
+
+def _answer_token_ids(tokenizer, words: Sequence[str]) -> list[int]:
+    """Single-token ids for yes/no in either SentencePiece (LLaVA) or BPE (Qwen)."""
+    from .model import model_family
+    if model_family() != "qwen2_5_vl":
+        ids = [tokenizer.convert_tokens_to_ids(t) for t in words]
+        return [i for i in ids if i is not None and i >= 0]
+
+    # Qwen uses `Yes` / `No` and `ĠYes` / `ĠNo`, not SentencePiece `▁Yes`.
+    # convert_tokens_to_ids returns unk for absent tokens, so encode both bare and
+    # space-prefixed forms and drop unk/eos/pad.
+    ids: set[int] = set()
+    for w in words:
+        for variant in (w, " " + w):
+            try:
+                enc = tokenizer.encode(variant, add_special_tokens=False)
+            except Exception:
+                enc = []
+            if len(enc) == 1:
+                ids.add(int(enc[0]))
+        v = tokenizer.convert_tokens_to_ids(w)
+        if isinstance(v, int) and v >= 0:
+            ids.add(int(v))
+    bad = {getattr(tokenizer, "unk_token_id", None),
+           getattr(tokenizer, "eos_token_id", None),
+           getattr(tokenizer, "pad_token_id", None),
+           getattr(tokenizer, "bos_token_id", None)}
+    return sorted(i for i in ids if i not in bad)
+
+
 def yes_no_probability(logits: torch.Tensor, tokenizer) -> torch.Tensor:
     """P(yes) / (P(yes) + P(no)) from the first generated position -- for ECE."""
-    ids_yes = [tokenizer.convert_tokens_to_ids(t) for t in ("▁Yes", "Yes", "▁yes", "yes")]
-    ids_no = [tokenizer.convert_tokens_to_ids(t) for t in ("▁No", "No", "▁no", "no")]
-    ids_yes = [i for i in ids_yes if i is not None and i >= 0]
-    ids_no = [i for i in ids_no if i is not None and i >= 0]
+    from .model import model_family
+    qwen = model_family() == "qwen2_5_vl"
+    ids_yes = _answer_token_ids(tokenizer, _QWEN_YES if qwen else _LLAVA_YES)
+    ids_no = _answer_token_ids(tokenizer, _QWEN_NO if qwen else _LLAVA_NO)
+    if not ids_yes or not ids_no:
+        raise RuntimeError("could not resolve yes/no token ids for this tokenizer")
     p = torch.softmax(logits.float(), -1)
     py = p[:, ids_yes].sum(-1)
     pn = p[:, ids_no].sum(-1)
@@ -135,7 +172,11 @@ def caption_perplexity(lm, samples, reference_captions: dict, batch_size: int = 
             out = lm.model(**enc, use_cache=False)
         logits = out.logits[:, :-1]
         target = enc["input_ids"][:, 1:]
-        n_ref = [len(tok(r, add_special_tokens=False)["input_ids"]) for r in refs]
+        from .model import model_family
+        # Qwen's BPE tokeniser can merge the leading space differently; LLaVA's
+        # original count used the bare caption, so keep that path unchanged.
+        n_ref = [len(tok((" " + r) if model_family() == "qwen2_5_vl" else r,
+                         add_special_tokens=False)["input_ids"]) for r in refs]
         lp = torch.log_softmax(logits.float(), -1)
         for b, k in enumerate(n_ref):
             if k <= 0:

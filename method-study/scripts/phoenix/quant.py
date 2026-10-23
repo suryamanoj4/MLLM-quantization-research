@@ -444,7 +444,7 @@ class FakeQuantLinear(nn.Module):
 # model surgery
 # --------------------------------------------------------------------------- #
 def _submodule_roots(model: nn.Module, targets: Sequence[str]) -> list[tuple[str, nn.Module]]:
-    """Map logical target names to actual submodules of a LLaVA-style model."""
+    """Map logical target names to actual submodules (LLaVA or Qwen2.5-VL)."""
     roots: list[tuple[str, nn.Module]] = []
     base = getattr(model, "model", model)
 
@@ -463,10 +463,15 @@ def _submodule_roots(model: nn.Module, targets: Sequence[str]) -> list[tuple[str
             roots.append((n, m))
     if "projector" in targets:
         n, m = _first(base, ["multi_modal_projector", "mm_projector", "projector"])
+        if m is None:
+            # Qwen2.5-VL's projector is the merger inside the vision tower.
+            vis = getattr(base, "visual", None)
+            if vis is not None and hasattr(vis, "merger"):
+                n, m = "visual.merger", vis.merger
         if m is not None:
             roots.append((n, m))
     if "vision" in targets:
-        n, m = _first(base, ["vision_tower", "vision_model"])
+        n, m = _first(base, ["vision_tower", "vision_model", "visual"])
         if m is not None:
             roots.append((n, m))
     if not roots:

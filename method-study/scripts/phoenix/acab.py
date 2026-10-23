@@ -330,6 +330,11 @@ def delta_from_entropy(E: torch.Tensor, cfg: ACABConfig) -> torch.Tensor:
 # --------------------------------------------------------------------------- #
 # generation loop
 # --------------------------------------------------------------------------- #
+def _needs_cache_position(lm) -> bool:
+    """Qwen2.5-VL's MRoPE needs an explicit position on decode steps; LLaVA does not."""
+    return getattr(getattr(lm.model, "config", None), "model_type", "") == "qwen2_5_vl"
+
+
 @torch.no_grad()
 def generate(lm, inputs: dict, ctrl: ACABController | None = None,
              max_new_tokens: int = 64, do_sample: bool = False,
@@ -370,6 +375,8 @@ def generate(lm, inputs: dict, ctrl: ACABController | None = None,
             out = model(**pre, use_cache=True)
         step = dict(input_ids=input_ids[:, -1:], attention_mask=attn_mask,
                     past_key_values=out.past_key_values, use_cache=True)
+        if _needs_cache_position(lm):
+            step["cache_position"] = torch.tensor([input_ids.shape[1] - 1], device=device)
         # no previous entropy exists for the first answer token, so gate it exactly
         past, logits, E0, d0 = _gated_step(model, step, ctrl, vis_cols, cfg,
                                            two_pass=True, prev_E=None)
@@ -398,6 +405,14 @@ def generate(lm, inputs: dict, ctrl: ACABController | None = None,
                                                      device=device)], dim=1)
         step = dict(input_ids=nxt[:, None], attention_mask=attn_mask,
                     past_key_values=past, use_cache=True)
+        # Qwen2.5-VL's MRoPE needs an explicit cache_position on decode steps:
+        # without it Qwen2_5_VLModel.forward takes the rope_deltas branch with
+        # delta=0 and gives every generated token position 0.  LLaVA keeps its
+        # original path (no cache_position kwarg).
+        if _needs_cache_position(lm):
+            plen = _cache_len(past)
+            if plen >= 0:
+                step["cache_position"] = torch.arange(plen, plen + 1, device=device)
         past, logits, E, d = _gated_step(model, step, ctrl if acting else None, vis_cols,
                                          cfg, two_pass=(cfg.gate == "two_pass"),
                                          prev_E=prev_E)
@@ -538,8 +553,14 @@ def measure_visual_mass(lm, inputs: dict, ctrl: ACABController | None = None,
         d = delta_from_entropy(prev_E, cfg) if ctrl is not None else torch.zeros(B, device=device)
         if ctrl is not None:
             ctrl.set_step(vis_cols, d)
+        step_kw = {}
+        if _needs_cache_position(lm):
+            plen = _cache_len(past)
+            if plen >= 0:
+                step_kw["cache_position"] = torch.arange(plen, plen + 1, device=device)
         o = model(input_ids=nxt[:, None], attention_mask=attn_mask,
-                  past_key_values=past, use_cache=True, output_attentions=True)
+                  past_key_values=past, use_cache=True, output_attentions=True,
+                  **step_kw)
         past, logits = o.past_key_values, o.logits[:, -1, :]
         sel = layers if layers is not None else range(len(o.attentions))
         m = []

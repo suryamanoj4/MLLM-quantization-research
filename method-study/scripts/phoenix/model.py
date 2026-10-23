@@ -1,6 +1,12 @@
-"""Model loading, prompt construction and visual-token localisation for LLaVA-1.5."""
+"""Model loading, prompt construction and visual-token localisation.
+
+The same code path supports LLaVA-1.5 (default) and Qwen2.5-VL.  The model family
+is detected from the checkpoint config, so the LLaVA entry point is unchanged and
+the Qwen entry point only has to pass a different `--model-id`/`--dtype`.
+"""
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -13,10 +19,42 @@ DEFAULT_MODEL = "llava-hf/llava-1.5-7b-hf"
 SYSTEM = ("A chat between a curious human and an artificial intelligence assistant. "
           "The assistant gives helpful, detailed, and polite answers to the human's questions.")
 
+# Set by load_model().  One process loads one model, so a module-level adapter keeps
+# every call site (`build_prompt(q)`) unchanged for both families.
+_FAMILY = "llava"
+_PROCESSOR = None
+
+
+def model_family() -> str:
+    """'llava' or 'qwen2_5_vl' for the currently loaded checkpoint."""
+    return _FAMILY
+
+
+def _is_qwen() -> bool:
+    return _FAMILY == "qwen2_5_vl"
+
 
 def build_prompt(question: str, with_system: bool = True) -> str:
+    """Image + question prompt in the loaded model's native chat format."""
+    if _is_qwen() and _PROCESSOR is not None:
+        messages = [{"role": "user", "content": [
+            {"type": "image"},
+            {"type": "text", "text": question},
+        ]}]
+        return _PROCESSOR.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True)
     s = f"{SYSTEM} " if with_system else ""
     return f"{s}USER: <image>\n{question} ASSISTANT:"
+
+
+def build_text_prompt(question: str, with_system: bool = False) -> str:
+    """Text-only prompt (no image token), for blind PPL and text calibration."""
+    if _is_qwen() and _PROCESSOR is not None:
+        messages = [{"role": "user", "content": [{"type": "text", "text": question}]}]
+        return _PROCESSOR.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True)
+    s = f"{SYSTEM} " if with_system else ""
+    return f"{s}USER: {question} ASSISTANT:"
 
 
 CAPTION_PROMPT = "Please describe this image in detail."
@@ -33,7 +71,7 @@ class LoadedModel:
 
     @property
     def lm(self) -> nn.Module:
-        """The decoder-only language model (LlamaModel)."""
+        """The decoder-only language model (LlamaModel / Qwen2_5_VLTextModel)."""
         return get_language_model(self.model)
 
     @property
@@ -46,7 +84,7 @@ class LoadedModel:
 
 
 def get_language_model(model: nn.Module) -> nn.Module:
-    """Return the LlamaModel (the thing that owns `.layers`), across transformers versions."""
+    """Return the text decoder that owns `.layers` (LLaVA or Qwen)."""
     cands = []
     base = getattr(model, "model", None)
     if base is not None:
@@ -70,7 +108,8 @@ def get_image_token_id(model: nn.Module, processor) -> int:
         if isinstance(v, int):
             return v
     tok = getattr(processor, "tokenizer", processor)
-    v = tok.convert_tokens_to_ids("<image>")
+    token = "<|image_pad|>" if _is_qwen() else "<image>"
+    v = tok.convert_tokens_to_ids(token)
     if v is None or v < 0:
         raise RuntimeError("cannot determine the image token id")
     return v
@@ -82,18 +121,37 @@ def load_model(model_id: str = DEFAULT_MODEL,
                attn_implementation: str = "sdpa",
                low_cpu_mem: bool = True,
                bnb_4bit: tuple | None = None) -> LoadedModel:
-    """bnb_4bit=("language",) loads real bitsandbytes NF4 kernels for those parts
-    (the Hugging Face `load_in_4bit` path) instead of FP16 weights."""
+    """Load a LLaVA-1.5 or Qwen2.5-VL checkpoint and install the prompt adapter.
+
+    bnb_4bit=("language",) loads real bitsandbytes NF4 kernels for those parts
+    (the Hugging Face `load_in_4bit` path) instead of FP16 weights.
+    """
+    global _FAMILY, _PROCESSOR
     from .env import require_cuda
     require_cuda(device)             # fail in ~1 s, not after loading 14 GB of weights
 
-    from transformers import AutoProcessor
-    try:
-        from transformers import LlavaForConditionalGeneration as _Cls
-    except ImportError:                                       # pragma: no cover
+    from transformers import AutoConfig, AutoProcessor
+    cfg = AutoConfig.from_pretrained(model_id)
+    family = getattr(cfg, "model_type", "")
+    if family == "qwen2_5_vl":
+        from transformers import Qwen2_5_VLForConditionalGeneration as _Cls
+    elif family == "llava":
+        try:
+            from transformers import LlavaForConditionalGeneration as _Cls
+        except ImportError:                                   # pragma: no cover
+            from transformers import AutoModelForVision2Seq as _Cls
+    else:                                                     # pragma: no cover
         from transformers import AutoModelForVision2Seq as _Cls
 
     processor = AutoProcessor.from_pretrained(model_id)
+    # Qwen2.5-VL's default max_pixels is 12.8M: a large image can become >16k visual
+    # tokens.  Cap it so per-image cost stays in the LLaVA range and runs are paired.
+    if family == "qwen2_5_vl":
+        ip = getattr(processor, "image_processor", None)
+        cap = int(os.environ.get("QWEN_MAX_PIXELS", "1003520"))
+        if ip is not None and cap > 0 and getattr(ip, "max_pixels", 0) > cap:
+            ip.max_pixels = cap
+
     kw = dict(attn_implementation=attn_implementation, low_cpu_mem_usage=low_cpu_mem)
     if bnb_4bit:
         try:
@@ -102,10 +160,15 @@ def load_model(model_id: str = DEFAULT_MODEL,
         except ImportError as e:
             raise RuntimeError("bnb-nf4 needs bitsandbytes: pip install bitsandbytes") from e
         keep = ["lm_head"]
-        if "vision" not in bnb_4bit:
-            keep.append("vision_tower")
-        if "projector" not in bnb_4bit:
-            keep.append("multi_modal_projector")
+        if family == "qwen2_5_vl":
+            # Qwen's vision tower and projector both live under `visual`.
+            if "vision" not in bnb_4bit or "projector" not in bnb_4bit:
+                keep.extend(["visual", "model.visual"])
+        else:
+            if "vision" not in bnb_4bit:
+                keep.append("vision_tower")
+            if "projector" not in bnb_4bit:
+                keep.append("multi_modal_projector")
         kw["quantization_config"] = BitsAndBytesConfig(
             load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=dtype,
             bnb_4bit_use_double_quant=False, llm_int8_skip_modules=keep)
@@ -125,6 +188,7 @@ def load_model(model_id: str = DEFAULT_MODEL,
         tok.pad_token = tok.unk_token or tok.eos_token
     tok.padding_side = "left"
 
+    _FAMILY, _PROCESSOR = family, processor
     return LoadedModel(model=model, processor=processor,
                        image_token_id=get_image_token_id(model, processor),
                        device=torch.device(device), dtype=dtype)
@@ -136,16 +200,16 @@ def load_model(model_id: str = DEFAULT_MODEL,
 def visual_mask(input_ids: torch.Tensor, image_token_id: int) -> torch.Tensor:
     """Boolean [B, T] mask, True at visual-token positions.
 
-    With transformers >= 4.47 the LLaVA processor expands `<image>` into
-    `num_image_tokens` (576 for CLIP-L/14-336 with patch 14) copies, so the mask is
-    exact and needs no offset arithmetic.
+    LLaVA expands `<image>` into 576 copies; Qwen expands `<|image_pad|>` into
+    `image_grid_thw.prod(-1) / merge_size**2` copies (variable per image).  Because
+    the mask is taken from `input_ids`, both are exact without offset arithmetic.
     """
     m = input_ids == image_token_id
     if not bool(m.any()):
         raise RuntimeError(
-            "no image tokens found in input_ids. Your processor is not expanding "
-            "<image>; upgrade transformers or set processor.patch_size / "
-            "processor.vision_feature_select_strategy from the model config."
+            "no image tokens found in input_ids. The processor did not expand the "
+            "image placeholder. Check that build_prompt produced the model's native "
+            "format (LLaVA '<image>', Qwen '<|vision_start|><|image_pad|><|vision_end|>')."
         )
     return m
 

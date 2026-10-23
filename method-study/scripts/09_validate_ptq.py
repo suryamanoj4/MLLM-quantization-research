@@ -4,10 +4,10 @@
 Reviewers will ask. The standard answer is WikiText-2 perplexity (2048-token windows of
 the test split), the number every PTQ paper reports. Two ways to run it:
 
-  1. On LLaVA's own language model (no extra download). There are no published numbers
-     for it, so the check is *relative*: at the same bit width, GPTQ and AWQ must close
-     most of RTN's perplexity gap to FP16, rotation must rescue W4A4, SmoothQuant W8A8
-     must sit near FP16.
+  1. On the loaded VLM's own language model (LLaVA or Qwen2.5-VL, no extra download).
+     There are no published numbers for it, so the check is *relative*: at the same
+     bit width, GPTQ and AWQ must close most of RTN's perplexity gap to FP16, rotation
+     must rescue W4A4, SmoothQuant W8A8 must sit near FP16.
 
         python scripts/09_validate_ptq.py --coco-root data/coco-mini
 
@@ -51,10 +51,10 @@ LLAMA2_7B_REF = {"fp16": 5.47, "w4a16": 5.73, "w4a16:method=gptq": 5.69,
 
 
 def load_any(model_id, dtype, device):
-    """LLaVA through phoenix.model; any other causal LM directly."""
+    """VLM (LLaVA/Qwen) through phoenix.model; any other causal LM directly."""
     from transformers import AutoConfig
     cfg = AutoConfig.from_pretrained(model_id)
-    if getattr(cfg, "model_type", "") == "llava":
+    if getattr(cfg, "model_type", "") in ("llava", "qwen2_5_vl"):
         return load_model(model_id, dtype=dtype, device=device), True
     from transformers import AutoModelForCausalLM, AutoTokenizer
     tok = AutoTokenizer.from_pretrained(model_id)
@@ -116,11 +116,12 @@ def main():
             print(f"[skip] {spec}: {results[spec]['ppl']:.3f}")
             continue
         t0 = time.perf_counter()
-        lm, is_llava = load_any(a.model_id, resolve_dtype(a.dtype), a.device)
-        calib = a.calib or ("mm" if is_llava else "wiki")
+        lm, is_vlm = load_any(a.model_id, resolve_dtype(a.dtype), a.device)
+        calib = a.calib or ("mm" if is_vlm else "wiki")
         cfg = QuantConfig.from_ladder(spec, calib=calib, n_calib=a.n_calib)
-        if cfg.calib in ("mm", "text") and not is_llava:
-            raise SystemExit(f"{spec}: calib={cfg.calib} needs a LLaVA model; use --calib wiki")
+        if cfg.calib in ("mm", "text") and not is_vlm:
+            raise SystemExit(f"{spec}: calib={cfg.calib} needs a vision-language model; "
+                             "use --calib wiki")
         if cfg.backend == "bnb":
             print(f"[skip] {spec}: real-kernel rungs are validated in the ladder, not here")
             continue

@@ -296,6 +296,19 @@ images are skipped, so it only fetches the delta.
 
 ## 4. Running it
 
+There are two entry points in this directory:
+
+| Entry point | Model | Outputs |
+|---|---|---|
+| `bash run_all.sh` | LLaVA-1.5-7B (default, unchanged) | `runs/`, `figures/` |
+| `bash run_all_qwen.sh` | Qwen2.5-VL-7B | `runs_qwen/`, `figures_qwen/` |
+
+Both run the **same** scripts in `scripts/`, stage for stage. Qwen support is a
+small, backward-compatible model-family adapter in `phoenix/model.py` (plus the
+MRoPE `cache_position` fix and Qwen yes/no token ids); there is no duplicated
+pipeline. See [`qwen/README.md`](qwen/README.md) for why the code is shared rather
+than copied, and for the Qwen-specific caveats.
+
 ```bash
 bash run_all.sh
 ```

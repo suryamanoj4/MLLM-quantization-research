@@ -26,6 +26,7 @@ def main():
     p.add_argument("--n-pope-images", type=int, default=50)
     p.add_argument("--pope-split", default="adversarial")
     p.add_argument("--chair-batch-size", type=int, default=4)
+    p.add_argument("--pope-batch-size", type=int, default=8)
     p.add_argument("--max-new-tokens", type=int, default=128)
     p.add_argument("--with-pope", action="store_true")
     p.add_argument("--synonyms", default=None)
@@ -66,7 +67,8 @@ def main():
                 g = [x for tr in r["traces"] for row in tr["gated"] for x in row]
                 sc["gated_frac"] = sum(g) / max(len(g), 1)
                 if pope is not None:
-                    pm = run_pope(lm, pope, ctrl, batch_size=8, verbose=False)
+                    pm = run_pope(lm, pope, ctrl, batch_size=args.pope_batch_size,
+                                  verbose=False)
                     sc["pope_f1"] = pm["f1"]
                     sc["pope_yes"] = pm["yes_ratio"]
             row = {"tau_pct": q, "tau": tau, "alpha": a, **sc}
