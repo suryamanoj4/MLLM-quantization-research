@@ -244,7 +244,9 @@ def blind_fluency(lm, captions: list[str], max_new_tokens: int = 64) -> dict:
         k = ids_all.shape[1] - ids_head.shape[1]
         if k <= 0:
             continue
-        logits = lm.model(input_ids=ids_all, use_cache=False).logits[:, :-1].float()
+        # explicit mask: without one, Qwen's 3-D MRoPE position ids crash transformers' mask builder
+        logits = lm.model(input_ids=ids_all, attention_mask=torch.ones_like(ids_all),
+                          use_cache=False).logits[:, :-1].float()
         tgt = ids_all[:, 1:]
         lp = torch.log_softmax(logits, -1)[0, -k:].gather(-1, tgt[0, -k:, None]).squeeze(-1)
         nll -= float(lp.sum())

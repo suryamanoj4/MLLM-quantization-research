@@ -73,7 +73,9 @@ def wiki_ppl(lm, ids: torch.Tensor, seqlen: int, max_windows: int) -> float:
     nll = 0.0
     for i in range(n):
         x = ids[i * seqlen:(i + 1) * seqlen][None].to(lm.device)
-        logits = lm.model(input_ids=x, use_cache=False).logits[:, :-1].float()
+        # explicit mask: without one, Qwen's 3-D MRoPE position ids crash transformers' mask builder
+        logits = lm.model(input_ids=x, attention_mask=torch.ones_like(x),
+                          use_cache=False).logits[:, :-1].float()
         nll += float(torch.nn.functional.cross_entropy(
             logits.reshape(-1, logits.shape[-1]), x[:, 1:].reshape(-1), reduction="sum"))
     return math.exp(nll / (n * (seqlen - 1)))
