@@ -81,9 +81,16 @@ Gate 2 (300 captions, 100 POPE images) replicates the LLaVA shape:
   +2.9 points, CHAIR_i −0.005 n.s. — provisional (no coverage CI).
 - A-CAB: best CHAIR_i 0.078 vs 0.091, but coverage 0.558 vs 0.580 — no
   coverage-preserving win.
+- Gate 1 (16/17, v2): weight-only omission replicates (W3 RTN coverage −0.090*);
+  W4A16 RTN is ok; NF4 / W3 GPTQ-mm / W4A8+SQ move toward fallback; `w4a4:rot`
+  coverage −0.070*, POPE +0.005; `rot+gptq` POPE-F1 −0.063*.
+- Activation attribution (v2): text tokens at A4 → BROKEN (100%), image tokens at
+  A4 → degraded, LM intact (F1 −0.300*) — the same trigger as LLaVA. Qwen is
+  already broken at W4A5 and degraded at W4A6.
 
-**Two caveats.** Qwen Gate-1 is partial (11/17; GPTQ text calibration hit a
-non-positive-definite Hessian). Qwen Gate-2 blind/caption PPL is not usable (FP16
+**Two caveats.** Qwen Gate-1 is 16/17: GPTQ with text calibration hits a
+non-positive-definite Hessian on the 18,944-wide down_proj, even with `damp=0.1`.
+On a 40 GB card GPTQ also needs `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`. Qwen Gate-2 blind/caption PPL is not usable (FP16
 blind PPL ≈146 vs WikiText 8.28), consistent with token-boundary misalignment when
 a caption is appended to the chat template; use `validate_ptq.json` for LM health.
 No visual attention / `r_pb` measurement exists for Qwen yet.

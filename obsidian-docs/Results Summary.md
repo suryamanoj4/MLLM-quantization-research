@@ -17,7 +17,7 @@ status: in-progress
 
 ## The storyline (one paragraph)
 
-Quantization does not linearly break hallucination — it changes its **shape**. With weight-only W4/W3 (real methods), LLaVA-1.5-7B still reads the image (POPE-F1 within ~1 pt, LM fluent) but systematically **omits objects — especially small ones** (2–3× the drop rate) — and its visual attention mass falls ~14% at W4A16 with the entropy of image attention rising ~0.8 bits. True *fallback* (the false-“yes” / invented-object regime) appears only when **activation** quantization enters the picture, and the collapse is triggered specifically by **text-token** 4-bit activations, not image-token ones — naive simulated W4A4 breaks the decoder entirely, while the realistic rotation+GPTQ recipe stays fluent and degrades gracefully. The evidence study confirms the grounding-attention coupling (hallucinated mentions get less visual attention) at every functioning precision — the signal a decoding-time intervention can use. The counters, however, are not free wins: at probe n, A-CAB only helps at small α (α≥2 just buys shorter, loopier captions: coverage 0.77→0.52, rep-4 0.01→0.31), and LoRAS's error is only ~60% linearly recoverable (K ceiling 0.67 / V 0.58) with no CHAIR gain yet at n=100 — except the text-side variant, which roughly halves the object drop on W3. Decoding choice itself moved CHAIR_s more (0.39 greedy vs 0.51 nucleus) than any W8/W4 rung — the strongest single lever measured so far remains **decoding-time**, which is exactly where GAD/A-CAB sit. On **Qwen2.5-VL-7B** the omission/small-object/text-position pattern replicates, and LoRAS-T again recovers the W3 loss; A-CAB does not produce a coverage-preserving gain, and the attention comparison is still missing.
+Quantization does not linearly break hallucination — it changes its **shape**. With weight-only W4/W3 (real methods), LLaVA-1.5-7B still reads the image (POPE-F1 within ~1 pt, LM fluent) but systematically **omits objects — especially small ones** (2–3× the drop rate) — and its visual attention mass falls ~14% at W4A16 with the entropy of image attention rising ~0.8 bits. True *fallback* (the false-“yes” / invented-object regime) appears only when **activation** quantization enters the picture, and the collapse is triggered specifically by **text-token** 4-bit activations, not image-token ones — naive simulated W4A4 breaks the decoder entirely, while the realistic rotation+GPTQ recipe stays fluent and degrades gracefully. The evidence study confirms the grounding-attention coupling (hallucinated mentions get less visual attention) at every functioning precision — the signal a decoding-time intervention can use. The counters, however, are not free wins: at probe n, A-CAB only helps at small α (α≥2 just buys shorter, loopier captions: coverage 0.77→0.52, rep-4 0.01→0.31), and LoRAS's error is only ~60% linearly recoverable (K ceiling 0.67 / V 0.58) with no CHAIR gain yet at n=100 — except the text-side variant, which roughly halves the object drop on W3. Decoding choice itself moved CHAIR_s more (0.39 greedy vs 0.51 nucleus) than any W8/W4 rung — the strongest single lever measured so far remains **decoding-time**, which is exactly where GAD/A-CAB sit. On **Qwen2.5-VL-7B** the omission/small-object/text-position pattern replicates in direction, the **text-token A4 collapse trigger replicates**, and LoRAS-T again halves the W3 object drop; magnitudes differ (Qwen drops 1.4–2.5× more of its own FP16 objects, breaks already at A5, and its realistic W4A4 loses 6.3 POPE-F1 points), per-rung Gate-1 verdicts do not carry over, A-CAB does not produce a coverage-preserving gain, and the attention comparison is still missing.
 
 ---
 
@@ -53,9 +53,10 @@ Quantization does not linearly break hallucination — it changes its **shape**.
 > [!info] Scope
 > Qwen2.5-VL-7B-Instruct, bf16, 28 decoder layers, 28/4 GQA, 196 wrapped Linears
 > (6.53B parameters). **Gate 2 is complete** (13 rungs, 300 captions, 100 POPE
-> images); **Gate 1 is partial** (11/17 rungs — the run stopped at
-> `w3a16:method=gptq:calib=text` with a non-positive-definite Hessian). No visual
-> attention / `r_pb` measurement is present in the archive.
+> images); **Gate 1 is 16/17** (`w3a16:method=gptq:calib=text` fails with a
+> non-positive-definite Hessian, also at `damp=0.1`); the **diagnostic / attribution
+> ladder is complete**. No visual attention / `r_pb` measurement is present in the
+> archive.
 
 **Baseline first — Qwen is a more conservative model.** Absolute scores are not
 comparable across models; compare deltas.
@@ -129,7 +130,7 @@ coverage 0.788 vs 0.770). Treat A-CAB as model-dependent and not yet a win.
 | FP16 | 7.27 | 8.28 |
 | NF4 | 7.39 | 8.38 |
 | W8A8 / W8A8+SQ | 7.30 / 7.31 | 8.44 / 8.35 |
-| W4A16 / GPTQ | 7.50 / 7.56 | 8.83 / 8.43 |
+| W4A16 RTN / GPTQ | 7.50 / 7.56 (mm-calib) | 8.83 / 8.43 (wiki-calib) |
 | W3 RTN | 9.14 | 10.66 |
 | W3 AWQ (wiki) | 8.47 | 10.29 |
 | W3 GPTQ (wiki) | 8.49 | 9.32 |
@@ -148,15 +149,24 @@ coverage 0.788 vs 0.770). Treat A-CAB as model-dependent and not yet a win.
 - Qwen’s realistic W4A4 (`rot+gptq`) **does** move POPE-F1 (−6.3 points), unlike
   LLaVA; weight-only W3 still leaves POPE-F1 flat while coverage falls. The
   benchmark is not uniformly blind on Qwen.
-- Gate 1 is incomplete (11/17); the missing activation/rotation rows are covered
-  only by Gate 2’s `rot+gptq` cell.
+- **Gate 1 (16/17) — direction carries, verdicts don't.** Weight-only RTN/AWQ-wiki/
+  GPTQ-wiki rungs lose coverage (W3 RTN −0.090*), W8A8/SQ are ok. But W4A16 RTN is ok
+  (LLaVA: fallback), NF4 / W3 GPTQ-mm / W4A8+SQ move toward **fallback** (NF4 F1
+  +0.018*, W4A8+SQ +0.014*), and `w4a4:rot` loses coverage (−0.070*) rather than POPE
+  (+0.005; LLaVA −2.0*). Full table: [[Results Comparison]] §8.
+- **Attribution replicates, with lower tolerance.** Text @A4 only → BROKEN (100%),
+  image @A4 only → degraded, LM intact (F1 −0.300*). W4A5 is already BROKEN and W4A6
+  degraded (LLaVA: W4A5 degraded, W4A6 ok). Token probe: text positions carry the
+  largest outliers (down_proj input max |x| 2288 vs 310).
+- PPL checks: AWQ/GPTQ pass on Qwen (GPTQ 72% / 56% of RTN's gap at W4 / W3), unlike
+  LLaVA; only AWQ@W3 fails (15%).
 
 ---
 
 ## 2. What the two studies say together
 
 ### 2.1 The W4A4 reconciliation — a simulated-quantization artifact becomes a finding
-The evidence study's W4A4 cell collapsed (near-degenerate output) under naive per-token int4 activations. The method study shows this collapse is a **toolchain artifact, not the model's regime**: with rotation (+GPTQ), W4A4 keeps the LM fluent (PPL 8.53) and degrades gracefully (omission). Two consequences: (a) the proposal's "largest drop at W4A4" predictions (H1/H2) **were never testable with the simulated rung** — the realistic W4A4 row is `rot+gptq`, and it should be folded back into the evidence ladder; (b) the collapse itself is *informative* — the fact that text-position (not image-position) 4-bit activations break the model is direct support for the outlier/massive-activation account the project rests on.
+The evidence study's W4A4 cell collapsed (near-degenerate output) under naive per-token int4 activations. The method study shows this collapse is a **toolchain artifact, not the model's regime**: with rotation (+GPTQ), W4A4 keeps the LM fluent (PPL 8.53) and degrades gracefully (omission). Two consequences: (a) the proposal's "largest drop at W4A4" predictions (H1/H2) **were never testable with the simulated rung** — the realistic W4A4 row is `rot+gptq`, and it should be folded back into the evidence ladder; (b) the collapse itself is *informative* — the fact that text-position (not image-position) 4-bit activations break the model is direct support for the outlier/massive-activation account the project rests on. On Qwen2.5-VL the same trigger holds, but the realistic `rot+gptq` W4A4 is *not* graceful (POPE-F1 −6.3*), so "rotation makes W4A4 safe" is model-dependent.
 
 ### 2.2 Two failure shapes, not one
 At n=100 the data describes **omission** (weight quantization: reads less, mentions fewer/smaller objects) and **fallback** (activation collapse / w4a4:rot: more linguistically-plausible wrong output). The evidence study's yes-ratio +1.2–1.7 pts on W4A16 is the fallback seed even in the weight axis, but the dominant weight-axis response is omission. The proposal should frame the phenomenon as a **shape-shifting degradation** — omission first (weights), then fallback (activations) — rather than a monotone hallucination curve. H1 as written (monotone CHAIR/POPE rise) is the least supported claim at n=100.
@@ -197,6 +207,9 @@ Greedy vs nucleus moved CHAIR_s by 12 pts (0.39 vs 0.51) — more than any W8/W4
 | **Qwen LoRAS-T (W3)** | coverage −0.009 n.s. vs FP16 (recovers +5.2 vs W3); small drop 0.360→0.209; 12.9M | `qwen-2.5vl-2026-10-25/` |
 | **Qwen KV-LoRAS** | ceilings 0.22–0.37 (vs LLaVA 0.58–0.67); 2×2 coverage +2.9 points, CHAIR_i −0.005 n.s. | `qwen-2.5vl-2026-10-25/` |
 | **Qwen A-CAB** | best CHAIR_i 0.078 vs 0.091, but coverage 0.558 vs 0.580; no clean win | `qwen-2.5vl-2026-10-25/` |
+| **Qwen collapse trigger** | text @A4 → BROKEN (100%); image @A4 → degraded, F1 −0.300*; W4A5 BROKEN | [[Results Comparison]] §9 |
+| **Qwen Gate 1** | 16/17; W3 RTN COV −0.090*; `w4a4:rot` COV −0.070*, F1 +0.005; `rot+gptq` F1 −0.063* | [[Results Comparison]] §8 |
+| **Qwen latency (W4A8)** | decode overhead LoRAS +4.6%, A-CAB +8.6%, both +13.9% | [[Results Comparison]] §11 |
 
 ---
 
@@ -210,7 +223,8 @@ Greedy vs nucleus moved CHAIR_s by 12 pts (0.39 vs 0.51) — more than any W8/W4
 - [ ] Methods note for the write-up: AWQ/GPTQ re-implementation checks did not pass; rotation + WikiText-calibrated GPTQ are the trustworthy tools.
 - [ ] **Qwen attention / `r_pb` measurement** — the archive has no visual-attention probe, so the LLaVA mechanism result has no cross-model counterpart yet.
 - [ ] **Fix Qwen caption/blind-PPL token alignment** and rerun the LM-health guard; current Gate-2 `lm_damaged` flags are provisional.
-- [ ] **Complete Qwen Gate 1** (11/17): `w3a16:method=gptq:calib=text` hit a non-positive-definite Hessian; W8A8/SQ and the activation-attribution arms are missing.
+- [x] **Complete Qwen Gate 1** — 16/17 done (v2). Remaining: `w3a16:method=gptq:calib=text` fails with a non-positive-definite Hessian even at `damp=0.1`; needs a Cholesky fallback in `phoenix/ptq/gptq.py`.
+- [x] **Qwen activation-attribution arms** — done (v2): text-position A4 is the collapse trigger, as on LLaVA.
 - [ ] **Qwen LoRAS n-confirmation** — the +2.9 coverage points in the 2×2 have no paired CI in the artifact.
 
 ## Related Notes

@@ -1,0 +1,572 @@
+{
+  "reference": "fp16",
+  "summary": {
+    "fp16": {
+      "verdict": "reference",
+      "direction": "none",
+      "health_reasons": [],
+      "lm_damaged": false,
+      "vs_reference": {},
+      "ptq": {}
+    },
+    "w4a8": {
+      "verdict": "ok (no significant change)",
+      "direction": "none",
+      "health_reasons": [],
+      "lm_damaged": false,
+      "vs_reference": {
+        "adversarial": {
+          "delta": -0.0024192264841635946,
+          "lo": -0.020067238823111788,
+          "hi": 0.013289036544850585,
+          "p": 0.816,
+          "significant": false,
+          "n_clusters": 60
+        },
+        "random": {
+          "delta": -0.0026825062272466393,
+          "lo": -0.019161982626469065,
+          "hi": 0.013437849944008984,
+          "p": 0.828,
+          "significant": false,
+          "n_clusters": 60
+        },
+        "pope_f1": {
+          "delta": -0.0011883541295305555,
+          "lo": -0.016179048726555068,
+          "hi": 0.012354242572486185,
+          "p": 0.87,
+          "significant": false,
+          "n_clusters": 60
+        },
+        "pope_precision": {
+          "delta": 0.007688492063492092,
+          "lo": -0.0029971390945007226,
+          "hi": 0.021897810218978075,
+          "p": 0.275,
+          "significant": false,
+          "n_clusters": 60
+        },
+        "pope_recall": {
+          "delta": -0.005555555555555536,
+          "lo": -0.02592592592592602,
+          "hi": 0.012962962962962954,
+          "p": 0.64,
+          "significant": false,
+          "n_clusters": 60
+        },
+        "pope_yes": {
+          "delta": -0.005555555555555591,
+          "lo": -0.016666666666666663,
+          "hi": 0.005555555555555536,
+          "p": 0.369,
+          "significant": false,
+          "n_clusters": 60
+        },
+        "pope_auroc": {
+          "delta": -0.0012568587105623585,
+          "lo": -0.005078875171467767,
+          "hi": 0.002253086419753081,
+          "p": 0.5,
+          "significant": false,
+          "n_clusters": 60
+        },
+        "chair_i": {
+          "delta": -0.021533613445378158,
+          "lo": -0.06263616557734204,
+          "hi": 0.017226890756302515,
+          "p": 0.326,
+          "significant": false,
+          "n_clusters": 40
+        },
+        "coverage": {
+          "delta": -0.021390374331550777,
+          "lo": -0.08139534883720934,
+          "hi": 0.033333333333333326,
+          "p": 0.552,
+          "significant": false,
+          "n_clusters": 40
+        },
+        "length": {
+          "delta": -0.5750000000000028,
+          "lo": -2.4000000000000057,
+          "hi": 1.0750000000000028,
+          "p": 0.551,
+          "significant": false,
+          "n_clusters": 40
+        },
+        "blind_ppl_ratio": 0.8062815085487048
+      },
+      "ptq": {}
+    },
+    "w4a6": {
+      "verdict": "degraded (LM damaged too)",
+      "direction": "omission",
+      "health_reasons": [],
+      "lm_damaged": true,
+      "vs_reference": {
+        "adversarial": {
+          "delta": -0.11302502000904757,
+          "lo": -0.15364523817297338,
+          "hi": -0.07501194457716198,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "random": {
+          "delta": -0.12316840093438086,
+          "lo": -0.1673717978520619,
+          "hi": -0.08283002588438315,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_f1": {
+          "delta": -0.11554392849356865,
+          "lo": -0.15681193967974316,
+          "hi": -0.07910786324554131,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_precision": {
+          "delta": 0.01222363945578231,
+          "lo": -0.0007575049097541253,
+          "hi": 0.02836363636363637,
+          "p": 0.1,
+          "significant": false,
+          "n_clusters": 60
+        },
+        "pope_recall": {
+          "delta": -0.15740740740740733,
+          "lo": -0.21111111111111114,
+          "hi": -0.10925925925925917,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_yes": {
+          "delta": -0.08333333333333337,
+          "lo": -0.11296296296296293,
+          "hi": -0.05833333333333329,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_auroc": {
+          "delta": -0.020426954732510216,
+          "lo": -0.0352469135802469,
+          "hi": -0.009194101508916308,
+          "p": 0.002,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "chair_i": {
+          "delta": 0.06911953970777499,
+          "lo": 0.01578439481665289,
+          "hi": 0.11914744933612857,
+          "p": 0.012,
+          "significant": true,
+          "n_clusters": 40
+        },
+        "coverage": {
+          "delta": -0.0802139037433155,
+          "lo": -0.1319796954314721,
+          "hi": -0.02717391304347827,
+          "p": 0.005,
+          "significant": true,
+          "n_clusters": 40
+        },
+        "length": {
+          "delta": 0.25,
+          "lo": -1.2750000000000057,
+          "hi": 1.7749999999999915,
+          "p": 0.838,
+          "significant": false,
+          "n_clusters": 40
+        },
+        "blind_ppl_ratio": 1.13548278993762
+      },
+      "ptq": {}
+    },
+    "w4a5": {
+      "verdict": "BROKEN: 99% unparseable POPE answers; coverage 0.00 vs 0.58 at reference; captions 6 words vs 108",
+      "direction": "n/a",
+      "health_reasons": [
+        "99% unparseable POPE answers",
+        "coverage 0.00 vs 0.58 at reference",
+        "captions 6 words vs 108"
+      ],
+      "lm_damaged": true,
+      "vs_reference": {
+        "adversarial": {
+          "delta": -0.7936760570852565,
+          "lo": -0.845321038251366,
+          "hi": -0.7329032258064516,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "random": {
+          "delta": -0.8015513897866838,
+          "lo": -0.8600095556617295,
+          "hi": -0.7343364024253312,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_f1": {
+          "delta": -0.7926343729263436,
+          "lo": -0.8460279616242918,
+          "hi": -0.7296012961632898,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_precision": {
+          "delta": -0.109375,
+          "lo": -0.9895287958115183,
+          "hi": 0.028169014084507005,
+          "p": 0.685,
+          "significant": false,
+          "n_clusters": 60
+        },
+        "pope_recall": {
+          "delta": -0.687037037037037,
+          "lo": -0.7611111111111111,
+          "hi": -0.611111111111111,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_yes": {
+          "delta": -0.34814814814814815,
+          "lo": -0.3861111111111111,
+          "hi": -0.3101851851851852,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_auroc": {
+          "delta": -0.44036865569272976,
+          "lo": -0.4929046639231825,
+          "hi": -0.38505315500685877,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "chair_i": {
+          "delta": -0.08403361344537816,
+          "lo": -0.13636363636363635,
+          "hi": -0.03571428571428571,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 40
+        },
+        "coverage": {
+          "delta": -0.5828877005347594,
+          "lo": -0.6564102564102564,
+          "hi": -0.5108695652173914,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 40
+        },
+        "length": {
+          "delta": -101.2,
+          "lo": -104.5,
+          "hi": -97.35,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 40
+        },
+        "blind_ppl_ratio": 39.50240196112811
+      },
+      "ptq": {}
+    },
+    "w4a4": {
+      "verdict": "BROKEN: 100% unparseable POPE answers; coverage 0.01 vs 0.58 at reference; captions 29 words vs 108",
+      "direction": "n/a",
+      "health_reasons": [
+        "100% unparseable POPE answers",
+        "coverage 0.01 vs 0.58 at reference",
+        "captions 29 words vs 108"
+      ],
+      "lm_damaged": true,
+      "vs_reference": {
+        "adversarial": {
+          "delta": -0.8155339805825242,
+          "lo": -0.8633540372670807,
+          "hi": -0.7635135135135136,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "random": {
+          "delta": -0.8235294117647058,
+          "lo": -0.871473354231975,
+          "hi": -0.7713310580204779,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_f1": {
+          "delta": -0.8181818181818181,
+          "lo": -0.8669438669438669,
+          "hi": -0.7659574468085105,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_precision": {
+          "delta": -0.984375,
+          "lo": -0.9973821989528796,
+          "hi": -0.9679802955665024,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_recall": {
+          "delta": -0.7,
+          "lo": -0.7722222222222223,
+          "hi": -0.6277777777777778,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_yes": {
+          "delta": -0.35555555555555557,
+          "lo": -0.39351851851851855,
+          "hi": -0.31851851851851853,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_auroc": {
+          "delta": -0.48718621399176953,
+          "lo": -0.5330504115226338,
+          "hi": -0.44335905349794247,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "chair_i": {
+          "delta": 0.6937441643323996,
+          "lo": 0.3233082706766917,
+          "hi": 0.9514563106796117,
+          "p": 0.001,
+          "significant": true,
+          "n_clusters": 40
+        },
+        "coverage": {
+          "delta": -0.5721925133689839,
+          "lo": -0.6519337016574586,
+          "hi": -0.5,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 40
+        },
+        "length": {
+          "delta": -78.275,
+          "lo": -80.85,
+          "hi": -75.75,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 40
+        },
+        "blind_ppl_ratio": 206.86503564565555
+      },
+      "ptq": {}
+    },
+    "w4a4:abits_text=8": {
+      "verdict": "degraded (LM intact: grounding-specific)",
+      "direction": "omission",
+      "health_reasons": [],
+      "lm_damaged": false,
+      "vs_reference": {
+        "adversarial": {
+          "delta": -0.30313728636764825,
+          "lo": -0.36973970235772813,
+          "hi": -0.23894683218489432,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "random": {
+          "delta": -0.30108043217286906,
+          "lo": -0.3651411879259979,
+          "hi": -0.241273662326294,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_f1": {
+          "delta": -0.30037359900373595,
+          "lo": -0.365966028616631,
+          "hi": -0.23982967760990748,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_precision": {
+          "delta": 0.010361842105263142,
+          "lo": -0.00787893346144608,
+          "hi": 0.029255319148936088,
+          "p": 0.279,
+          "significant": false,
+          "n_clusters": 60
+        },
+        "pope_recall": {
+          "delta": -0.35,
+          "lo": -0.41851851851851846,
+          "hi": -0.27962962962962956,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_yes": {
+          "delta": -0.17962962962962964,
+          "lo": -0.21481481481481482,
+          "hi": -0.1435185185185185,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_auroc": {
+          "delta": -0.02258401920438957,
+          "lo": -0.03809499314128939,
+          "hi": -0.007371399176954729,
+          "p": 0.006,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "chair_i": {
+          "delta": -0.027853838164479283,
+          "lo": -0.09049255441008018,
+          "hi": 0.03518312985571587,
+          "p": 0.348,
+          "significant": false,
+          "n_clusters": 40
+        },
+        "coverage": {
+          "delta": -0.1336898395721925,
+          "lo": -0.20348837209302328,
+          "hi": -0.060109289617486295,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 40
+        },
+        "length": {
+          "delta": 0.4000000000000057,
+          "lo": -1.1500000000000057,
+          "hi": 1.75,
+          "p": 0.618,
+          "significant": false,
+          "n_clusters": 40
+        },
+        "blind_ppl_ratio": 0.8062815085487048
+      },
+      "ptq": {}
+    },
+    "w4a4:abits_image=8": {
+      "verdict": "BROKEN: 100% unparseable POPE answers; coverage 0.01 vs 0.58 at reference; captions 24 words vs 108",
+      "direction": "n/a",
+      "health_reasons": [
+        "100% unparseable POPE answers",
+        "coverage 0.01 vs 0.58 at reference",
+        "captions 24 words vs 108"
+      ],
+      "lm_damaged": true,
+      "vs_reference": {
+        "adversarial": {
+          "delta": -0.8155339805825242,
+          "lo": -0.8633540372670807,
+          "hi": -0.7635135135135136,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "random": {
+          "delta": -0.8235294117647058,
+          "lo": -0.871473354231975,
+          "hi": -0.7713310580204779,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_f1": {
+          "delta": -0.8181818181818181,
+          "lo": -0.8669438669438669,
+          "hi": -0.7659574468085105,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_precision": {
+          "delta": -0.984375,
+          "lo": -0.9973821989528796,
+          "hi": -0.9679802955665024,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_recall": {
+          "delta": -0.7,
+          "lo": -0.7722222222222223,
+          "hi": -0.6277777777777778,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_yes": {
+          "delta": -0.35555555555555557,
+          "lo": -0.39351851851851855,
+          "hi": -0.31851851851851853,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "pope_auroc": {
+          "delta": -0.4688254458161865,
+          "lo": -0.5172427983539094,
+          "hi": -0.4200137174211248,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 60
+        },
+        "chair_i": {
+          "delta": 0.7826330532212885,
+          "lo": 0.5721784776902887,
+          "hi": 0.9327731092436975,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 40
+        },
+        "coverage": {
+          "delta": -0.5721925133689839,
+          "lo": -0.6477272727272727,
+          "hi": -0.5,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 40
+        },
+        "length": {
+          "delta": -83.25,
+          "lo": -85.6,
+          "hi": -80.85,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 40
+        },
+        "blind_ppl_ratio": 206.86503564565555
+      },
+      "ptq": {}
+    }
+  },
+  "candidates": [
+    "w4a6",
+    "w4a4:abits_text=8"
+  ],
+  "grounding_specific": [
+    "w4a4:abits_text=8"
+  ]
+}
