@@ -27,6 +27,9 @@ graph TD
     D --> R
     C --> M["Method Study"]
     M --> R
+    D --> RC["Results Comparison"]
+    M --> RC
+    RC --> R
 ```
 
 ## Notes
@@ -39,6 +42,7 @@ graph TD
 | [[Results]] | Append-only experiment log + hypothesis verdict tracker | ⏳ Running (100-img run logged) |
 | [[Method Study]] | **Methods phase (Phoenix, C2 & C3):** LoRAS + A-CAB on practically quantized LLaVA **and Qwen2.5-VL-7B** — PTQ validation, Gate 1/2 verdicts, drift profiling, 2×2 ablation, A-CAB sweep, token probe, LoRAS ceilings | ⏳ In progress (LLaVA n=100 + Qwen Gate 2 complete; Qwen Gate 1 partial) |
 | [[Results Summary]] | **The one-place synthesis:** verdict dashboard for both studies, the cross-study inference (omission vs fallback, W4A4 reconciliation, decoding as the strongest lever), LLaVA↔Qwen comparison, cheat-sheet numbers | 🔒 Synced with the detail notes and the 2026-10-25 Qwen run |
+| [[Results Comparison]] | **Single master table** for LLaVA-1.5-7B vs Qwen2.5-VL-7B: Gate-2 rungs, object drops, 2×2, methods, quantizer PPL, A-CAB sweep, Gate-1 partial | ✅ 2026-10-25 |
 
 ## One-Paragraph Pitch
 

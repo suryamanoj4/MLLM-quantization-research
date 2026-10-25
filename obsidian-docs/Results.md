@@ -202,47 +202,129 @@ W4 weights make image attention more scattered (+0.8 bits entropy) and less stab
 > `obsidian-docs/results/qwen-2.5vl-2026-10-25/` (compact reports, eval cells,
 > figures); raw run from `qwen_results.tgz`. Entry point `run_all_qwen.sh`; same
 > shared pipeline as LLaVA. Model: Qwen2.5-VL-7B-Instruct, bf16, 28 layers,
-> 28/4 GQA, 196 wrapped Linears (6.53B params).
+> 28/4 GQA, 196 wrapped Linears (6.53B params). Artifacts: `gate2_ladder_report.json`,
+> `gate2_object_analysis.json`, `eval/*.json`, `validate_ptq.json`, `token_probe.json`,
+> `acab_sweep.json`, `loras_diagnostics.json`, `drift.json`, `lorast.json`,
+> `latency.json`.
+>
+> Full cross-model table: [[Results Comparison]]. Gate 2 is complete (13 rungs,
+> 300 captions, 100 POPE images); Gate 1 is partial (11/17; stopped at
+> `w3a16:method=gptq:calib=text` with a non-positive-definite Hessian).
 
-- **Gate 2** (13 rungs, 300 captions, 100 POPE images): **complete**.
-- **Gate 1** (17 rungs): **partial, 11/17** — stopped at
-  `w3a16:method=gptq:calib=text` with a non-positive-definite Hessian
-  (`leading minor of order 18917`). W8A8/SQ and the activation-attribution arms
-  were not reached; Gate 2 includes `w4a4:method=rot+gptq`.
-- **FP16 baseline:** coverage 0.559, CHAIR_i 0.109, CHAIR_s 0.250, POPE-F1 0.833,
-  caption length 106.9 words, WikiText-2 PPL 8.28. Qwen is more conservative than
-  LLaVA (coverage 0.744, CHAIR_i 0.220, POPE-F1 0.854), so compare deltas only.
-- **W3 RTN:** coverage **−0.061 [−0.085, −0.037]**, CHAIR_i −0.004 n.s.,
-  small-object drop 0.360 vs large 0.118, all 0.205.
-- **W3 GPTQ (wiki):** coverage −0.046*, CHAIR_i +0.006 n.s., all drop 0.167.
-- **W3 GPTQ (mm):** coverage −0.004 n.s., CHAIR_i +0.019, direction *fallback* —
-  the one Qwen rung with the opposite shape.
-- **Text-position weights:** coverage −0.059*; image-position weights +0.004 n.s.
-  The text-side attribution replicates.
-- **Matched noise:** W3 noise coverage −0.042*, all drop 0.142 — error energy, not
-  quantizer identity.
-- **Realistic W4A4 (`rot+gptq`):** coverage −0.019 n.s. but **POPE-F1 −0.063***;
-  unlike LLaVA, Qwen’s benchmark is not blind at W4A4.
-- **LoRAS-T (W3 RTN):** coverage −0.009 n.s. vs FP16 (recovers **+5.2** vs W3),
-  CHAIR_i +0.007 n.s., small drop 0.360→0.209, all 0.205→0.110; 12.9M params,
-  held-out KL 0.276→0.071, top-1 0.729→0.872.
-- **KV-LoRAS (W4A8):** ceilings 0.22–0.37 (LLaVA 0.58–0.67); 2×2 coverage **+2.9**
-  points (0.545→0.574), CHAIR_i −0.005 [−0.039,+0.030]. No coverage CI; provisional.
-- **A-CAB:** baseline sweep CHAIR_i 0.091 / coverage 0.580; best CHAIR 0.078 at
-  τ60/α1 but coverage 0.558 (−2.2). No coverage-preserving win; no LLaVA-style
-  brevity collapse either.
-- **Quantizer PPL:** FP16 8.28; W4A16 8.83; W3 RTN 10.66; W3 GPTQ-wiki 9.32;
-  W3 AWQ-wiki 10.29; W4A4 plain 59989; rot 11.18; rot+GPTQ 10.36. Rotation rescues
-  W4A4, SmoothQuant W8A8 is near FP16 (8.35), GPTQ@W3 closes ~56% of RTN’s gap.
-- **Do not use Qwen blind/caption PPL from Gate 2**: FP16 blind PPL ≈146 vs
-  WikiText 8.28; appending a caption to the chat template shifts the scored BPE
-  tokens. Use `validate_ptq.json`; `lm_damaged` flags are provisional.
-- **Attention / `r_pb`:** no Qwen measurement in this archive — the LLaVA Table 2
-  mechanism comparison is still missing.
+### 6.1 Gate 2 per-rung (300 captions, 100 POPE images, 1,800 questions)
+
+Baseline: coverage 0.559, CHAIR_i 0.109, CHAIR_s 0.250, POPE-F1 0.833, caption
+length 106.9 words. Qwen is more conservative than LLaVA (0.744 / 0.220 / 0.854),
+so compare the deltas, not the absolute values.
+
+| Rung | COV | CHAIR_i | CHAIR_s | Len | POPE-F1 | ΔCOV | ΔCHAIR_i | ΔF1 | Direction |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| FP16 | 0.559 | 0.109 | 0.25 | 106.9 | 0.833 | — | — | — | reference |
+| W4A16 GPTQ (wiki) | 0.575 | 0.102 | 0.24 | 105.9 | 0.826 | +0.015 | −0.007 | −0.007 | none |
+| W3 RTN | 0.498 | 0.105 | 0.23 | 102.4 | 0.836 | **−0.061*** | −0.004 | +0.003 | omission |
+| W3 GPTQ (wiki) | 0.513 | 0.116 | 0.25 | 104.7 | 0.816 | **−0.046*** | +0.006 | −0.017 | omission |
+| W3 GPTQ (mm) | 0.555 | 0.128 | 0.31 | 107.0 | 0.849 | −0.004 | +0.019 | +0.016 | fallback |
+| W3 AWQ (wiki) | 0.535 | 0.118 | 0.26 | 107.7 | 0.837 | −0.025* | +0.009 | +0.004 | omission |
+| W4A4 rot+GPTQ | 0.540 | 0.097 | 0.21 | 106.2 | 0.770 | −0.019 | −0.013 | **−0.063*** | omission |
+| W4 matched noise | 0.550 | 0.120 | 0.25 | 106.9 | 0.826 | −0.009 | +0.010 | −0.007 | none |
+| W3 matched noise | 0.518 | 0.113 | 0.25 | 107.1 | 0.797 | **−0.042*** | +0.004 | −0.036* | omission |
+| W3 weights @ image | 0.563 | 0.114 | 0.27 | 106.6 | 0.821 | +0.004 | +0.005 | −0.012 | none |
+| W3 weights @ text | 0.501 | 0.103 | 0.22 | 103.2 | 0.817 | **−0.059*** | −0.006 | −0.016 | omission |
+| W3 RTN + LoRAS-T | 0.550 | 0.116 | 0.27 | 106.9 | 0.831 | −0.009 | +0.007 | −0.002 | none |
+| W3 RTN + LoRAS-T @0.5 | 0.514 | 0.105 | 0.22 | 105.5 | 0.838 | −0.045* | −0.005 | +0.005 | omission |
+
+`*` = paired 95% image-clustered CI excludes zero. The Qwen **blind PPL** column is
+omitted: it is not usable (see §6.6). The omission signature replicates: coverage
+falls without a CHAIR rise; small objects go first; text-position weights drive it;
+image-position weights do not; matched noise reproduces it. The exceptions are W4A16
+GPTQ (harmless) and realistic W4A4 (`rot+GPTQ`), which loses 6.3 POPE-F1 points.
+
+### 6.2 Object drop by size
+
+Share of FP16-mentioned objects that the rung no longer names. FP16 already mentions
+fewer small objects on Qwen, but the small-first tail is the same.
+
+| Rung | <1% | 1–5% | 5–20% | >20% | All |
+|---|---:|---:|---:|---:|---:|
+| FP16 mention rate | 0.319 | 0.558 | 0.838 | 0.838 | — |
+| W3 RTN | 0.360 | 0.258 | 0.112 | 0.118 | 0.205 |
+| W3 GPTQ (wiki) | 0.353 | 0.198 | 0.099 | 0.034 | 0.167 |
+| W3 weights @ text | 0.331 | 0.192 | 0.108 | 0.076 | 0.172 |
+| W3 weights @ image | 0.122 | 0.137 | 0.072 | 0.008 | 0.089 |
+| W3 matched noise | 0.252 | 0.198 | 0.076 | 0.050 | 0.142 |
+| W3 RTN + LoRAS-T | 0.209 | 0.132 | 0.067 | 0.042 | 0.110 |
+
+For comparison, LLaVA W3 RTN drops 0.279 / 0.188 / 0.042 / 0.061 (all 0.158), and
+LLaVA FP16 mention rates are 0.608 / 0.798 / 0.898 / 0.923. Qwen’s drop is larger at
+every size, but its FP16 floor is also much lower.
+
+### 6.3 2×2 ablation at W4A8
+
+| Cell | Coverage | CHAIR_i | CHAIR_s | Len | rep-4 | gated_frac |
+|---|---:|---:|---:|---:|---:|---:|
+| base | 0.545 | 0.103 | 0.21 | 106.8 | 0.003 | 0.00 |
+| + LoRAS | 0.574 | 0.099 | 0.27 | 106.8 | 0.002 | 0.00 |
+| + A-CAB (add, τ-pct 60) | 0.556 | 0.114 | 0.27 | 106.2 | 0.002 | 0.46 |
+| + both | 0.552 | 0.092 | 0.21 | 106.5 | 0.004 | 0.43 |
+
+Qwen paired CHAIR changes: LoRAS −0.005 [−0.039,+0.030], CHAIR_s +0.060
+[−0.020,+0.140]; A-CAB +0.011 [−0.020,+0.039], CHAIR_s +0.060 [−0.010,+0.130];
+both −0.011 [−0.050,+0.028], CHAIR_s 0.000 [−0.080,+0.070]. Coverage has no CI in
+the artifact. **Only LoRAS has a positive coverage signal (+2.9 points), and it is
+provisional.** The eval caption PPL (≈253) is not usable; see §6.6.
+
+### 6.4 Methods
+
+| Method | Qwen2.5-VL | LLaVA (same cell) |
+|---|---|---|
+| KV-LoRAS ceilings | K/V 0.22–0.37 | K 0.67 / V 0.58 |
+| KV-LoRAS rank-16 error removed | 10–21% | K 42% / V 25% |
+| KV-LoRAS 2×2 Δcoverage | **+2.9 points** (no CI) | −1.6 points |
+| KV-LoRAS 2×2 ΔCHAIR_i | −0.005 n.s. | +1.3 n.s. |
+| LoRAS-T Δcoverage vs FP16 | −0.009 n.s. | −0.012 n.s. |
+| LoRAS-T small-object drop | 0.360→0.209 | 0.28→0.14 |
+| LoRAS-T all-object drop | 0.205→0.110 | 0.16→0.08 |
+| LoRAS-T params | 12.9M (rank 64, 28 layers) | 16.9M (rank 64, 32 layers) |
+| A-CAB best honest point | τ60/α1: CHAIR_i 0.078 vs 0.091, coverage 0.558 vs 0.580 | α0.5/τ40: 0.188 vs 0.210, coverage 0.788 vs 0.770 |
+| A-CAB high α | CHAIR worsens; no brevity trap (len ~106) | brevity trap (coverage 0.52, rep-4 0.31) |
+
+LoRAS-T on Qwen: held-out KL 0.276→0.071, top-1 0.729→0.872. Drift selects layers
+[17, 20–26] (LLaVA [23, 25–31]).
+
+### 6.5 Quantizer health — WikiText-2 PPL
+
+| Rung | Qwen | LLaVA |
+|---|---:|---:|
+| FP16 | 8.28 | 7.27 |
+| NF4 | 8.38 | 7.39 |
+| W8A8 / W8A8+SQ | 8.44 / 8.35 | 7.30 / 7.31 |
+| W4A16 / GPTQ | 8.83 / 8.43 | 7.50 / 7.56 |
+| W3 RTN | 10.66 | 9.14 |
+| W3 AWQ (wiki) | 10.29 | 8.47 |
+| W3 GPTQ (wiki) | 9.32 | 8.49 |
+| W4A4 plain | 59988.7 | 1000.8 |
+| W4A4 rot / rot+GPTQ | 11.18 / 10.36 | 10.64 / 8.53 |
+
+Rotation rescues W4A4; SmoothQuant W8A8 is near FP16; GPTQ@W3 closes ~56% of RTN’s
+gap on Qwen (AWQ ~15%).
+
+### 6.6 Caveats
+
+- **Qwen Gate-2 blind/caption PPL is not usable.** FP16 blind PPL ≈146 vs WikiText
+  8.28; consistent with token-boundary misalignment when a caption is appended to
+  a chat-template prompt. Use `validate_ptq.json`; `lm_damaged` flags in
+  `gate2_ladder_report.json` are provisional.
+- **No Qwen attention / `r_pb` measurement**: the LLaVA Table 2 / `r_pb` mechanism
+  has no cross-model counterpart yet.
+- **Gate 1 is partial** (11/17): the missing W8A8/SQ and activation-attribution
+  rows were not run; Gate 2 covers `rot+GPTQ`.
+- Qwen’s FP16 baseline is more conservative; state the baseline and compare deltas.
+- KV-LoRAS coverage gain (+2.9) has no paired CI; treat as provisional.
 
 ## Related Notes
 
 - [[Study Experiment]] — the cells this log tracks
 - [[Research Ideation]] — hypotheses, metrics, figures
 - [[Method Study]] — the methods phase (LoRAS / A-CAB): PTQ validation, Gate 1/2 verdicts, 2×2 ablation, A-CAB sweep — artifacts in `method-study/runs/`
+- [[Results Comparison]] — single LLaVA ↔ Qwen2.5-VL table (Gate 2, 2×2, object drops, PPL)
 - [[README]] — vault index

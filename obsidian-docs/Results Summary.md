@@ -48,7 +48,7 @@ Quantization does not linearly break hallucination — it changes its **shape**.
 | LoRAS (W4A8) | ◐ partial | Ceilings K 0.67 / V 0.58 → only ~half the error is linearly fixable. Rank-16 removes 42% (K) / 25% (V) of error, held-out ≈ train. No CHAIR gain in the 2×2 at n=100. LoRAS-T (W3) halves object drops (0.080–0.096 vs 0.158). |
 | A-CAB (W4A8) | ◐ brevity trap | α=0.5: honest small win (CHAIR_i 0.188 vs 0.210, coverage 0.788). α≥2: CHAIR falls by *shorter loopier captions* (coverage 0.77→0.52, rep-4 →0.31). Fires ~35% of steps at τ-pct 60. |
 
-### Qwen2.5-VL-7B replication — `results/qwen-2.5vl-2026-10-25/`
+### Qwen2.5-VL-7B replication — `results/qwen-2.5vl-2026-10-25/` (master table: [[Results Comparison]])
 
 > [!info] Scope
 > Qwen2.5-VL-7B-Instruct, bf16, 28 decoder layers, 28/4 GQA, 196 wrapped Linears
@@ -216,6 +216,7 @@ Greedy vs nucleus moved CHAIR_s by 12 pts (0.39 vs 0.51) — more than any W8/W4
 ## Related Notes
 
 - [[Results]] — append-only evidence log, entry template, source numbers
+- [[Results Comparison]] — single LLaVA ↔ Qwen2.5-VL master table
 - [[Method Study]] — methods phase detail, per-rung tables, artifact paths
 - [[Study Experiment]] — the protocol the evidence numbers come from
 - [[Research Ideation]] — hypotheses H1–H4, probes S1–S3, metrics

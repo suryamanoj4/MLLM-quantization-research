@@ -140,6 +140,7 @@ Drift (per-layer K/V error) grows monotonically toward the tail: K max-drift lay
 > `obsidian-docs/results/qwen-2.5vl-2026-10-25/`. Model:
 > `Qwen/Qwen2.5-VL-7B-Instruct`, bf16, 28 layers, 28/4 GQA, 196 wrapped Linears
 > (6.53B params). Entry point: `run_all_qwen.sh` (same stages as LLaVA).
+> **Single cross-model table: [[Results Comparison]].**
 > Gate 2 complete (13 rungs, 300 captions, 100 POPE images); Gate 1 partial
 > (11/17, stopped at `w3a16:method=gptq:calib=text`, non-positive-definite Hessian).
 
