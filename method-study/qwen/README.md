@@ -54,6 +54,40 @@ same Llama-style module names (`self_attn.q/k/v/o_proj`, `mlp.gate/up/down_proj`
 `input_layernorm`, `post_attention_layernorm`), which is why the PTQ and steering
 code carries over directly.
 
+## Results (2026-10-25)
+
+The run is archived in `obsidian-docs/results/qwen-2.5vl-2026-10-25/`; the synthesis
+is in `obsidian-docs/Results Summary.md` §1 and the per-rung detail in
+`obsidian-docs/Method Study.md` §9.
+
+| FP16 baseline | LLaVA-1.5-7B | Qwen2.5-VL-7B |
+|---|---:|---:|
+| Coverage | 0.744 | 0.559 |
+| CHAIR_i | 0.220 | 0.109 |
+| POPE-F1 (3-split mean) | 0.854 | 0.833 |
+| WikiText-2 PPL | 7.27 | 8.28 |
+
+Gate 2 (300 captions, 100 POPE images) replicates the LLaVA shape:
+
+- W3 RTN: coverage **−0.061 [−0.085, −0.037]**, CHAIR_i −0.004 n.s.; small-object
+  drop 0.360 vs large 0.118.
+- W3 GPTQ (wiki): coverage −0.046*, CHAIR_i +0.006 n.s.
+- Text-position weights: coverage −0.059*; image-position weights +0.004 n.s.
+- W3 matched noise: coverage −0.042* — error energy, not method identity.
+- Realistic W4A4 (`rot+gptq`): coverage −0.019 n.s., but **POPE-F1 −0.063***.
+- LoRAS-T: coverage −0.009 n.s. vs FP16 (recovers +5.2 vs W3), small-object drop
+  0.360→0.209, all 0.205→0.110; 12.9M params.
+- KV-LoRAS: ceilings 0.22–0.37 (much lower than LLaVA’s 0.58–0.67); 2×2 coverage
+  +2.9 points, CHAIR_i −0.005 n.s. — provisional (no coverage CI).
+- A-CAB: best CHAIR_i 0.078 vs 0.091, but coverage 0.558 vs 0.580 — no
+  coverage-preserving win.
+
+**Two caveats.** Qwen Gate-1 is partial (11/17; GPTQ text calibration hit a
+non-positive-definite Hessian). Qwen Gate-2 blind/caption PPL is not usable (FP16
+blind PPL ≈146 vs WikiText 8.28), consistent with token-boundary misalignment when
+a caption is appended to the chat template; use `validate_ptq.json` for LM health.
+No visual attention / `r_pb` measurement exists for Qwen yet.
+
 ## Setup
 
 The existing `.venv` is a copy from another machine (its `bin/python` is not

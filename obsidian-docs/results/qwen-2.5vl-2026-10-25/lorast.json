@@ -1,0 +1,338 @@
+{
+  "meta": {
+    "precision": "w3a16",
+    "rank": 64,
+    "ridge": 0.01,
+    "source": "gen",
+    "n_calib": 192,
+    "qa_per_image": 0,
+    "n_qa_batches": 0,
+    "layers": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27
+    ],
+    "params": 12945408,
+    "kl_before": {
+      "kl": 0.27605279209450606,
+      "top1_agree": 0.7292426083434589,
+      "tokens": 4938
+    },
+    "kl_after": {
+      "kl": 0.07063013158282948,
+      "top1_agree": 0.8722154718509518,
+      "tokens": 4938,
+      "scale_0.5": {
+        "kl": 0.1091239982503008,
+        "top1_agree": 0.824422843256379,
+        "tokens": 4938
+      },
+      "scale_1.5": {
+        "kl": 0.12280202385093963,
+        "top1_agree": 0.8292831105710814,
+        "tokens": 4938
+      }
+    }
+  },
+  "layers": {
+    "0": {
+      "rank": 64,
+      "rel_mse_reduction": 0.5710690565360382,
+      "ceiling": 0.9215366318819199,
+      "n_tokens": 23791,
+      "val_red": 0.5665099084448778,
+      "massive_excluded": 0,
+      "rel_err_before": 0.1803710286141182
+    },
+    "1": {
+      "rank": 64,
+      "rel_mse_reduction": 0.592073517479279,
+      "ceiling": 0.913327734669276,
+      "n_tokens": 23791,
+      "val_red": 0.5831677982846508,
+      "massive_excluded": 0,
+      "rel_err_before": 0.18673734198611502
+    },
+    "2": {
+      "rank": 64,
+      "rel_mse_reduction": 0.39986491528602797,
+      "ceiling": 0.852144828434979,
+      "n_tokens": 23791,
+      "val_red": 0.38782658354795707,
+      "massive_excluded": 0,
+      "rel_err_before": 0.15473927200770474
+    },
+    "3": {
+      "rank": 64,
+      "rel_mse_reduction": 0.3802381373571433,
+      "ceiling": 0.8210760617808486,
+      "n_tokens": 23638,
+      "val_red": 0.36609787257838855,
+      "massive_excluded": 192,
+      "rel_err_before": 0.16665953879565037
+    },
+    "4": {
+      "rank": 64,
+      "rel_mse_reduction": 0.36710437389303263,
+      "ceiling": 0.7979470381697871,
+      "n_tokens": 23638,
+      "val_red": 0.352784608297396,
+      "massive_excluded": 192,
+      "rel_err_before": 0.17211322752423272
+    },
+    "5": {
+      "rank": 64,
+      "rel_mse_reduction": 0.37161789876883,
+      "ceiling": 0.7852948802907598,
+      "n_tokens": 23638,
+      "val_red": 0.35579112791708845,
+      "massive_excluded": 192,
+      "rel_err_before": 0.16427143910246583
+    },
+    "6": {
+      "rank": 64,
+      "rel_mse_reduction": 0.35822071959293644,
+      "ceiling": 0.7685419016336441,
+      "n_tokens": 23638,
+      "val_red": 0.34457985368048216,
+      "massive_excluded": 192,
+      "rel_err_before": 0.16143826937128752
+    },
+    "7": {
+      "rank": 64,
+      "rel_mse_reduction": 0.30448461550948125,
+      "ceiling": 0.7336711801416066,
+      "n_tokens": 23638,
+      "val_red": 0.28692184527262876,
+      "massive_excluded": 192,
+      "rel_err_before": 0.15542352747240934
+    },
+    "8": {
+      "rank": 64,
+      "rel_mse_reduction": 0.26443552677340854,
+      "ceiling": 0.6954763103345786,
+      "n_tokens": 23638,
+      "val_red": 0.2472543878024117,
+      "massive_excluded": 192,
+      "rel_err_before": 0.15390592262646474
+    },
+    "9": {
+      "rank": 64,
+      "rel_mse_reduction": 0.2676489528999425,
+      "ceiling": 0.6844970667279886,
+      "n_tokens": 23638,
+      "val_red": 0.24063860966259976,
+      "massive_excluded": 192,
+      "rel_err_before": 0.14945815972576706
+    },
+    "10": {
+      "rank": 64,
+      "rel_mse_reduction": 0.23458529874863754,
+      "ceiling": 0.6566233151624032,
+      "n_tokens": 23638,
+      "val_red": 0.21177635679155737,
+      "massive_excluded": 192,
+      "rel_err_before": 0.14142471161214623
+    },
+    "11": {
+      "rank": 64,
+      "rel_mse_reduction": 0.22178406312441667,
+      "ceiling": 0.632475459749347,
+      "n_tokens": 23638,
+      "val_red": 0.1969585592302988,
+      "massive_excluded": 192,
+      "rel_err_before": 0.1427724324740587
+    },
+    "12": {
+      "rank": 64,
+      "rel_mse_reduction": 0.22587034327546984,
+      "ceiling": 0.6265083950654704,
+      "n_tokens": 23638,
+      "val_red": 0.2014222032891363,
+      "massive_excluded": 192,
+      "rel_err_before": 0.14216375930779554
+    },
+    "13": {
+      "rank": 64,
+      "rel_mse_reduction": 0.21151715796909432,
+      "ceiling": 0.6093953211861001,
+      "n_tokens": 23638,
+      "val_red": 0.18464232183346185,
+      "massive_excluded": 192,
+      "rel_err_before": 0.14124374932950434
+    },
+    "14": {
+      "rank": 64,
+      "rel_mse_reduction": 0.2309976309677808,
+      "ceiling": 0.6124494711923092,
+      "n_tokens": 23638,
+      "val_red": 0.20363505948863858,
+      "massive_excluded": 192,
+      "rel_err_before": 0.13823095816564684
+    },
+    "15": {
+      "rank": 64,
+      "rel_mse_reduction": 0.21740337758764305,
+      "ceiling": 0.5995290313280465,
+      "n_tokens": 23638,
+      "val_red": 0.19105784675340232,
+      "massive_excluded": 192,
+      "rel_err_before": 0.13817882403976822
+    },
+    "16": {
+      "rank": 64,
+      "rel_mse_reduction": 0.18902594962871688,
+      "ceiling": 0.5759922485295316,
+      "n_tokens": 23638,
+      "val_red": 0.16169628286795346,
+      "massive_excluded": 192,
+      "rel_err_before": 0.14002044094529503
+    },
+    "17": {
+      "rank": 64,
+      "rel_mse_reduction": 0.1773259436581911,
+      "ceiling": 0.5620057754753454,
+      "n_tokens": 23638,
+      "val_red": 0.15330265332291582,
+      "massive_excluded": 192,
+      "rel_err_before": 0.14556880993528237
+    },
+    "18": {
+      "rank": 64,
+      "rel_mse_reduction": 0.22293823472500163,
+      "ceiling": 0.5962927928592393,
+      "n_tokens": 23638,
+      "val_red": 0.19697621188462744,
+      "massive_excluded": 192,
+      "rel_err_before": 0.14806164987021256
+    },
+    "19": {
+      "rank": 64,
+      "rel_mse_reduction": 0.2606419721737012,
+      "ceiling": 0.6229520517348369,
+      "n_tokens": 23638,
+      "val_red": 0.23205946773068153,
+      "massive_excluded": 192,
+      "rel_err_before": 0.14778709275433333
+    },
+    "20": {
+      "rank": 64,
+      "rel_mse_reduction": 0.22804489205184886,
+      "ceiling": 0.6093870829162225,
+      "n_tokens": 23638,
+      "val_red": 0.20304440805108948,
+      "massive_excluded": 192,
+      "rel_err_before": 0.1510788023214819
+    },
+    "21": {
+      "rank": 64,
+      "rel_mse_reduction": 0.227695777499471,
+      "ceiling": 0.6173717732894699,
+      "n_tokens": 23638,
+      "val_red": 0.1978699014762505,
+      "massive_excluded": 192,
+      "rel_err_before": 0.1569469327115013
+    },
+    "22": {
+      "rank": 64,
+      "rel_mse_reduction": 0.2104052752217357,
+      "ceiling": 0.6034299910736871,
+      "n_tokens": 23638,
+      "val_red": 0.18135773894752372,
+      "massive_excluded": 192,
+      "rel_err_before": 0.163735075808034
+    },
+    "23": {
+      "rank": 64,
+      "rel_mse_reduction": 0.20275997579276728,
+      "ceiling": 0.5993345640277274,
+      "n_tokens": 23638,
+      "val_red": 0.1722426219922406,
+      "massive_excluded": 192,
+      "rel_err_before": 0.15796951120221417
+    },
+    "24": {
+      "rank": 64,
+      "rel_mse_reduction": 0.18633319944757065,
+      "ceiling": 0.5879162654913896,
+      "n_tokens": 23638,
+      "val_red": 0.15700268172657783,
+      "massive_excluded": 192,
+      "rel_err_before": 0.154576960391482
+    },
+    "25": {
+      "rank": 64,
+      "rel_mse_reduction": 0.1780672088730072,
+      "ceiling": 0.5801804650682312,
+      "n_tokens": 23638,
+      "val_red": 0.15037125787935457,
+      "massive_excluded": 192,
+      "rel_err_before": 0.1575380310980513
+    },
+    "26": {
+      "rank": 64,
+      "rel_mse_reduction": 0.4778629906504711,
+      "ceiling": 0.7389882487278014,
+      "n_tokens": 23791,
+      "val_red": 0.4508612336784079,
+      "massive_excluded": 0,
+      "rel_err_before": 0.18004571369536435
+    },
+    "27": {
+      "rank": 64,
+      "rel_mse_reduction": 0.5917962865134552,
+      "ceiling": 0.8116441743235726,
+      "n_tokens": 23791,
+      "val_red": 0.5524946527522948,
+      "massive_excluded": 0,
+      "rel_err_before": 0.30261575034240357
+    }
+  },
+  "calib_captions": [
+    "The image shows a woman sitting on a bench next to a bronze statue of a man. The woman is dressed in a light-colored jacket over a patterned top and light-colored pants. She is smiling and appears to be interacting with the statue, as she is touching the statue's hand with her own. The statue is seated on the bench, wearing a suit and hat, and is depicted in a relaxed pose with one hand raised. The bench is made of metal with a perforated design, and the background includes some greenery and a paved area. The overall setting appears to be an outdoor public space, possibly a park or a plaza",
+    "This image shows a rooftop scene where two individuals are flying a kite. The kite is shaped like a bird and is brightly colored with a design that includes red, yellow, and black patterns. The person on the left, wearing a light-colored outfit, is actively holding the kite string, seemingly controlling the kite as it soars in the sky. The person on the right, dressed in darker clothing, is standing near a stack of chairs and appears to be observing the kite.\n\nThe rooftop is surrounded by low walls, and there are various objects on the roof, including a water tank, a small structure, and a \"Purvi\"",
+    "This image shows a scene at an airport. In the background, there is a Qantas aircraft on the runway, preparing for takeoff or having just landed. The plane is white with red and blue accents, which are characteristic of Qantas' livery. The aircraft is positioned on the tarmac, and the surrounding area appears to be a remote or less developed airport, as indicated by the sparse vegetation and open landscape.\n\nIn the foreground, there is a white SUV parked on the tarmac, with traffic cones placed around it, likely to indicate a restricted or controlled area. The SUV appears to be a utility vehicle, possibly used for",
+    "The image shows a plated meal consisting of a bowl of pasta, likely penne, topped with a creamy sauce and garnished with herbs, possibly parsley. The pasta is served in a white oval dish, which is placed on a white plate. To the side of the pasta, there is a small portion of steamed broccoli and a few slices of carrot, adding a pop of color to the plate. The plate is set on a yellow napkin, which contrasts nicely with the white plate and the food. The overall presentation is clean and appetizing, suggesting a well-prepared and balanced meal.",
+    "The image shows a naval ship docked at a pier. The ship is a large, gray vessel with a sleek, modern design, indicative of a warship or a naval frigate. The hull is marked with the identification number \"D646,\" which is likely the ship's designation. The ship is equipped with various antennas, radar systems, and communication equipment, visible on the superstructure. The superstructure also features a prominent mast with a radar dome and other communication devices.\n\nThe ship is moored to the pier, and the water around it appears calm. The sky is clear and blue, suggesting a sunny day. The",
+    "The image shows a pebbled beach setting with a person sitting on the ground in the foreground. The individual is wearing a brown long-sleeve shirt, maroon pants, and white sneakers. They are smiling and appear to be interacting with a red hula hoop lying on the ground in front of them. The person is also wearing a wristwatch on their left wrist.\n\nIn the background, there are a few other people. One person is standing and appears to be looking at the person with the hula hoop, while another person is sitting on the pebbled ground, seemingly engaged in their own activity. There is a carousel",
+    "The image shows a neatly arranged bedroom with a minimalist design. The walls are painted in a light neutral color, and the room has a simple and clean aesthetic. \n\n- **Bed**: A bed with a beige or light brown striped duvet is positioned against the wall. The bed appears to be unmade, with the duvet slightly rumpled. The bed frame is not visible, suggesting it may be a platform bed or a bed with a low-profile frame.\n  \n- **Nightstand**: To the left of the bed, there is a small black nightstand with a modern design. It has a few items on it, including a",
+    "This image depicts a serene beach scene. The foreground features two lounge chairs, one on the left and one on the right, both with a metal frame and a striped fabric seat. Between the chairs stands a tall, red beach umbrella with a white pole, providing shade. The sand is light beige and appears smooth, with some footprints visible, suggesting recent activity. The ocean is calm, with a deep blue hue, and the horizon is visible in the background. The sky is overcast with soft, diffused light, and there are scattered clouds, giving the scene a tranquil and slightly moody atmosphere. The overall setting suggests a quiet",
+    "The image shows a double-decker bus, painted in a bright blue color with yellow trim. The bus is labeled \"Garage\" on the front, indicating it is likely a service bus, possibly for a garage or maintenance facility. The registration plate reads \"XDH 516G,\" and the bus number is \"116.\" The bus appears to be in motion, as the driver is visible through the windshield, and the bus is on a road with other vehicles and traffic lights in the background. The surrounding environment includes trees and a grassy area, suggesting the bus is in a suburban or semi-urban setting.",
+    "This image depicts a snowy residential street after a heavy snowfall. The ground and surrounding areas are covered in a thick layer of snow, with tire tracks visible in the middle of the street, suggesting that a vehicle has recently driven through. The street is lined with snow-covered trees and bushes, and the branches of the trees are heavily laden with snow, indicating the depth of the snowfall. \n\nOn the left side of the street, there is a house with a wooden fence partially visible, and the roof and walls of the house are also dusted with snow. The house appears to be surrounded by more snow-covered trees and shrubs.",
+    "This image features a tabby cat lying on a blue towel, with its head positioned between a pair of black slippers. The cat has a striped coat with a mix of brown, black, and white fur, and its eyes are glowing yellow, likely due to the camera flash reflecting off the eyes. The slippers are positioned with the toes pointing towards the cat, and the brand \"Bass\" is visible on the inside of one slipper. The background is a simple, uncluttered setting, with the focus primarily on the cat and the slippers. The text \"Shoes to Fill\" is written in pink in",
+    "This image shows a bathroom with a toilet positioned in the foreground. The toilet is a standard white model with a tank on top and a seat below. The walls of the bathroom are covered with a black wallpaper featuring a repeating pattern of a monochrome illustration of a person sitting in a meditative pose, with their hands resting on their knees. The person depicted in the illustration appears to be wearing a sleeveless top and pants, and the overall design is simple and stylized. The wallpaper creates a bold and artistic backdrop for the otherwise mundane setting of the bathroom. The lighting in the room is dim, giving the space a somewhat moody or",
+    "The image shows two individuals seated in a green golf cart on a grassy field. Both are wearing white hard hats, suggesting they are involved in some form of construction, maintenance, or outdoor work. The person on the left is wearing a denim shirt and appears to be holding a clipboard or some papers, possibly reviewing or taking notes. The person on the right is wearing a white shirt, blue jeans, and sunglasses, and is holding a phone to their ear, seemingly engaged in a conversation. The golf cart has a windshield and a small sign on the front that reads \"Director\" and \"Solar Technology,\" indicating that the setting might be",
+    "This image shows a street corner with a stop sign prominently in the foreground. The stop sign is octagonal and red with the word \"STOP\" in white capital letters. Above the stop sign, there are two street signs mounted on a wooden post. The signs read \"Brewer Rd\" and \"Bachnow Rd,\" indicating the intersection of these two roads. The background features a clear blue sky with some scattered clouds. In the distance, there are red rock formations, which are characteristic of the landscape in Sedona, Arizona. The foreground also includes some bare branches of a tree and a utility pole with wires. The overall scene",
+    "The image shows a close-up view of a toilet with the lid open. Inside the toilet bowl, there is a large amount of white, crumpled paper, which appears to be toilet paper. The toilet is situated in a bathroom with tiled flooring. To the left of the toilet, part of a person's leg and foot are visible, suggesting they are standing next to the toilet. The person is wearing dark-colored pants. The bathroom appears to be clean, with a white wall and a purple object, possibly a container or a roll of toilet paper, visible in the background on the left side. The lighting in the room is bright",
+    "This image captures a dynamic scene of a surfer riding a wave in the ocean. The surfer is positioned on a surfboard, leaning forward with their body angled towards the wave, suggesting they are in the midst of carving a turn. The wave is a large, curling tube, with the crest forming a tunnel-like shape, indicating a powerful and well-formed wave. The water is a deep blue, and the white foam of the breaking wave contrasts sharply with the darker blue of the deeper water. The surfer is wearing a wetsuit, which is typical for surfing in cooler water temperatures. The overall scene conveys a sense",
+    "This image shows two zebras standing close to each other in a dry, grassy area with sparse vegetation. The zebras are facing each other, and their heads are touching, which is a common behavior among zebras, often seen as a sign of affection or bonding. The zebra on the left has its head slightly raised, while the one on the right has its head lowered, resting against the other's. Both zebras have their distinctive black-and-white striped patterns, which are unique to each individual. The background features a few trees with sparse leaves, suggesting a dry or arid environment, possibly during the dry season. The",
+    "The image is a painting that appears to be a modern interpretation of a classical portrait. The subject is a man dressed in formal attire, including a dark suit and a top hat, which suggests a historical or upper-class setting. The background is a blend of muted colors, primarily shades of gray and brown, with a hint of light coming through what seems to be a window or an opening, creating a contrast with the darker foreground. The man is seated and appears to be engaged in an activity, possibly writing or reading, as there is a piece of paper or a book in front of him. The painting style is impressionistic, with visible",
+    "This is a black-and-white photograph capturing a dynamic moment in a motocross race. The image is taken from a low angle, emphasizing the speed and intensity of the scene. The rider, wearing a full protective suit and a helmet with a visor, is leaning into a turn on a dirt bike. The bike is positioned at an angle, with the front wheel lifted slightly off the ground, indicating a high-speed maneuver. The rider's posture suggests they are fully focused on navigating the turn.\n\nThe background features a white picket fence that runs along the edge of the dirt track, separating the racing area from the spectators or the surrounding",
+    "The image shows a scene with a man standing in front of a red and black train car. The man is wearing a light blue shirt, glasses, and a backpack, and he appears to be looking at something in his hands, possibly a phone or a map. The train car has a classic design with a maroon body and black roof, and it has a door open, revealing the interior.\n\nIn the foreground, there is a decorative display of three blue train-like structures, each with wheels and a small flower bed on top. These structures are painted to resemble miniature trains and are positioned on a gravel surface. Behind the man and the"
+  ]
+}

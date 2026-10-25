@@ -1,0 +1,75 @@
+{
+  "config": {
+    "model_id": "Qwen/Qwen2.5-VL-7B-Instruct",
+    "coco_root": "data/coco-mini",
+    "eval_subset": "val2014",
+    "calib_subset": "val2014",
+    "precision": "w4a8",
+    "group_size": 128,
+    "quant_targets": "language",
+    "act_clip": 1.0,
+    "act_granularity": "token",
+    "dtype": "bfloat16",
+    "device": "cuda",
+    "attn": "sdpa",
+    "seed": 0,
+    "out": "runs_qwen",
+    "tag": "w4a8",
+    "loras": "runs_qwen/loras__w4a8/loras.pt",
+    "loras_scale": 1.0,
+    "acab": "add",
+    "gate": "prev",
+    "alpha": 1.0,
+    "tau": 1.5,
+    "delta_max": 3.0,
+    "acab_layers": "",
+    "acab_skip_first": false,
+    "acab_head_frac": 0.0,
+    "n_trials": 8,
+    "max_new_tokens": 64
+  },
+  "results": {
+    "baseline": {
+      "ttft_ms_median": 146.5907355013769,
+      "decode_tok_per_s_median": 17.359138383846624,
+      "peak_vram_gb": 15.671002864837646,
+      "n_trials": 8,
+      "decode_overhead_pct": 0.0
+    },
+    "loras": {
+      "ttft_ms_median": 155.36545400391333,
+      "decode_tok_per_s_median": 16.589830660442573,
+      "peak_vram_gb": 15.671867847442627,
+      "n_trials": 8,
+      "decode_overhead_pct": 4.637224689932595
+    },
+    "acab_add_prev": {
+      "ttft_ms_median": 146.56416047364473,
+      "decode_tok_per_s_median": 15.982018703787361,
+      "peak_vram_gb": 15.671363830566406,
+      "n_trials": 8,
+      "decode_overhead_pct": 8.616681694490303
+    },
+    "acab_add_twopass": {
+      "ttft_ms_median": 146.05987747199833,
+      "decode_tok_per_s_median": 13.09391725490618,
+      "peak_vram_gb": 15.671363830566406,
+      "n_trials": 8,
+      "decode_overhead_pct": 32.574065086155166
+    },
+    "acab_mult_eager": {
+      "ttft_ms_median": 148.5516779939644,
+      "decode_tok_per_s_median": 13.654080743494365,
+      "peak_vram_gb": 15.680520057678223,
+      "n_trials": 8,
+      "decode_overhead_pct": 27.135167207192424
+    },
+    "loras+acab": {
+      "ttft_ms_median": 155.16687600756995,
+      "decode_tok_per_s_median": 15.244071342811848,
+      "peak_vram_gb": 15.671867370605469,
+      "n_trials": 8,
+      "decode_overhead_pct": 13.874686056439312
+    }
+  }
+}

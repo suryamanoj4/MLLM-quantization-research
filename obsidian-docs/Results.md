@@ -196,6 +196,50 @@ W4 weights make image attention more scattered (+0.8 bits entropy) and less stab
 
 > Within a rung, per-question attention mass on POPE mostly reflects whether the model says "yes": generating "Yes, there is a …" pulls attention onto the image. FP16 "no" questions: accuracy 0.998 in the lowest-attention quartile vs 0.00 in the highest; "yes" questions: 0.17 vs 1.00. So POPE attention buckets **cannot** be used as grounding evidence, and H3 is measured on CHAIR object mentions only. The H2 rung-level comparison survives this confound: W4A16 says "yes" slightly *more* often (54.0% vs 52.3%), which would raise attention, yet attention fell 14%. The CHAIR drop (−18%) has no yes/no answer involved at all.
 
+## 6. Qwen2.5-VL-7B replication — 2026-10-25
+
+> [!info] Artifacts
+> `obsidian-docs/results/qwen-2.5vl-2026-10-25/` (compact reports, eval cells,
+> figures); raw run from `qwen_results.tgz`. Entry point `run_all_qwen.sh`; same
+> shared pipeline as LLaVA. Model: Qwen2.5-VL-7B-Instruct, bf16, 28 layers,
+> 28/4 GQA, 196 wrapped Linears (6.53B params).
+
+- **Gate 2** (13 rungs, 300 captions, 100 POPE images): **complete**.
+- **Gate 1** (17 rungs): **partial, 11/17** — stopped at
+  `w3a16:method=gptq:calib=text` with a non-positive-definite Hessian
+  (`leading minor of order 18917`). W8A8/SQ and the activation-attribution arms
+  were not reached; Gate 2 includes `w4a4:method=rot+gptq`.
+- **FP16 baseline:** coverage 0.559, CHAIR_i 0.109, CHAIR_s 0.250, POPE-F1 0.833,
+  caption length 106.9 words, WikiText-2 PPL 8.28. Qwen is more conservative than
+  LLaVA (coverage 0.744, CHAIR_i 0.220, POPE-F1 0.854), so compare deltas only.
+- **W3 RTN:** coverage **−0.061 [−0.085, −0.037]**, CHAIR_i −0.004 n.s.,
+  small-object drop 0.360 vs large 0.118, all 0.205.
+- **W3 GPTQ (wiki):** coverage −0.046*, CHAIR_i +0.006 n.s., all drop 0.167.
+- **W3 GPTQ (mm):** coverage −0.004 n.s., CHAIR_i +0.019, direction *fallback* —
+  the one Qwen rung with the opposite shape.
+- **Text-position weights:** coverage −0.059*; image-position weights +0.004 n.s.
+  The text-side attribution replicates.
+- **Matched noise:** W3 noise coverage −0.042*, all drop 0.142 — error energy, not
+  quantizer identity.
+- **Realistic W4A4 (`rot+gptq`):** coverage −0.019 n.s. but **POPE-F1 −0.063***;
+  unlike LLaVA, Qwen’s benchmark is not blind at W4A4.
+- **LoRAS-T (W3 RTN):** coverage −0.009 n.s. vs FP16 (recovers **+5.2** vs W3),
+  CHAIR_i +0.007 n.s., small drop 0.360→0.209, all 0.205→0.110; 12.9M params,
+  held-out KL 0.276→0.071, top-1 0.729→0.872.
+- **KV-LoRAS (W4A8):** ceilings 0.22–0.37 (LLaVA 0.58–0.67); 2×2 coverage **+2.9**
+  points (0.545→0.574), CHAIR_i −0.005 [−0.039,+0.030]. No coverage CI; provisional.
+- **A-CAB:** baseline sweep CHAIR_i 0.091 / coverage 0.580; best CHAIR 0.078 at
+  τ60/α1 but coverage 0.558 (−2.2). No coverage-preserving win; no LLaVA-style
+  brevity collapse either.
+- **Quantizer PPL:** FP16 8.28; W4A16 8.83; W3 RTN 10.66; W3 GPTQ-wiki 9.32;
+  W3 AWQ-wiki 10.29; W4A4 plain 59989; rot 11.18; rot+GPTQ 10.36. Rotation rescues
+  W4A4, SmoothQuant W8A8 is near FP16 (8.35), GPTQ@W3 closes ~56% of RTN’s gap.
+- **Do not use Qwen blind/caption PPL from Gate 2**: FP16 blind PPL ≈146 vs
+  WikiText 8.28; appending a caption to the chat template shifts the scored BPE
+  tokens. Use `validate_ptq.json`; `lm_damaged` flags are provisional.
+- **Attention / `r_pb`:** no Qwen measurement in this archive — the LLaVA Table 2
+  mechanism comparison is still missing.
+
 ## Related Notes
 
 - [[Study Experiment]] — the cells this log tracks

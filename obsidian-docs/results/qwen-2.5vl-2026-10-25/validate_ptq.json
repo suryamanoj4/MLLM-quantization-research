@@ -1,0 +1,127 @@
+{
+  "_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+  "fp16": {
+    "ppl": 8.280965461087115,
+    "ptq": {},
+    "minutes": 0.27377305544990427
+  },
+  "w4a16": {
+    "ppl": 8.825659021128015,
+    "ptq": {},
+    "minutes": 0.23089983728326235
+  },
+  "w4a16:method=awq:calib=wiki": {
+    "ppl": 8.65653414649403,
+    "ptq": {
+      "method": "awq",
+      "calib": "wiki",
+      "awq": {
+        "mean_loss_ratio_vs_rtn": 0.7496590338689075
+      },
+      "minutes": 2.305213713783693
+    },
+    "minutes": 2.5334002072001263
+  },
+  "w4a16:method=gptq:calib=wiki": {
+    "ppl": 8.433182754963156,
+    "ptq": {
+      "method": "gptq",
+      "calib": "wiki",
+      "gptq": {
+        "mean_loss_ratio_vs_rtn": 0.31480577559755757
+      },
+      "minutes": 4.458084968432861
+    },
+    "minutes": 4.686789179917347
+  },
+  "w3a16": {
+    "ppl": 10.656961152143376,
+    "ptq": {},
+    "minutes": 0.2449678823672002
+  },
+  "w3a16:method=awq:calib=wiki": {
+    "ppl": 10.293209678357268,
+    "ptq": {
+      "method": "awq",
+      "calib": "wiki",
+      "awq": {
+        "mean_loss_ratio_vs_rtn": 0.7576514715711028
+      },
+      "minutes": 2.282276801600043
+    },
+    "minutes": 2.512026722266455
+  },
+  "w3a16:method=gptq:calib=wiki": {
+    "ppl": 9.323603976923108,
+    "ptq": {
+      "method": "gptq",
+      "calib": "wiki",
+      "gptq": {
+        "mean_loss_ratio_vs_rtn": 0.337937067427887
+      },
+      "minutes": 4.434581168533381
+    },
+    "minutes": 4.666628347283889
+  },
+  "nf4": {
+    "ppl": 8.37656193273259,
+    "ptq": {},
+    "minutes": 0.2376607527160862
+  },
+  "w8a8": {
+    "ppl": 8.43961946944897,
+    "ptq": {},
+    "minutes": 0.2932859434503674
+  },
+  "w8a8:method=sq": {
+    "ppl": 8.348461113163571,
+    "ptq": {
+      "method": "sq",
+      "calib": "mm",
+      "sq": {
+        "alpha": 0.85,
+        "max_scale": 94.24748229980469
+      },
+      "minutes": 0.17990434298311206
+    },
+    "minutes": 0.472410802533462
+  },
+  "w4a4": {
+    "ppl": 59988.724955855105,
+    "ptq": {},
+    "minutes": 0.2940374455996789
+  },
+  "w4a4:method=rot": {
+    "ppl": 11.178254650432391,
+    "ptq": {
+      "method": "rot",
+      "calib": null,
+      "rot": {
+        "rotations": {
+          "3584": "hadamard (x) orthogonal",
+          "18944": "hadamard (x) orthogonal"
+        }
+      },
+      "minutes": 0.030669429299693244
+    },
+    "minutes": 0.5110470679666226
+  },
+  "w4a4:method=rot+gptq": {
+    "ppl": 10.358719324357141,
+    "ptq": {
+      "method": "rot+gptq",
+      "calib": "mm",
+      "rot": {
+        "rotations": {
+          "3584": "hadamard (x) orthogonal",
+          "18944": "hadamard (x) orthogonal"
+        }
+      },
+      "gptq": {
+        "mean_loss_ratio_vs_rtn": 0.09943239288864074
+      },
+      "minutes": 4.8287913743328925
+    },
+    "minutes": 5.243744692649731
+  }
+}

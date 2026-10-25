@@ -1,0 +1,2322 @@
+{
+  "config": {
+    "model_id": "Qwen/Qwen2.5-VL-7B-Instruct",
+    "coco_root": "data/coco-mini",
+    "precisions": "fp16,w4a8,w4a4",
+    "n_images": 16,
+    "n_captions": 40,
+    "batch_size": 2,
+    "skip_census": false,
+    "skip_blind": false,
+    "dtype": "bfloat16",
+    "device": "cuda",
+    "seed": 0,
+    "out": "runs_qwen/token_probe"
+  },
+  "census": {
+    "rows": [
+      {
+        "layer": 0,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 31.317131736632874,
+        "erased4": 0.7959269322991714,
+        "erased8": 0.06714331225241688,
+        "maxabs": 14.3125
+      },
+      {
+        "layer": 0,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 27.714781149839745,
+        "erased4": 0.4325206295037881,
+        "erased8": 0.05353208268300081,
+        "maxabs": 20.125
+      },
+      {
+        "layer": 0,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 70.55346609329972,
+        "erased4": 0.9605151538055784,
+        "erased8": 0.15279243472379242,
+        "maxabs": 2.1875
+      },
+      {
+        "layer": 0,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 17.096802344689003,
+        "erased4": 0.3060477207868527,
+        "erased8": 0.03992929061253866,
+        "maxabs": 3.375
+      },
+      {
+        "layer": 0,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 175.32219406134212,
+        "erased4": 0.9456995166638792,
+        "erased8": 0.41488282795352865,
+        "maxabs": 14.4375
+      },
+      {
+        "layer": 0,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 488.80921662159454,
+        "erased4": 0.9955471692941128,
+        "erased8": 0.6748092846992688,
+        "maxabs": 17.5
+      },
+      {
+        "layer": 0,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 61.245455707724375,
+        "erased4": 0.9777403666974096,
+        "erased8": 0.1367753893811794,
+        "maxabs": 13.4375
+      },
+      {
+        "layer": 0,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 50.467052361904045,
+        "erased4": 0.5660060827548687,
+        "erased8": 0.11078529785840939,
+        "maxabs": 17.375
+      },
+      {
+        "layer": 1,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 238.8243329302182,
+        "erased4": 0.9809635895767934,
+        "erased8": 0.47020945386073876,
+        "maxabs": 36.25
+      },
+      {
+        "layer": 1,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 187.30284705528845,
+        "erased4": 0.9699461460113525,
+        "erased8": 0.41659760322326267,
+        "maxabs": 22.5
+      },
+      {
+        "layer": 1,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 16.144596783012556,
+        "erased4": 0.5561164394235748,
+        "erased8": 0.03504201383343348,
+        "maxabs": 1.046875
+      },
+      {
+        "layer": 1,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 6.549020522680038,
+        "erased4": 0.21619346508613,
+        "erased8": 0.014670348320251856,
+        "maxabs": 1.171875
+      },
+      {
+        "layer": 1,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 1785.5275190407576,
+        "erased4": 0.9872890957690601,
+        "erased8": 0.7377506851315646,
+        "maxabs": 68.5
+      },
+      {
+        "layer": 1,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 1387.4915614983975,
+        "erased4": 0.9939635441853449,
+        "erased8": 0.6230232837872628,
+        "maxabs": 10.3125
+      },
+      {
+        "layer": 1,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 140.50424235796623,
+        "erased4": 0.9927806767871616,
+        "erased8": 0.29276728561357396,
+        "maxabs": 89.5
+      },
+      {
+        "layer": 1,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 162.96019568810095,
+        "erased4": 0.9734629484323355,
+        "erased8": 0.29598653622162646,
+        "maxabs": 124.5
+      },
+      {
+        "layer": 2,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 51.197989704482296,
+        "erased4": 0.8829396963610282,
+        "erased8": 0.1553204262781752,
+        "maxabs": 18.5
+      },
+      {
+        "layer": 2,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 57.00704056177384,
+        "erased4": 0.9036581516265869,
+        "erased8": 0.17259401694322243,
+        "maxabs": 9.5625
+      },
+      {
+        "layer": 2,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 22.777508185595924,
+        "erased4": 0.6880234851420981,
+        "erased8": 0.04872129777175696,
+        "maxabs": 2.5625
+      },
+      {
+        "layer": 2,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 9.466077560033554,
+        "erased4": 0.2526419560114543,
+        "erased8": 0.020476737465613928,
+        "maxabs": 2.171875
+      },
+      {
+        "layer": 2,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 1402.2260318032113,
+        "erased4": 0.9976984419023711,
+        "erased8": 0.8318041836395829,
+        "maxabs": 68.0
+      },
+      {
+        "layer": 2,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 4605.6935471754805,
+        "erased4": 0.9962054093678793,
+        "erased8": 0.8991763530633389,
+        "maxabs": 25.25
+      },
+      {
+        "layer": 2,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 121.52161463693906,
+        "erased4": 0.9909446593811111,
+        "erased8": 0.25434040149674586,
+        "maxabs": 78.0
+      },
+      {
+        "layer": 2,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 148.19119810446713,
+        "erased4": 0.9871994623771081,
+        "erased8": 0.29958470509602475,
+        "maxabs": 96.5
+      },
+      {
+        "layer": 3,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 48.37723174081412,
+        "erased4": 0.875864995561445,
+        "erased8": 0.12337816159094052,
+        "maxabs": 15.25
+      },
+      {
+        "layer": 3,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 57.40024273212139,
+        "erased4": 0.9141141970952352,
+        "erased8": 0.14013202832295343,
+        "maxabs": 10.875
+      },
+      {
+        "layer": 3,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 17.434103540551668,
+        "erased4": 0.5768318914395392,
+        "erased8": 0.03928098368418958,
+        "maxabs": 2.890625
+      },
+      {
+        "layer": 3,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 6.4068725781563005,
+        "erased4": 0.20638513870728323,
+        "erased8": 0.014067821777783908,
+        "maxabs": 2.453125
+      },
+      {
+        "layer": 3,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 463.4058318752573,
+        "erased4": 0.9806406359556723,
+        "erased8": 0.5717607846030388,
+        "maxabs": 63.25
+      },
+      {
+        "layer": 3,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 6122.947353265225,
+        "erased4": 0.9925216191854233,
+        "erased8": 0.8255996153904841,
+        "maxabs": 356.0
+      },
+      {
+        "layer": 3,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 104.841188985951,
+        "erased4": 0.9918911440375412,
+        "erased8": 0.22021247703580515,
+        "maxabs": 76.0
+      },
+      {
+        "layer": 3,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 183.0764434031951,
+        "erased4": 0.9941487312316895,
+        "erased8": 0.3729934600683359,
+        "maxabs": 117.5
+      },
+      {
+        "layer": 4,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 59.192980650473444,
+        "erased4": 0.8969616440403555,
+        "erased8": 0.14329985347290794,
+        "maxabs": 24.75
+      },
+      {
+        "layer": 4,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 71.69801134940906,
+        "erased4": 0.9188974973482963,
+        "erased8": 0.1641000685019371,
+        "maxabs": 14.375
+      },
+      {
+        "layer": 4,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 87.39296086995677,
+        "erased4": 0.8510763608854757,
+        "erased8": 0.21118982911060846,
+        "maxabs": 4.8125
+      },
+      {
+        "layer": 4,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 26.11269789475661,
+        "erased4": 0.28934041659037274,
+        "erased8": 0.06982936538182773,
+        "maxabs": 4.65625
+      },
+      {
+        "layer": 4,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 519.666108094895,
+        "erased4": 0.9841978058200552,
+        "erased8": 0.622507829536573,
+        "maxabs": 49.25
+      },
+      {
+        "layer": 4,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 3201.6641939603364,
+        "erased4": 0.9935424572382218,
+        "erased8": 0.8493776076879257,
+        "maxabs": 212.0
+      },
+      {
+        "layer": 4,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 88.91027364656237,
+        "erased4": 0.9894060281727627,
+        "erased8": 0.18813862806487447,
+        "maxabs": 62.25
+      },
+      {
+        "layer": 4,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 137.74939903846155,
+        "erased4": 0.9897072315216064,
+        "erased8": 0.2199344963599474,
+        "maxabs": 73.0
+      },
+      {
+        "layer": 5,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 47.210639586120834,
+        "erased4": 0.8723747658601951,
+        "erased8": 0.10647196826644276,
+        "maxabs": 21.0
+      },
+      {
+        "layer": 5,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 63.98199775891426,
+        "erased4": 0.9067378655458108,
+        "erased8": 0.13290059566497803,
+        "maxabs": 18.5
+      },
+      {
+        "layer": 5,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 71.83261099603746,
+        "erased4": 0.8961290192240892,
+        "erased8": 0.16870977810843582,
+        "maxabs": 4.3125
+      },
+      {
+        "layer": 5,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 19.426880078438,
+        "erased4": 0.28977615405351687,
+        "erased8": 0.048471306379024796,
+        "maxabs": 2.640625
+      },
+      {
+        "layer": 5,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 676.1692697612186,
+        "erased4": 0.9832442288734433,
+        "erased8": 0.6489441558724816,
+        "maxabs": 74.5
+      },
+      {
+        "layer": 5,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 4650.932297926683,
+        "erased4": 0.994162211051354,
+        "erased8": 0.8449444342882205,
+        "maxabs": 44.5
+      },
+      {
+        "layer": 5,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 80.03197206926718,
+        "erased4": 0.9879007225617699,
+        "erased8": 0.16945637357043553,
+        "maxabs": 64.0
+      },
+      {
+        "layer": 5,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 191.18076109274838,
+        "erased4": 0.9903866725090222,
+        "erased8": 0.24012506160980615,
+        "maxabs": 127.5
+      },
+      {
+        "layer": 6,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 59.98674303339852,
+        "erased4": 0.9230905896403162,
+        "erased8": 0.1337784994477939,
+        "maxabs": 18.0
+      },
+      {
+        "layer": 6,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 70.21075322077824,
+        "erased4": 0.9268638109549497,
+        "erased8": 0.14715464604206574,
+        "maxabs": 16.25
+      },
+      {
+        "layer": 6,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 49.247664130043226,
+        "erased4": 0.780773384279555,
+        "erased8": 0.12990958212628292,
+        "maxabs": 2.171875
+      },
+      {
+        "layer": 6,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 11.76404522626828,
+        "erased4": 0.2564008755561633,
+        "erased8": 0.03195537130037943,
+        "maxabs": 2.703125
+      },
+      {
+        "layer": 6,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 93.30220769864141,
+        "erased4": 0.9573375816549378,
+        "erased8": 0.2412211314892759,
+        "maxabs": 24.625
+      },
+      {
+        "layer": 6,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 178.7384549654447,
+        "erased4": 0.9845749109219282,
+        "erased8": 0.39113588363696367,
+        "maxabs": 27.0
+      },
+      {
+        "layer": 6,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 98.94599597313709,
+        "erased4": 0.9933105757718422,
+        "erased8": 0.20803498652502558,
+        "maxabs": 42.0
+      },
+      {
+        "layer": 6,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 135.92220208583734,
+        "erased4": 0.9965221515068641,
+        "erased8": 0.2221753566693037,
+        "maxabs": 38.5
+      },
+      {
+        "layer": 7,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 46.264070299634625,
+        "erased4": 0.8957333397894742,
+        "erased8": 0.1023668200452419,
+        "maxabs": 21.25
+      },
+      {
+        "layer": 7,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 64.97274584647937,
+        "erased4": 0.91933641066918,
+        "erased8": 0.12460182645382026,
+        "maxabs": 20.25
+      },
+      {
+        "layer": 7,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 46.15874306877831,
+        "erased4": 0.7685959722928031,
+        "erased8": 0.12148563122739513,
+        "maxabs": 3.578125
+      },
+      {
+        "layer": 7,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 9.877008780454977,
+        "erased4": 0.23710169853308263,
+        "erased8": 0.02492738515138626,
+        "maxabs": 2.625
+      },
+      {
+        "layer": 7,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 126.58719669874434,
+        "erased4": 0.9652769702017774,
+        "erased8": 0.3011219029369645,
+        "maxabs": 28.625
+      },
+      {
+        "layer": 7,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 124.63726611015124,
+        "erased4": 0.9806863833696414,
+        "erased8": 0.2975585368963388,
+        "maxabs": 25.75
+      },
+      {
+        "layer": 7,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 17.42658583859742,
+        "erased4": 0.589715975702128,
+        "erased8": 0.03811758621674401,
+        "maxabs": 10.875
+      },
+      {
+        "layer": 7,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 64.42043871757312,
+        "erased4": 0.7312933145425259,
+        "erased8": 0.06811054394795345,
+        "maxabs": 30.125
+      },
+      {
+        "layer": 8,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 48.301781130995266,
+        "erased4": 0.8987631234380629,
+        "erased8": 0.10642659237179652,
+        "maxabs": 19.375
+      },
+      {
+        "layer": 8,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 57.89586854592348,
+        "erased4": 0.9138121146422166,
+        "erased8": 0.12116194459108207,
+        "maxabs": 23.375
+      },
+      {
+        "layer": 8,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 59.9937610963874,
+        "erased4": 0.8105041704927761,
+        "erased8": 0.17562991535285707,
+        "maxabs": 5.53125
+      },
+      {
+        "layer": 8,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 19.198724795610477,
+        "erased4": 0.271851719954075,
+        "erased8": 0.052063885025489025,
+        "maxabs": 3.65625
+      },
+      {
+        "layer": 8,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 100.76662689121038,
+        "erased4": 0.9606730059470204,
+        "erased8": 0.2567927398618821,
+        "maxabs": 34.75
+      },
+      {
+        "layer": 8,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 122.906981639373,
+        "erased4": 0.9776362516941168,
+        "erased8": 0.2878952737037952,
+        "maxabs": 32.75
+      },
+      {
+        "layer": 8,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 14.586728117602409,
+        "erased4": 0.5102674626381419,
+        "erased8": 0.031575599488234414,
+        "maxabs": 9.3125
+      },
+      {
+        "layer": 8,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 59.49424430651543,
+        "erased4": 0.650425299620017,
+        "erased8": 0.05591647861859737,
+        "maxabs": 29.25
+      },
+      {
+        "layer": 9,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 43.34173697058975,
+        "erased4": 0.8903697466546,
+        "erased8": 0.09676291354647779,
+        "maxabs": 21.25
+      },
+      {
+        "layer": 9,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 53.81367531800881,
+        "erased4": 0.9013401728409988,
+        "erased8": 0.10800361709716992,
+        "maxabs": 22.625
+      },
+      {
+        "layer": 9,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 50.02906570026246,
+        "erased4": 0.7653051873399869,
+        "erased8": 0.1299069413632314,
+        "maxabs": 4.21875
+      },
+      {
+        "layer": 9,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 10.620023580697866,
+        "erased4": 0.23138205516032684,
+        "erased8": 0.026551859501080636,
+        "maxabs": 2.875
+      },
+      {
+        "layer": 9,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 218.0207679343351,
+        "erased4": 0.9892559593329463,
+        "erased8": 0.42122609628086083,
+        "maxabs": 44.0
+      },
+      {
+        "layer": 9,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 211.08026279547275,
+        "erased4": 0.9939207786168808,
+        "erased8": 0.4277335512332427,
+        "maxabs": 33.0
+      },
+      {
+        "layer": 9,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 52.1403246738627,
+        "erased4": 0.9581970805344439,
+        "erased8": 0.11107093917827834,
+        "maxabs": 38.5
+      },
+      {
+        "layer": 9,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 74.28806637494992,
+        "erased4": 0.8981008376830664,
+        "erased8": 0.0889210731555254,
+        "maxabs": 40.0
+      },
+      {
+        "layer": 10,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 49.618777178108274,
+        "erased4": 0.9169270816581541,
+        "erased8": 0.10916594155485515,
+        "maxabs": 21.25
+      },
+      {
+        "layer": 10,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 65.31689922626202,
+        "erased4": 0.9403807688982059,
+        "erased8": 0.132579994507325,
+        "maxabs": 20.125
+      },
+      {
+        "layer": 10,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 47.06154836416735,
+        "erased4": 0.7512445367378873,
+        "erased8": 0.12866445488770736,
+        "maxabs": 3.90625
+      },
+      {
+        "layer": 10,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 13.110203473995893,
+        "erased4": 0.25214384763668746,
+        "erased8": 0.03412737257969685,
+        "maxabs": 2.71875
+      },
+      {
+        "layer": 10,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 99.76003418973858,
+        "erased4": 0.9715742391536833,
+        "erased8": 0.2457991875263338,
+        "maxabs": 41.5
+      },
+      {
+        "layer": 10,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 111.26002619816707,
+        "erased4": 0.9892143163925562,
+        "erased8": 0.2672324348718692,
+        "maxabs": 15.9375
+      },
+      {
+        "layer": 10,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 18.093412685904692,
+        "erased4": 0.6071608548500058,
+        "erased8": 0.0388027252410851,
+        "maxabs": 8.625
+      },
+      {
+        "layer": 10,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 46.409862811748795,
+        "erased4": 0.5849334735136765,
+        "erased8": 0.05220384017015115,
+        "maxabs": 23.375
+      },
+      {
+        "layer": 11,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 51.01457968814327,
+        "erased4": 0.9081409088423734,
+        "erased8": 0.11272787154579712,
+        "maxabs": 20.0
+      },
+      {
+        "layer": 11,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 75.73546698154547,
+        "erased4": 0.9314211179048587,
+        "erased8": 0.14124832397852188,
+        "maxabs": 23.25
+      },
+      {
+        "layer": 11,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 32.185189860796626,
+        "erased4": 0.7167141483663384,
+        "erased8": 0.10086863656356139,
+        "maxabs": 4.34375
+      },
+      {
+        "layer": 11,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 13.568325923039364,
+        "erased4": 0.2522974411646525,
+        "erased8": 0.03592198590437571,
+        "maxabs": 2.671875
+      },
+      {
+        "layer": 11,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 81.02297113009469,
+        "erased4": 0.9530915110726669,
+        "erased8": 0.2147039803716566,
+        "maxabs": 39.5
+      },
+      {
+        "layer": 11,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 105.25709494566306,
+        "erased4": 0.9705225045864398,
+        "erased8": 0.24222625600985992,
+        "maxabs": 33.5
+      },
+      {
+        "layer": 11,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 16.212981386212174,
+        "erased4": 0.5567357050336993,
+        "erased8": 0.03501191773302715,
+        "maxabs": 7.90625
+      },
+      {
+        "layer": 11,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 43.91824497320713,
+        "erased4": 0.45194993416468304,
+        "erased8": 0.04121326349484615,
+        "maxabs": 24.125
+      },
+      {
+        "layer": 12,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 52.12890665204302,
+        "erased4": 0.9129181787672235,
+        "erased8": 0.11680424306656707,
+        "maxabs": 24.75
+      },
+      {
+        "layer": 12,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 79.95719674917368,
+        "erased4": 0.9250242496148134,
+        "erased8": 0.15237058126009428,
+        "maxabs": 27.125
+      },
+      {
+        "layer": 12,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 28.4677384597571,
+        "erased4": 0.6768538065533817,
+        "erased8": 0.08741191111753487,
+        "maxabs": 7.59375
+      },
+      {
+        "layer": 12,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 16.11217107528295,
+        "erased4": 0.26872663314525896,
+        "erased8": 0.04098589336260771,
+        "maxabs": 3.9375
+      },
+      {
+        "layer": 12,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 87.07229457209758,
+        "erased4": 0.9594777571708394,
+        "erased8": 0.22892441951772124,
+        "maxabs": 51.0
+      },
+      {
+        "layer": 12,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 98.81791413136018,
+        "erased4": 0.9536748788295648,
+        "erased8": 0.2506021016683334,
+        "maxabs": 17.5
+      },
+      {
+        "layer": 12,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 16.927036629335632,
+        "erased4": 0.5748102338091244,
+        "erased8": 0.036565125356637286,
+        "maxabs": 8.125
+      },
+      {
+        "layer": 12,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 40.68749726124299,
+        "erased4": 0.4060065440642528,
+        "erased8": 0.03797370653886061,
+        "maxabs": 21.75
+      },
+      {
+        "layer": 13,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 47.211902001209346,
+        "erased4": 0.9051974639327205,
+        "erased8": 0.10531953864256606,
+        "maxabs": 23.625
+      },
+      {
+        "layer": 13,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 79.9039564866286,
+        "erased4": 0.8890707676227276,
+        "erased8": 0.12889395692409614,
+        "maxabs": 25.25
+      },
+      {
+        "layer": 13,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 22.278348254490016,
+        "erased4": 0.6034347264057032,
+        "erased8": 0.07376898164462532,
+        "maxabs": 4.53125
+      },
+      {
+        "layer": 13,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 11.807985061254257,
+        "erased4": 0.24482589195936155,
+        "erased8": 0.029970275667997506,
+        "maxabs": 3.828125
+      },
+      {
+        "layer": 13,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 91.64029371655002,
+        "erased4": 0.9617380995768096,
+        "erased8": 0.23566476029591973,
+        "maxabs": 25.5
+      },
+      {
+        "layer": 13,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 72.95270401392227,
+        "erased4": 0.9552063911389082,
+        "erased8": 0.2008454707952646,
+        "maxabs": 9.75
+      },
+      {
+        "layer": 13,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 19.18806326227357,
+        "erased4": 0.6280181746563336,
+        "erased8": 0.04153770848820366,
+        "maxabs": 10.75
+      },
+      {
+        "layer": 13,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 35.08691132374299,
+        "erased4": 0.4400384395550459,
+        "erased8": 0.03983136533926695,
+        "maxabs": 16.375
+      },
+      {
+        "layer": 14,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 49.13265851752264,
+        "erased4": 0.9076449448015034,
+        "erased8": 0.10829063735905377,
+        "maxabs": 27.5
+      },
+      {
+        "layer": 14,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 70.23583827874599,
+        "erased4": 0.8606688456657605,
+        "erased8": 0.12428412452722207,
+        "maxabs": 31.125
+      },
+      {
+        "layer": 14,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 38.77876497208213,
+        "erased4": 0.7269810519134031,
+        "erased8": 0.13876550076870625,
+        "maxabs": 5.59375
+      },
+      {
+        "layer": 14,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 23.012333014072517,
+        "erased4": 0.27828701642843395,
+        "erased8": 0.06076642718070593,
+        "maxabs": 3.671875
+      },
+      {
+        "layer": 14,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 95.06699082055373,
+        "erased4": 0.9607301211838076,
+        "erased8": 0.2397091497654481,
+        "maxabs": 36.75
+      },
+      {
+        "layer": 14,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 97.59249251928085,
+        "erased4": 0.9666743798133655,
+        "erased8": 0.2229453600369967,
+        "maxabs": 48.25
+      },
+      {
+        "layer": 14,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 18.49145819395842,
+        "erased4": 0.6100518959645334,
+        "erased8": 0.039938898035507236,
+        "maxabs": 9.6875
+      },
+      {
+        "layer": 14,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 33.95448146722256,
+        "erased4": 0.4320247417841202,
+        "erased8": 0.03763879472628618,
+        "maxabs": 15.9375
+      },
+      {
+        "layer": 15,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 53.38494694640284,
+        "erased4": 0.915184262850099,
+        "erased8": 0.11814821792169086,
+        "maxabs": 22.25
+      },
+      {
+        "layer": 15,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 96.18488879081531,
+        "erased4": 0.8939788341522217,
+        "erased8": 0.12303144962359698,
+        "maxabs": 28.375
+      },
+      {
+        "layer": 15,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 23.6261313490634,
+        "erased4": 0.642386670856625,
+        "erased8": 0.06766660069182558,
+        "maxabs": 6.8125
+      },
+      {
+        "layer": 15,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 14.776611523750502,
+        "erased4": 0.2722776180658585,
+        "erased8": 0.03837524201625433,
+        "maxabs": 3.78125
+      },
+      {
+        "layer": 15,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 108.6782465778098,
+        "erased4": 0.9695971172108185,
+        "erased8": 0.2714709521027051,
+        "maxabs": 25.875
+      },
+      {
+        "layer": 15,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 55.98624244103065,
+        "erased4": 0.9169217745463053,
+        "erased8": 0.16236992294971758,
+        "maxabs": 7.375
+      },
+      {
+        "layer": 15,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 18.772860568263688,
+        "erased4": 0.6152871934019916,
+        "erased8": 0.04083074449560386,
+        "maxabs": 10.3125
+      },
+      {
+        "layer": 15,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 34.02070461175381,
+        "erased4": 0.451014057183877,
+        "erased8": 0.03881187698779962,
+        "maxabs": 15.375
+      },
+      {
+        "layer": 16,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 55.69907361246912,
+        "erased4": 0.9302597454223381,
+        "erased8": 0.1271179108130878,
+        "maxabs": 30.625
+      },
+      {
+        "layer": 16,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 76.24666184645433,
+        "erased4": 0.8723768821129432,
+        "erased8": 0.13112856027407524,
+        "maxabs": 33.0
+      },
+      {
+        "layer": 16,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 31.211171489038698,
+        "erased4": 0.6877251692199079,
+        "erased8": 0.11074074250084227,
+        "maxabs": 5.90625
+      },
+      {
+        "layer": 16,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 11.901434482672276,
+        "erased4": 0.2501786488753099,
+        "erased8": 0.031329369697815336,
+        "maxabs": 3.84375
+      },
+      {
+        "layer": 16,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 67.10269183884829,
+        "erased4": 0.9305946975148917,
+        "erased8": 0.19130197951409886,
+        "maxabs": 21.0
+      },
+      {
+        "layer": 16,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 60.887501252003204,
+        "erased4": 0.9357231213496282,
+        "erased8": 0.17449165001893654,
+        "maxabs": 8.8125
+      },
+      {
+        "layer": 16,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 17.731604722558153,
+        "erased4": 0.5883127450452218,
+        "erased8": 0.038527153803517955,
+        "maxabs": 10.1875
+      },
+      {
+        "layer": 16,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 30.916777977576622,
+        "erased4": 0.4120671321184207,
+        "erased8": 0.03668369543858063,
+        "maxabs": 14.625
+      },
+      {
+        "layer": 17,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 48.092356518886376,
+        "erased4": 0.9103568003667436,
+        "erased8": 0.10776292605378492,
+        "maxabs": 26.375
+      },
+      {
+        "layer": 17,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 69.75418051695212,
+        "erased4": 0.8706209292778602,
+        "erased8": 0.11464526408757919,
+        "maxabs": 28.125
+      },
+      {
+        "layer": 17,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 43.02493993477254,
+        "erased4": 0.7508328949389216,
+        "erased8": 0.12064025175330961,
+        "maxabs": 5.0
+      },
+      {
+        "layer": 17,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 25.25508039425581,
+        "erased4": 0.30499850175319576,
+        "erased8": 0.06067542999218672,
+        "maxabs": 4.21875
+      },
+      {
+        "layer": 17,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 108.72148952115067,
+        "erased4": 0.9639300821052259,
+        "erased8": 0.2700189815818061,
+        "maxabs": 36.0
+      },
+      {
+        "layer": 17,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 83.67793782552083,
+        "erased4": 0.9692670229153756,
+        "erased8": 0.2227674967203385,
+        "maxabs": 9.875
+      },
+      {
+        "layer": 17,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 17.150804528290962,
+        "erased4": 0.5720358008757301,
+        "erased8": 0.03701960672415446,
+        "maxabs": 10.625
+      },
+      {
+        "layer": 17,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 29.798949021559494,
+        "erased4": 0.4033080217165825,
+        "erased8": 0.036050315850820296,
+        "maxabs": 14.75
+      },
+      {
+        "layer": 18,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 49.817606750463156,
+        "erased4": 0.9176085131705274,
+        "erased8": 0.11639203510936173,
+        "maxabs": 25.875
+      },
+      {
+        "layer": 18,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 75.96541184645433,
+        "erased4": 0.9134937616494986,
+        "erased8": 0.1275695203206478,
+        "maxabs": 27.0
+      },
+      {
+        "layer": 18,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 41.94535913699053,
+        "erased4": 0.7362625668597546,
+        "erased8": 0.11798309288480342,
+        "maxabs": 6.3125
+      },
+      {
+        "layer": 18,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 12.957140506842197,
+        "erased4": 0.25251116508092636,
+        "erased8": 0.03165869223765838,
+        "maxabs": 3.75
+      },
+      {
+        "layer": 18,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 165.935528381021,
+        "erased4": 0.9842950436940356,
+        "erased8": 0.36759225681221697,
+        "maxabs": 31.25
+      },
+      {
+        "layer": 18,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 102.4019528902494,
+        "erased4": 0.9755910298763177,
+        "erased8": 0.26109664868085813,
+        "maxabs": 20.5
+      },
+      {
+        "layer": 18,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 19.117437771781084,
+        "erased4": 0.6201594836822799,
+        "erased8": 0.041156974531780695,
+        "maxabs": 11.8125
+      },
+      {
+        "layer": 18,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 27.710314237154446,
+        "erased4": 0.41734298375936657,
+        "erased8": 0.03691330399268713,
+        "maxabs": 13.375
+      },
+      {
+        "layer": 19,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 46.42527186149135,
+        "erased4": 0.920898525446911,
+        "erased8": 0.10317722334690965,
+        "maxabs": 27.875
+      },
+      {
+        "layer": 19,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 63.49320514385517,
+        "erased4": 0.9001422723134359,
+        "erased8": 0.10602276829572824,
+        "maxabs": 28.25
+      },
+      {
+        "layer": 19,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 47.13218330267085,
+        "erased4": 0.7888250935956155,
+        "erased8": 0.11383171128657385,
+        "maxabs": 6.96875
+      },
+      {
+        "layer": 19,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 13.19145261324369,
+        "erased4": 0.25910342350984233,
+        "erased8": 0.03438671620992514,
+        "maxabs": 5.71875
+      },
+      {
+        "layer": 19,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 130.10713562036847,
+        "erased4": 0.9772841232507108,
+        "erased8": 0.310876691621142,
+        "maxabs": 43.75
+      },
+      {
+        "layer": 19,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 137.9140132023738,
+        "erased4": 0.9851424938593155,
+        "erased8": 0.32462344872645843,
+        "maxabs": 28.75
+      },
+      {
+        "layer": 19,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 19.689089477086764,
+        "erased4": 0.6375768542927741,
+        "erased8": 0.04228051123966548,
+        "maxabs": 12.3125
+      },
+      {
+        "layer": 19,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 26.606879014235275,
+        "erased4": 0.42586891467754656,
+        "erased8": 0.03599285811949999,
+        "maxabs": 12.9375
+      },
+      {
+        "layer": 20,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 45.87838037772746,
+        "erased4": 0.9195045417795067,
+        "erased8": 0.10069403446177093,
+        "maxabs": 28.375
+      },
+      {
+        "layer": 20,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 60.83807646922576,
+        "erased4": 0.9041451062911596,
+        "erased8": 0.10733468410296318,
+        "maxabs": 26.25
+      },
+      {
+        "layer": 20,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 50.59455006561342,
+        "erased4": 0.8333242517677831,
+        "erased8": 0.12052791056784154,
+        "maxabs": 6.1875
+      },
+      {
+        "layer": 20,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 15.546643966283554,
+        "erased4": 0.2767255887007102,
+        "erased8": 0.03897843796473283,
+        "maxabs": 5.15625
+      },
+      {
+        "layer": 20,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 146.1275296546933,
+        "erased4": 0.9808411674766493,
+        "erased8": 0.3348468483696753,
+        "maxabs": 71.0
+      },
+      {
+        "layer": 20,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 90.47212649614383,
+        "erased4": 0.9695956707000732,
+        "erased8": 0.2315389238871061,
+        "maxabs": 26.75
+      },
+      {
+        "layer": 20,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 20.043788716743002,
+        "erased4": 0.6448704800815825,
+        "erased8": 0.04296858078072031,
+        "maxabs": 13.875
+      },
+      {
+        "layer": 20,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 26.126583784054485,
+        "erased4": 0.42444274364373624,
+        "erased8": 0.03825205182417845,
+        "maxabs": 13.375
+      },
+      {
+        "layer": 21,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 45.71614114283141,
+        "erased4": 0.9070557507530266,
+        "erased8": 0.09974148146848023,
+        "maxabs": 30.375
+      },
+      {
+        "layer": 21,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 57.943055372971756,
+        "erased4": 0.9068270707741762,
+        "erased8": 0.10228128998707502,
+        "maxabs": 26.875
+      },
+      {
+        "layer": 21,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 58.82638214350041,
+        "erased4": 0.7861392012148936,
+        "erased8": 0.1567673822546653,
+        "maxabs": 9.75
+      },
+      {
+        "layer": 21,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 10.11923315586188,
+        "erased4": 0.23412863413492838,
+        "erased8": 0.028265985922935683,
+        "maxabs": 5.21875
+      },
+      {
+        "layer": 21,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 135.9322726366303,
+        "erased4": 0.98081162987839,
+        "erased8": 0.3097254351462391,
+        "maxabs": 63.0
+      },
+      {
+        "layer": 21,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 92.3271226149339,
+        "erased4": 0.9685753186543783,
+        "erased8": 0.22495795366091606,
+        "maxabs": 46.75
+      },
+      {
+        "layer": 21,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 24.08409734908913,
+        "erased4": 0.7261626744967226,
+        "erased8": 0.05165311091718677,
+        "maxabs": 19.375
+      },
+      {
+        "layer": 21,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 25.638667375613483,
+        "erased4": 0.4675642007436508,
+        "erased8": 0.03941395649543175,
+        "maxabs": 18.125
+      },
+      {
+        "layer": 22,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 51.30123194022746,
+        "erased4": 0.9158225061472378,
+        "erased8": 0.11157314823507133,
+        "maxabs": 37.0
+      },
+      {
+        "layer": 22,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 62.36195725661058,
+        "erased4": 0.9223794234104645,
+        "erased8": 0.11948336584445758,
+        "maxabs": 27.625
+      },
+      {
+        "layer": 22,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 46.83989762376493,
+        "erased4": 0.783556853758057,
+        "erased8": 0.12203149414690692,
+        "maxabs": 7.5625
+      },
+      {
+        "layer": 22,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 13.204654987041767,
+        "erased4": 0.24959489626762194,
+        "erased8": 0.03654508063426384,
+        "maxabs": 5.5
+      },
+      {
+        "layer": 22,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 149.89989932842732,
+        "erased4": 0.9854378132920247,
+        "erased8": 0.3277341545045302,
+        "maxabs": 74.0
+      },
+      {
+        "layer": 22,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 153.86518116486377,
+        "erased4": 0.9886686343413132,
+        "erased8": 0.3412444224724403,
+        "maxabs": 50.5
+      },
+      {
+        "layer": 22,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 27.618898796122377,
+        "erased4": 0.7813346489018597,
+        "erased8": 0.059140587795315676,
+        "maxabs": 27.375
+      },
+      {
+        "layer": 22,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 29.12297801482372,
+        "erased4": 0.5420442972427759,
+        "erased8": 0.04678579859244518,
+        "maxabs": 26.25
+      },
+      {
+        "layer": 23,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 51.41826023119082,
+        "erased4": 0.9104349286333432,
+        "erased8": 0.11143553487652856,
+        "maxabs": 34.75
+      },
+      {
+        "layer": 23,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 60.49192379682492,
+        "erased4": 0.913064528734256,
+        "erased8": 0.10852230473970756,
+        "maxabs": 26.0
+      },
+      {
+        "layer": 23,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 66.48281386694627,
+        "erased4": 0.8372232021741682,
+        "erased8": 0.17865942573782936,
+        "maxabs": 9.75
+      },
+      {
+        "layer": 23,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 16.106377821702225,
+        "erased4": 0.2514496460939065,
+        "erased8": 0.04613386132778265,
+        "maxabs": 7.90625
+      },
+      {
+        "layer": 23,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 221.14274457081103,
+        "erased4": 0.9921550664355991,
+        "erased8": 0.4210670034597812,
+        "maxabs": 186.0
+      },
+      {
+        "layer": 23,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 149.89083314553287,
+        "erased4": 0.9793967130856637,
+        "erased8": 0.32121268449685514,
+        "maxabs": 70.5
+      },
+      {
+        "layer": 23,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 30.84239370786589,
+        "erased4": 0.8181214534779938,
+        "erased8": 0.06600639112401077,
+        "maxabs": 36.75
+      },
+      {
+        "layer": 23,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 32.59164526523688,
+        "erased4": 0.5611892235584748,
+        "erased8": 0.04585998333417452,
+        "maxabs": 34.75
+      },
+      {
+        "layer": 24,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 50.4580021838977,
+        "erased4": 0.9211638989690009,
+        "erased8": 0.10858424419530285,
+        "maxabs": 39.0
+      },
+      {
+        "layer": 24,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 51.813183124248795,
+        "erased4": 0.9049542133624737,
+        "erased8": 0.09752881756195655,
+        "maxabs": 24.125
+      },
+      {
+        "layer": 24,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 47.71458684450906,
+        "erased4": 0.8112134372024882,
+        "erased8": 0.11608515928291205,
+        "maxabs": 8.3125
+      },
+      {
+        "layer": 24,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 15.334904401730268,
+        "erased4": 0.2628869246213864,
+        "erased8": 0.04026800241225805,
+        "maxabs": 7.3125
+      },
+      {
+        "layer": 24,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 184.14217366972005,
+        "erased4": 0.9909665581619558,
+        "erased8": 0.37767266579349623,
+        "maxabs": 127.0
+      },
+      {
+        "layer": 24,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 139.07498560196314,
+        "erased4": 0.9658136001000037,
+        "erased8": 0.28859546398505187,
+        "maxabs": 70.5
+      },
+      {
+        "layer": 24,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 28.903326142123817,
+        "erased4": 0.7755472207569988,
+        "erased8": 0.06185357606965556,
+        "maxabs": 37.5
+      },
+      {
+        "layer": 24,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 32.16312604072766,
+        "erased4": 0.5250843702218472,
+        "erased8": 0.043389961505547546,
+        "maxabs": 36.5
+      },
+      {
+        "layer": 25,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 59.83984173978489,
+        "erased4": 0.937190866607754,
+        "erased8": 0.12849439068947766,
+        "maxabs": 42.75
+      },
+      {
+        "layer": 25,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 57.755632840670074,
+        "erased4": 0.9238051267770621,
+        "erased8": 0.10265577068695655,
+        "maxabs": 27.0
+      },
+      {
+        "layer": 25,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 52.3801075545492,
+        "erased4": 0.8373439218733918,
+        "erased8": 0.13622223157949437,
+        "maxabs": 11.0
+      },
+      {
+        "layer": 25,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 16.398179861215446,
+        "erased4": 0.26640013548044056,
+        "erased8": 0.04075382420649895,
+        "maxabs": 8.625
+      },
+      {
+        "layer": 25,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 198.49910424814738,
+        "erased4": 0.9893326992947361,
+        "erased8": 0.3873492445460854,
+        "maxabs": 296.0
+      },
+      {
+        "layer": 25,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 182.11699030949518,
+        "erased4": 0.9298002414214306,
+        "erased8": 0.2716120802439176,
+        "maxabs": 326.0
+      },
+      {
+        "layer": 25,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 26.35980357786126,
+        "erased4": 0.743963832863077,
+        "erased8": 0.056387340251974435,
+        "maxabs": 40.0
+      },
+      {
+        "layer": 25,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 37.32631624661959,
+        "erased4": 0.5161014611904438,
+        "erased8": 0.043779647503143705,
+        "maxabs": 37.75
+      },
+      {
+        "layer": 26,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 75.28464565536228,
+        "erased4": 0.9451254871756317,
+        "erased8": 0.161402132639722,
+        "maxabs": 49.0
+      },
+      {
+        "layer": 26,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 59.8621826171875,
+        "erased4": 0.9331772724787394,
+        "erased8": 0.12270727524390587,
+        "maxabs": 28.75
+      },
+      {
+        "layer": 26,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 35.525841114205946,
+        "erased4": 0.7859681947283315,
+        "erased8": 0.08279881137739538,
+        "maxabs": 19.375
+      },
+      {
+        "layer": 26,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 18.30490953494341,
+        "erased4": 0.26723898068452495,
+        "erased8": 0.045495338164843045,
+        "maxabs": 18.0
+      },
+      {
+        "layer": 26,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 153.95711487494853,
+        "erased4": 0.9827661180555108,
+        "erased8": 0.3343524673732037,
+        "maxabs": 188.0
+      },
+      {
+        "layer": 26,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 345.51872996794873,
+        "erased4": 0.9479913100218161,
+        "erased8": 0.3429990945718227,
+        "maxabs": 2288.0
+      },
+      {
+        "layer": 26,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 34.19694519671161,
+        "erased4": 0.8569987372833793,
+        "erased8": 0.07309245709874297,
+        "maxabs": 38.25
+      },
+      {
+        "layer": 26,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 47.26757186498397,
+        "erased4": 0.5573668051988651,
+        "erased8": 0.05207148576394106,
+        "maxabs": 94.5
+      },
+      {
+        "layer": 27,
+        "kind": "attn_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 107.217478739965,
+        "erased4": 0.953784457348462,
+        "erased8": 0.22605806164606063,
+        "maxabs": 50.75
+      },
+      {
+        "layer": 27,
+        "kind": "attn_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 85.09119121844952,
+        "erased4": 0.9370023440092038,
+        "erased8": 0.14223047479605064,
+        "maxabs": 109.5
+      },
+      {
+        "layer": 27,
+        "kind": "attn_out",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 33.611908474101995,
+        "erased4": 0.7868396983611923,
+        "erased8": 0.0755046586923611,
+        "maxabs": 17.625
+      },
+      {
+        "layer": 27,
+        "kind": "attn_out",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 9.863211313883463,
+        "erased4": 0.21542437259967512,
+        "erased8": 0.02365414186930045,
+        "maxabs": 62.75
+      },
+      {
+        "layer": 27,
+        "kind": "down_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 295.23540101379166,
+        "erased4": 0.9828996591579772,
+        "erased8": 0.517275421155142,
+        "maxabs": 310.0
+      },
+      {
+        "layer": 27,
+        "kind": "down_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 354.513926970653,
+        "erased4": 0.9630774748631012,
+        "erased8": 0.5526438706960434,
+        "maxabs": 292.0
+      },
+      {
+        "layer": 27,
+        "kind": "mlp_in",
+        "group": "image",
+        "tokens": 4858,
+        "ratio": 97.00268323512762,
+        "erased4": 0.9920179320736253,
+        "erased8": 0.20406458239439537,
+        "maxabs": 122.5
+      },
+      {
+        "layer": 27,
+        "kind": "mlp_in",
+        "group": "text",
+        "tokens": 1248,
+        "ratio": 38.77057276016627,
+        "erased4": 0.7106612064899542,
+        "erased8": 0.0817446334239764,
+        "maxabs": 100.0
+      }
+    ]
+  },
+  "blind": {
+    "fp16": {
+      "fluency": {
+        "avg_len": 51.25,
+        "rep4": 0.0025000000000000022,
+        "distinct2": 0.8805970149253731,
+        "empty_frac": 0.0
+      },
+      "answers": [
+        "A busy city street is a bustling and vibrant scene that is often characterized by a high volume of foot and vehicular traffic, a mix of pedestrians, cyclists, and drivers, and a variety of commercial establishments, such as shops, restaurants, and offices. The street is typically lined with tall buildings, which may house businesses",
+        "People usually keep a variety of items in a kitchen, which can vary depending on personal preferences, dietary habits, and cultural practices. Here are some common items that are typically found in a kitchen:\n\n1. **Cookware and Utensils**: Pots, pans, spatulas, ladles, whisks, and",
+        "Making a cup of tea is a simple process that can be done in a few easy steps. Here's a basic guide on how to make a cup of tea:\n\n1. Choose your tea: There are many types of tea to choose from, including black tea, green tea, white tea, oolong tea,",
+        "A typical day at the beach can vary depending on the location, season, and personal preferences, but here's a general description of what a day at the beach might look like:\n\n1. Arrival: The day usually starts with a trip to the beach, either by car, public transportation, or even by walking. Once",
+        "On a farm, you might see a variety of animals depending on the type of farm and its specific purpose. Here are some common animals you might encounter:\n\n1. **Cattle (Cows, Bulls, Calves)**: These are often found on dairy farms, beef farms, or mixed farms. They are raised",
+        "The inside of a classroom can vary greatly depending on the school, the grade level, and the teacher's preferences. However, there are some common elements that are typically found in a classroom.\n\nFirstly, the walls of the classroom are usually painted in a light color, such as white or beige, to create a bright",
+        "A football match, also known as a soccer match in some parts of the world, is a competitive game played between two teams of eleven players each. Here's a general overview of what happens during a football match:\n\n1. **Pre-Match Activities:**\n   - **Team Arrivals:** The teams arrive at the",
+        "A quiet park in the morning is a serene and peaceful place, where the only sounds that can be heard are the soft rustling of leaves, the gentle chirping of birds, and the occasional distant sound of a car or a train. The air is cool and crisp, and the sun is just beginning to rise,"
+      ],
+      "blind_ppl": 146.27818193693707,
+      "scored_tokens": 444
+    },
+    "w4a8": {
+      "fluency": {
+        "avg_len": 51.625,
+        "rep4": 0.0025000000000000022,
+        "distinct2": 0.8567901234567902,
+        "empty_frac": 0.0
+      },
+      "answers": [
+        "A busy city street is typically bustling with activity, reflecting the fast-paced nature of urban life. Here are some common characteristics you might expect to find:\n\n1. **Vehicles**: The street is likely filled with a variety of vehicles including cars, buses, taxis, and sometimes motorcycles or bicycles. These vehicles are in constant",
+        "People usually keep a variety of items in a kitchen, which can vary depending on personal preferences, dietary habits, and the type of cooking they do. Here are some common items found in a typical kitchen:\n\n1. **Cookware and Utensils**: Pots, pans, spatulas, ladles, tongs",
+        "Making a cup of tea is a simple process that can be done in a few easy steps. Here's a basic guide to making a cup of tea:\n\n1. **Choose Your Tea**: Select the type of tea you want to make. Common types include black tea, green tea, herbal tea, and white tea.",
+        "A typical day at the beach can vary greatly depending on the location, time of year, and personal preferences. However, here's a general description of what a day at the beach might look like:\n\n1. **Arrival**: The day usually starts with a drive to the beach, where people arrive early in the morning",
+        "On a farm, you might see a variety of animals depending on the type of farm and its specific purpose. Here are some common animals you might encounter:\n\n1. **Cows** - Often found on dairy farms, they are raised for milk production.\n2. **Chickens** - Commonly found on poultry",
+        "The inside of a classroom can vary depending on the type of school, the grade level, and the specific needs of the students. However, there are some common features that are typically found in a classroom.\n\nThe classroom is usually a room with walls, a floor, and a ceiling. It may be decorated with posters,",
+        "A football match, also known as soccer in some regions, is a competitive game played between two teams of eleven players each. Here's a general overview of what happens during a football match:\n\n1. **Pre-Match Setup**:\n   - The teams are introduced to the crowd.\n   - The teams line up for",
+        "A quiet park in the morning is a serene and peaceful place, where the air is crisp and the sun is just beginning to rise. The sky is a soft shade of blue, dotted with a few wispy clouds. The park is bathed in the warm, golden light of the early morning sun, which gently illumin"
+      ],
+      "blind_ppl": 117.94139319987553,
+      "scored_tokens": 444
+    },
+    "w4a4": {
+      "fluency": {
+        "avg_len": 14.375,
+        "rep4": 0.075,
+        "distinct2": 0.7383177570093458,
+        "empty_frac": 0.0
+      },
+      "answers": [
+        "1             1 1   1                1                1 1   ,",
+        "1 3.1    2 201  23 1     1 3 2  . the2 2            1    122",
+        "and  21 22   '&&    Clamp 1  A  Beautiful 2 1  10 Helmet  0 Closet  Cabinets Cups        Cabinets             1 1 1",
+        ".2 1  2   11        2    1  .  3       Cabinets   2    1 2   2-Pack",
+        "12 1 1   enery 1   1  12 2 1   1211 1 20  Cabinets   2  the       1 112",
+        "4   3    2 1  1    2  the 1 1           1 1   211             \uff0c",
+        "ornings1     ,   1 secondo   21 Inspiration  S.lse     The Clips 2  1  1201scape        2       2",
+        "1   \u8d64    A   22   121\u7f8e\u9e97h\u1ebf .\u65b0\u57ce    2 100 21   1 1111 ksi 2    11  1 2"
+      ],
+      "blind_ppl": 30259.841320566175,
+      "scored_tokens": 444
+    }
+  }
+}

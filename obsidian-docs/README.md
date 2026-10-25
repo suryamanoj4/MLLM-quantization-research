@@ -37,8 +37,8 @@ graph TD
 | [[Claims & Evidence Chain]] | The argumentative spine: 4 claims (hallucination is measurable → the head carries the bias → quantization inflates it → no bridging work exists) with primary sources | ✅ Verified |
 | [[Study Experiment]] | The main study: 7B self-quantized precision ladder (FP16/W8A8/W4A16/W4A8/W4A4) on full POPE (3 splits) + CHAIR with attention capture and text-only probe | ✅ Resampled-100 run complete; full 500 pending |
 | [[Results]] | Append-only experiment log + hypothesis verdict tracker | ⏳ Running (100-img run logged) |
-| [[Method Study]] | **Methods phase (Phoenix, C2 & C3):** LoRAS + A-CAB on practically quantized LLaVA — PTQ validation, Gate 1/2 verdicts, drift profiling, 2×2 ablation, A-CAB sweep, token probe, LoRAS ceilings | ⏳ In progress (n=100 probe complete) |
-| [[Results Summary]] | **The one-place synthesis:** verdict dashboard for both studies, the cross-study inference (omission vs fallback, W4A4 reconciliation, decoding as the strongest lever), cheat-sheet numbers | 🔒 Synced with the two detail notes |
+| [[Method Study]] | **Methods phase (Phoenix, C2 & C3):** LoRAS + A-CAB on practically quantized LLaVA **and Qwen2.5-VL-7B** — PTQ validation, Gate 1/2 verdicts, drift profiling, 2×2 ablation, A-CAB sweep, token probe, LoRAS ceilings | ⏳ In progress (LLaVA n=100 + Qwen Gate 2 complete; Qwen Gate 1 partial) |
+| [[Results Summary]] | **The one-place synthesis:** verdict dashboard for both studies, the cross-study inference (omission vs fallback, W4A4 reconciliation, decoding as the strongest lever), LLaVA↔Qwen comparison, cheat-sheet numbers | 🔒 Synced with the detail notes and the 2026-10-25 Qwen run |
 
 ## One-Paragraph Pitch
 
@@ -51,6 +51,8 @@ Extreme precision reduction (W4A8/W4A4) disproportionately corrupts the cross-mo
 - [x] Visualization suite (F1–F5 produced for the 100-img run; remaining per [[Research Ideation#Figures Planned]])
 - [ ] Evidence write-up (results logged in [[Results]])
 - [ ] Method-study validation at larger n ([[Method Study]] — LoRAS / A-CAB / Gate 1–2)
+- [x] Qwen2.5-VL-7B Gate-2 replication (2026-10-25; artifacts in `results/qwen-2.5vl-2026-10-25/`)
+- [ ] Qwen attention / `r_pb` probe and complete Qwen Gate 1
 
 > [!info] Growing the Vault
 > As research progresses, new notes get added: follow-up experiments, method design and implementation documentation (future research phases). The map is updated as the graph grows.

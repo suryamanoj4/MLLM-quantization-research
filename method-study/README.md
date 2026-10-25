@@ -307,7 +307,9 @@ Both run the **same** scripts in `scripts/`, stage for stage. Qwen support is a
 small, backward-compatible model-family adapter in `phoenix/model.py` (plus the
 MRoPE `cache_position` fix and Qwen yes/no token ids); there is no duplicated
 pipeline. See [`qwen/README.md`](qwen/README.md) for why the code is shared rather
-than copied, and for the Qwen-specific caveats.
+than copied, and for the Qwen-specific caveats. The 2026-10-25 Qwen results are
+archived in `obsidian-docs/results/qwen-2.5vl-2026-10-25/` and summarized in
+`obsidian-docs/Results Summary.md`.
 
 ```bash
 bash run_all.sh
