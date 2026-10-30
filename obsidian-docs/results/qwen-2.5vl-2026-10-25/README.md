@@ -52,6 +52,55 @@ extracted and reduced to the compact artifacts below. Full raw runs (including
   recall −0.089) across the two GPUs.
 - Diagnostic ladder: `--preset diagnostic`, 60 POPE / 40 caption images.
 
+## Calibration, PPL and seed details
+
+### LoRAS-T was calibrated on captions only (no yes/no questions)
+
+`lorast.json` records `source: gen`, `qa_per_image: 0`, `n_qa_batches: 0`,
+`n_calib: 192`: the correctors were fitted to FP16-generated captions on 192
+calibration images, rank 64, all 28 layers, ridge 1e-2, 12.9M parameters. The
+question-augmented calibration from the LLaVA Table 4 ablation was **not** run for
+Qwen, so there is no “captions + QA” Qwen row.
+
+POPE for the W3-RTN + LoRAS-T cell (scale 1.0; FP16 reference in brackets):
+
+| Split | F1 | Precision | Recall | Yes-ratio | AUROC |
+|---|---:|---:|---:|---:|---:|
+| random | 0.8346 [0.8378] | 0.9864 [0.9954] | 0.7233 [0.7233] | 0.3667 [0.3633] | 0.9727 [0.9748] |
+| popular | 0.8298 [0.8298] | 0.9731 [0.9731] | 0.7233 [0.7233] | 0.3717 [0.3717] | 0.9550 [0.9581] |
+| adversarial | 0.8298 [0.8314] | 0.9731 [0.9775] | 0.7233 [0.7233] | 0.3717 [0.3700] | 0.9386 [0.9399] |
+| mean / pooled | **0.8314** [0.8330] | — | — | ~0.370 [0.368] | ~0.9554 [0.9576] |
+
+Paired deltas vs FP16: ΔF1 −0.002 [−0.018,+0.016], Δyes +0.002 [−0.011,+0.014],
+ΔAUROC −0.002 [−0.007,+0.003], all n.s. Coverage −0.009 [−0.031,+0.011] n.s.
+The scale-0.5 variant has mean F1 0.8380 but coverage 0.514 (−0.045*), so it recovers
+POPE F1 by giving up coverage.
+
+### WikiText PPL: what exists and what does not
+
+`validate_ptq.json` contains only the **wiki-calibrated** W3 GPTQ row (9.324).
+There is **no WikiText PPL for W3 GPTQ calibrated on image+caption (mm)** in this
+archive, and **no WikiText PPL for either noise rung** (`w4a16:method=noise`,
+`w3a16:method=noise`). Gate-2 “blind PPL” is not a substitute (see caveats).
+
+To fill the gap on the GPU box:
+
+```bash
+python scripts/09_validate_ptq.py --coco-root data/coco-mini \
+    --model-id Qwen/Qwen2.5-VL-7B-Instruct --dtype bfloat16 \
+    --out runs_qwen/validate_extra \
+    --specs "w3a16:method=gptq,w3a16:method=gptq:calib=wiki,w4a16:method=noise,w3a16:method=noise"
+```
+
+### Noise seed
+
+The Qwen Gate-2 noise rungs used the default **noise seed 0**
+(`QuantConfig.rot_seed = 0`, global `seed = 0`); `matched_noise` derives a per-layer
+generator from `rot_seed * 1_000_003 + crc32(layer_name)`. That is **one noise draw
+per bit width**, not a multi-seed average. The LLaVA extra seed-1/seed-2 object
+analysis was not run for Qwen. To request another draw, append `:seed=1` (or `2`)
+to the rung spec.
+
 ## Known measurement caveats
 
 - **Gate-2 blind PPL and eval caption PPL are not usable for Qwen as an absolute

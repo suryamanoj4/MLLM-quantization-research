@@ -95,6 +95,15 @@ blind PPL ≈146 vs WikiText 8.28), consistent with token-boundary misalignment 
 a caption is appended to the chat template; use `validate_ptq.json` for LM health.
 No visual attention / `r_pb` measurement exists for Qwen yet.
 
+**Run details often asked for.** LoRAS-T was calibrated **without** yes/no questions
+(`qa_per_image=0`, 192 FP16 captions, rank 64, all 28 layers). Its scale-1.0 POPE is
+random 0.8346 / popular 0.8298 / adversarial 0.8298 (mean 0.8314 vs FP16 0.8330;
+Δ −0.002 n.s.), yes-ratio ~0.370 vs 0.368. WikiText PPL for **W3 GPTQ (img+cap)** and
+for both **noise** rungs was **not measured**; the archive only has wiki-calibrated
+W3 GPTQ = 9.324. The noise rungs used **seed 0** (one draw per bit width; add
+`:seed=1` for another). See `obsidian-docs/results/qwen-2.5vl-2026-10-25/README.md`
+for the table and the command to fill the missing PPL rows.
+
 ## Setup
 
 The existing `.venv` is a copy from another machine (its `bin/python` is not
