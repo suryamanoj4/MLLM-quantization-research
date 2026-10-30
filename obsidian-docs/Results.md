@@ -208,7 +208,8 @@ W4 weights make image attention more scattered (+0.8 bits entropy) and less stab
 > `latency.json`, plus the v2 pass: `gate1_ladder_report.json`,
 > `gate1_object_analysis.json`, `diagnostic_ladder_report.json`.
 >
-> Full cross-model table: [[Results Comparison]]. Gate 2 is complete (13 rungs,
+> Full cross-model table: [[Results Comparison]]; exact paper-table replica:
+> [[Results Comparison#0.1 Paper Table 1 replication]]. Gate 2 is complete (13 rungs,
 > 300 captions, 100 POPE images); Gate 1 is 16/17 (`w3a16:method=gptq:calib=text`
 > fails with a non-positive-definite Hessian, also at `damp=0.1`); the diagnostic /
 > attribution ladder is complete (§6.6).

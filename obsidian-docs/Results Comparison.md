@@ -38,6 +38,51 @@ status: complete
 | Realistic W4A4 (`rot+GPTQ`) is graceful | ❌ Qwen −6.3 POPE-F1* | — | §2, §8 |
 | A-CAB high-α brevity trap | ❌ no brevity trap on Qwen | — | §7 |
 
+## 0.1 Paper Table 1 replication
+
+Exact replication of the current paper table, with the same rows, values, stars and
+dashes. `–` means **not run / not measured**, not zero.
+
+| Setting | LLaVA Cov | LLaVA CHAIR_i | LLaVA yes-ratio | LLaVA AUROC | LLaVA small | LLaVA PPL∅ | Qwen Cov | Qwen CHAIR_i | Qwen F1 | Qwen PPL_wiki |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| **FP16 (absolute values)** | .744 | .220 | .542 | – | | 15.6 | .559 | .109 | .833 | 8.28 |
+| NF4 (bitsandbytes kernels) | −.005 | +.016 | +.006 | −.001 | .11 | 1.01× | – | – | – | 1.01× |
+| W4A4 rot. + GPTQ (wiki) | −.002 | −.001 | +.007 | −.001 | .14 | 1.06× | −.019 | −.013 | −.063* | 1.25× |
+| W4 GPTQ (wiki) | −.018* | −.026* | +.002 | .000 | .16 | 1.01× | +.015 | −.007 | −.007 | 1.02× |
+| W3 GPTQ (img+cap) | −.025* | −.036* | +.033* | −.006* | .20 | 1.13× | −.004 | +.019 | +.016 | – |
+| W3 AWQ (wiki) | −.042* | −.014 | +.061* | −.004 | .22 | 1.10× | −.025* | +.009 | +.004 | 1.24× |
+| W3 GPTQ (wiki) | −.045* | −.028* | +.006 | −.007* | .24 | 1.09× | −.046* | +.006 | −.017 | 1.13× |
+| W3 RTN | −.072* | −.035* | −.031* | −.001 | .28 | 1.08× | −.061* | −.004 | +.003 | 1.29× |
+| *Matched noise: Gaussian weight noise with RTN's per-group error energy* | | | | | | | | | | |
+| W4 noise | −.027* | −.030* | +.034* | −.003* | .13 | 1.09× | −.009 | +.010 | −.007 | – |
+| W3 noise | −.097* | −.046* | +.009 | −.010* | .31 | 1.14× | −.042* | +.004 | −.036* | – |
+| W3 noise, other draws | Cov −.069*, −.018; CHAIR_i −.066*, +.040* | | | | | | | | | |
+| *Position-selective quantization: W3 RTN weights at one position type, FP16 weights at the other* | | | | | | | | | | |
+| image positions only | −.008 | −.006 | −.017* | +.001 | .13 | 1.00× | +.004 | +.005 | −.012 | 1.00× |
+| text positions only | −.069* | −.040* | −.022* | .002 | .28 | 1.08× | −.059* | −.006 | −.016 | 1.29× |
+
+> **Caption (as in the paper).** Study 2 on both models (300 caption images; 100 POPE
+> images, 1,800 questions). Changes are quantized minus FP16 on the same items;
+> `*`: paired 95% interval excludes 0. AUROC: of P(yes), pooled over POPE's three
+> splits. Small: of the small annotated objects (<1% of the image) that FP16's caption
+> names, the share the setting's caption no longer names. PPL∅: LLaVA blind
+> perplexity; PPL_wiki: WikiText-2 perplexity; both relative to FP16, and equal to FP16
+> or W3 RTN by construction in the last two rows, as the test has no image. Noise rows:
+> first draw on each model (LLaVA, W4: a second draw gives −.018 coverage, n.s.).
+> `–`: not run.
+
+### Dashes in this table
+
+| Cell(s) | Why |
+|---|---|
+| LLaVA FP16 **AUROC** | Reference row; AUROC is otherwise shown as a delta. Absolute pooled AUROC can be computed from the existing eval JSON. |
+| LLaVA FP16 **small** | Blank, not a dash: the cell would be a drop relative to FP16 itself. FP16 mention rates are in §3. |
+| Qwen NF4 **Cov / CHAIR_i / F1** | Qwen NF4 behavior was not run; only its WikiText PPL (1.01×) exists. |
+| Qwen W3 GPTQ (img+cap) **PPL_wiki** | WikiText PPL for the mm-calibrated GPTQ row was not measured. |
+| Qwen W4 noise **PPL_wiki** | Noise-control WikiText PPL was not measured. |
+| Qwen W3 noise **PPL_wiki** | Noise-control WikiText PPL was not measured. |
+| “W3 noise, other draws” Qwen columns | LLaVA-only extra draws; no Qwen extra seeds were run. |
+
 ## 1. FP16 baseline
 
 | Metric | LLaVA-1.5-7B | Qwen2.5-VL-7B |

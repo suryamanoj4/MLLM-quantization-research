@@ -57,6 +57,8 @@ Quantization does not linearly break hallucination — it changes its **shape**.
 > non-positive-definite Hessian, also at `damp=0.1`); the **diagnostic / attribution
 > ladder is complete**. No visual attention / `r_pb` measurement is present in the
 > archive.
+>
+> **Paper Table 1 replica:** [[Results Comparison#0.1 Paper Table 1 replication]].
 
 **Baseline first — Qwen is a more conservative model.** Absolute scores are not
 comparable across models; compare deltas.

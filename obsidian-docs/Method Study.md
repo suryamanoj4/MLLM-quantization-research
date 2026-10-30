@@ -141,6 +141,7 @@ Drift (per-layer K/V error) grows monotonically toward the tail: K max-drift lay
 > `Qwen/Qwen2.5-VL-7B-Instruct`, bf16, 28 layers, 28/4 GQA, 196 wrapped Linears
 > (6.53B params). Entry point: `run_all_qwen.sh` (same stages as LLaVA).
 > **Single cross-model table: [[Results Comparison]].**
+> **Paper Table 1 replica:** [[Results Comparison#0.1 Paper Table 1 replication]].
 > Gate 2 complete (13 rungs, 300 captions, 100 POPE images); Gate 1 **16/17**
 > (`w3a16:method=gptq:calib=text` fails with a non-positive-definite Hessian, also at
 > `damp=0.1`); diagnostic / attribution ladder complete. The five late Gate-1 rungs
