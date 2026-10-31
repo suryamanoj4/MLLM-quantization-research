@@ -1,0 +1,123 @@
+{
+  "reference": "w3a16+lorast=runs/lorast/w3_rtn_qa.pt",
+  "summary": {
+    "w3a16+lorast=runs/lorast/w3_rtn_qa.pt": {
+      "verdict": "reference",
+      "direction": "none",
+      "health_reasons": [],
+      "lm_damaged": false,
+      "vs_reference": {},
+      "ptq": {
+        "lorast": {
+          "path": "runs/lorast/w3_rtn_qa.pt",
+          "scale": 1.0,
+          "rank": 64,
+          "params": 16908288
+        }
+      }
+    },
+    "w3a16+lorast=runs/lorast/w3_rtn_qa_allpos.pt": {
+      "verdict": "degraded (LM intact: grounding-specific)",
+      "direction": "omission",
+      "health_reasons": [],
+      "lm_damaged": false,
+      "vs_reference": {
+        "adversarial": {
+          "delta": -0.003590458196644275,
+          "lo": -0.013265677462767411,
+          "hi": 0.005934718100890302,
+          "p": 0.458,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "random": {
+          "delta": 0.002171316903701981,
+          "lo": -0.006831918312783625,
+          "hi": 0.010509200934629703,
+          "p": 0.682,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "pope_f1": {
+          "delta": 1.701242048457452e-05,
+          "lo": -0.008107315052414799,
+          "hi": 0.007642391682152638,
+          "p": 0.994,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "pope_precision": {
+          "delta": 0.005677333012698127,
+          "lo": -0.0014381591562798723,
+          "hi": 0.0133126934984521,
+          "p": 0.137,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "pope_recall": {
+          "delta": -0.00666666666666671,
+          "lo": -0.020000000000000018,
+          "hi": 0.006666666666666599,
+          "p": 0.43,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "pope_yes": {
+          "delta": -0.007777777777777883,
+          "lo": -0.01666666666666672,
+          "hi": 0.0,
+          "p": 0.07,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "pope_auroc": {
+          "delta": 0.003162962962962923,
+          "lo": 0.0006629629629629763,
+          "hi": 0.006161111111111062,
+          "p": 0.012,
+          "significant": true,
+          "n_clusters": 100
+        },
+        "chair_i": {
+          "delta": -0.01088491148010845,
+          "lo": -0.032015950091648676,
+          "hi": 0.008954634137671252,
+          "p": 0.283,
+          "significant": false,
+          "n_clusters": 300
+        },
+        "coverage": {
+          "delta": -0.016178736517719616,
+          "lo": -0.032909498878085364,
+          "hi": -0.0007473841554558325,
+          "p": 0.05,
+          "significant": true,
+          "n_clusters": 300
+        },
+        "length": {
+          "delta": -0.7366666666666646,
+          "lo": -1.940000000000012,
+          "hi": 0.46333333333332405,
+          "p": 0.232,
+          "significant": false,
+          "n_clusters": 300
+        },
+        "blind_ppl_ratio": 0.9815231409452881
+      },
+      "ptq": {
+        "lorast": {
+          "path": "runs/lorast/w3_rtn_qa_allpos.pt",
+          "scale": 1.0,
+          "rank": 64,
+          "params": 16908288
+        }
+      }
+    }
+  },
+  "candidates": [
+    "w3a16+lorast=runs/lorast/w3_rtn_qa_allpos.pt"
+  ],
+  "grounding_specific": [
+    "w3a16+lorast=runs/lorast/w3_rtn_qa_allpos.pt"
+  ]
+}

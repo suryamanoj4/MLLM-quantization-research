@@ -1,0 +1,16 @@
+
+=============================================================================================================================================
+paired comparison vs 'w3a16' (95% CI from an image-clustered bootstrap, * = CI excludes 0; POPE pooled over 3 splits)
+rung                                    dF1   dAUROC    dPrec  dRecall     dYes  dCHAIR_i   dCover    dLen  blindPPL  direction  verdict
+w3a16                                     -        -        -        -        -         -        -       -      16.9  none       reference
+w3a16+lorast=runs/lorast/w3_rtn_qa.pt  -0.008   +0.001   -0.035*  +0.023*  +0.036*   +0.045*  +0.060* +2.867*     0.89x  fallback   degraded (LM intact: grounding-specific)
+w3a16+lorast=runs/lorast/w3_rtn_qa_allpos.pt  -0.008   +0.004*  -0.030*  +0.017*  +0.028*   +0.034*  +0.044* +2.130*     0.87x  fallback   degraded (LM intact: grounding-specific)
+
+CIs are unadjusted: across 16 comparisons expect ~1 false stars. Trust a direction that repeats across methods/bit widths, and confirm any single star at a larger n before building on it.
+
+Degraded-but-fluent rungs:
+    w3a16+lorast=runs/lorast/w3_rtn_qa.pt direction=fallback  grounding-specific
+    w3a16+lorast=runs/lorast/w3_rtn_qa_allpos.pt direction=fallback  grounding-specific
+Gate 1 passes for the grounding-specific ones: confirm them at a larger n, then run attribution (abits_image/abits_text arms) on them.
+
+written to runs/q1_llava/pairwise_vs_base/ladder.json and runs/q1_llava/pairwise_vs_base/ladder_report.json

@@ -1,0 +1,21 @@
+[q1] runs/q1_llava/ladder.json: 20 rungs, model llava-hf/llava-1.5-7b-hf, dtype float16, 300 captions, 100 POPE images
+[q1]   rung: fp16
+[q1]   rung: w4a16:method=gptq:calib=wiki
+[q1]   rung: w3a16
+[q1]   rung: w3a16:method=gptq:calib=wiki
+[q1]   rung: w3a16:method=gptq
+[q1]   rung: w3a16:method=awq:calib=wiki
+[q1]   rung: w4a4:method=rot+gptq:calib=wiki
+[q1]   rung: w4a16:method=noise
+[q1]   rung: w3a16:method=noise
+[q1]   rung: w3a16:wtok=image
+[q1]   rung: w3a16:wtok=text
+[q1]   rung: w3a16:method=noise:seed=1
+[q1]   rung: w3a16:method=noise:seed=2
+[q1]   rung: w4a16:method=noise:seed=1
+[q1]   rung: nf4
+[q1]   rung: bnb-nf4
+[q1]   rung: w3a16+lorast=runs/lorast/w3_rtn.pt
+[q1]   rung: w3a16:method=gptq:calib=wiki+lorast=runs/lorast/w3_gptq.pt
+[q1]   rung: w3a16+lorast=runs/lorast/w3_rtn_qa.pt
+[q1]   rung: w3a16:method=gptq:calib=wiki+lorast=runs/lorast/w3_gptq_qa.pt

@@ -26,6 +26,12 @@ dominate the regression; they are excluded from the fit and, through a calibrate
 norm gate, left uncorrected at inference.
 
 Decode overhead: two skinny matmuls per layer per token (2 * d * r MACs).
+
+Ablation (positions="all"): the same corrector, same rank and layers, fitted and
+applied at EVERY position, image tokens included -- what a placement-agnostic
+low-rank correction (QwT-style, but rank-limited) would do. Comparing the two at equal
+parameters tests whether the text-side placement, not the added capacity, is what
+repairs grounding.
 """
 from __future__ import annotations
 
@@ -41,9 +47,16 @@ from .quant import quant_mode
 MASSIVE_FACTOR = 10.0      # a token with norm > 10x the batch median is "massive"
 
 
+POSITIONS = ("text", "all")
+
+
 class HiddenCorrector(nn.Module):
-    def __init__(self, A, B, bias, max_norm: float, scale: float = 1.0):
+    def __init__(self, A, B, bias, max_norm: float, scale: float = 1.0,
+                 positions: str = "text"):
         super().__init__()
+        if positions not in POSITIONS:
+            raise ValueError(f"positions must be one of {POSITIONS}, got {positions!r}")
+        self.positions = positions
         self.register_buffer("A", A, persistent=True)
         self.register_buffer("B", B, persistent=True)
         self.register_buffer("bias", bias, persistent=True)
@@ -53,9 +66,10 @@ class HiddenCorrector(nn.Module):
     def forward(self, h: torch.Tensor, image_mask: torch.Tensor | None) -> torch.Tensor:
         if self.scale == 0.0 or not SteerContext.enabled:
             return h
-        if image_mask is not None and h.dim() == 3 and h.shape[:2] == image_mask.shape:
+        if (self.positions == "text" and image_mask is not None and h.dim() == 3
+                and h.shape[:2] == image_mask.shape):
             sel = ~image_mask                    # prefill: every non-image position
-        else:
+        else:                                    # decode, or the all-positions ablation
             sel = torch.ones(h.shape[:-1], dtype=torch.bool, device=h.device)  # decode
         sel = sel & (h.float().norm(dim=-1) <= self.max_norm)
         if not bool(sel.any()):
@@ -104,15 +118,18 @@ def set_scale(layers: nn.ModuleList, scale: float) -> None:
 
 def save(path, correctors: dict[int, HiddenCorrector], meta: dict) -> None:
     torch.save({"state": {str(li): {"A": c.A.cpu(), "B": c.B.cpu(), "bias": c.bias.cpu(),
-                                     "max_norm": c.max_norm}
+                                     "max_norm": c.max_norm,
+                                     "positions": getattr(c, "positions", "text")}
                           for li, c in correctors.items()},
                 "meta": meta}, path)
 
 
 def load(path, device, dtype) -> tuple[dict[int, HiddenCorrector], dict]:
     blob = torch.load(path, map_location="cpu", weights_only=False)
+    # files written before the ablation existed carry no "positions": text-only
     out = {int(li): HiddenCorrector(t["A"].to(device, dtype), t["B"].to(device, dtype),
-                                    t["bias"].to(device, dtype), t["max_norm"])
+                                    t["bias"].to(device, dtype), t["max_norm"],
+                                    positions=t.get("positions", "text"))
            for li, t in blob["state"].items()}
     return out, blob["meta"]
 
@@ -266,17 +283,18 @@ class _Stop(Exception):
     pass
 
 
-def _text_sel(lm, s: dict) -> torch.Tensor:
+def _text_sel(lm, s: dict, positions: str = "text") -> torch.Tensor:
     img = s["input_ids"] == lm.image_token_id
     am = s.get("attention_mask")
     am = torch.ones_like(img) if am is None else am.bool()
-    return (~img) & am
+    return am if positions == "all" else (~img) & am
 
 
 @torch.no_grad()
-def _run_capture(lm, s: dict, layer_ids: Sequence[int], quant: bool, stop_after: int | None):
-    """Hidden states at text positions after each layer in layer_ids ([N, d] each)."""
-    layers, sel = lm.layers, _text_sel(lm, s)
+def _run_capture(lm, s: dict, layer_ids: Sequence[int], quant: bool, stop_after: int | None,
+                 positions: str = "text"):
+    """Hidden states at text (or all) positions after each layer in layer_ids ([N, d] each)."""
+    layers, sel = lm.layers, _text_sel(lm, s, positions)
     store, hs = {}, []
     for li in layer_ids:
         def hook(m, a, out, li=li):
@@ -300,24 +318,38 @@ def _run_capture(lm, s: dict, layer_ids: Sequence[int], quant: bool, stop_after:
 @torch.no_grad()
 def calibrate(lm, seqs: list[dict], layer_ids: Sequence[int], rank: int = 64,
               ridge: float = 1e-2, layers_per_pass: int = 1, energy: float | None = None,
-              val_every: int = 5, verbose: bool = True) -> tuple[dict, dict]:
+              val_every: int = 5, verbose: bool = True, positions: str = "text",
+              lazy_fp: bool | None = None) -> tuple[dict, dict]:
     """Fit one HiddenCorrector per layer, front to back.
 
     FP16 targets are captured once (CPU, fp16). Each block then re-runs the quantized
     model -- with every earlier corrector live -- up to the block's last layer only.
     layers_per_pass=1 is exact sequential fitting (each corrector sees the corrected
     upstream it will see at inference); larger values trade that for speed.
+
+    positions="all" fits (and later applies) the correctors at every position, image
+    tokens included. With ~5x more tokens per sequence, caching every layer's FP16
+    targets on the CPU would need tens of GB, so FP16 targets are then recomputed per
+    block instead (lazy_fp; about 2x the calibration time, identical result).
     """
+    if positions not in POSITIONS:
+        raise ValueError(f"positions must be one of {POSITIONS}")
+    if lazy_fp is None:
+        lazy_fp = positions == "all"
     layers = lm.layers
     layer_ids = sorted(layer_ids)
     t0 = time.perf_counter()
-    fp_cache: list[dict] = []
-    for j, s in enumerate(seqs):
-        st = _run_capture(lm, s, layer_ids, quant=False, stop_after=layer_ids[-1])
-        fp_cache.append({li: v.to("cpu", torch.float16) for li, v in st.items()})
-    if verbose:
-        print(f"[loras-t] FP16 targets for {len(seqs)} sequences, {len(layer_ids)} layers "
-              f"({time.perf_counter() - t0:.0f}s)", flush=True)
+    fp_cache: list[dict] = [{} for _ in seqs]
+    if not lazy_fp:
+        for j, s in enumerate(seqs):
+            st = _run_capture(lm, s, layer_ids, quant=False, stop_after=layer_ids[-1],
+                              positions=positions)
+            fp_cache[j] = {li: v.to("cpu", torch.float16) for li, v in st.items()}
+        if verbose:
+            print(f"[loras-t] FP16 targets for {len(seqs)} sequences, {len(layer_ids)} layers "
+                  f"({time.perf_counter() - t0:.0f}s)", flush=True)
+    elif verbose:
+        print(f"[loras-t] positions={positions}: FP16 targets recomputed per block", flush=True)
 
     blocks = [layer_ids[i:i + layers_per_pass] for i in range(0, len(layer_ids), layers_per_pass)]
     correctors: dict[int, HiddenCorrector] = {}
@@ -330,10 +362,16 @@ def calibrate(lm, seqs: list[dict], layer_ids: Sequence[int], rank: int = 64,
         n_massive = {li: 0 for li in block}
         base_err = {li: [0.0, 0.0] for li in block}      # sum ||y-x||^2, sum ||y||^2
         for j, s in enumerate(seqs):
-            q = _run_capture(lm, s, block, quant=True, stop_after=block[-1])
+            if lazy_fp:
+                fp_j = _run_capture(lm, s, block, quant=False, stop_after=block[-1],
+                                    positions=positions)
+            else:
+                fp_j = fp_cache[j]
+            q = _run_capture(lm, s, block, quant=True, stop_after=block[-1],
+                             positions=positions)
             store = val if (val_every and j % val_every == 0) else fit
             for li in block:
-                y = fp_cache[j][li].to(lm.device).float()
+                y = fp_j[li].to(lm.device).float()
                 x = q[li].float()
                 ny = y.norm(dim=-1)
                 ok = ny <= MASSIVE_FACTOR * ny.median().clamp(min=1e-6)
@@ -354,7 +392,7 @@ def calibrate(lm, seqs: list[dict], layer_ids: Sequence[int], rank: int = 64,
             new[li] = HiddenCorrector(sol["A"].to(lm.device, lm.dtype),
                                       sol["B"].to(lm.device, lm.dtype),
                                       sol["bias"].to(lm.device, lm.dtype),
-                                      max_norm=1.25 * kept_norm[li])
+                                      max_norm=1.25 * kept_norm[li], positions=positions)
             d = {k: sol[k] for k in ("rank", "rel_mse_reduction", "ceiling", "n_tokens")}
             if li in val:
                 d["val_red"] = val[li].evaluate(sol["A"], sol["B"], sol["bias"])

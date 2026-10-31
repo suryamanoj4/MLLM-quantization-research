@@ -1,0 +1,44 @@
+300 captions. Reference (fp16) mentions annotated objects:
+      <1%: 139/436 = 0.32
+     1-5%: 182/326 = 0.56
+    5-20%: 223/266 = 0.84
+     >20%: 119/142 = 0.84
+
+share of the reference's mentioned objects that each rung DROPS (95% CI over images)
+rung                                          <1%           1-5%          5-20%           >20%            all     small-large  gained
+w4a16:method=gptq:calib=wiki      0.16 [0.09,0.22]0.10 [0.06,0.15]0.05 [0.03,0.09]0.03 [0.00,0.06]0.08 [0.06,0.11]          +0.13*      72
+w3a16                             0.36 [0.28,0.45]0.26 [0.20,0.32]0.11 [0.07,0.15]0.12 [0.07,0.18]0.21 [0.18,0.23]          +0.24*      71
+w3a16:method=gptq:calib=wiki      0.35 [0.27,0.43]0.20 [0.14,0.26]0.10 [0.07,0.14]0.03 [0.00,0.07]0.17 [0.14,0.20]          +0.32*      63
+w3a16:method=gptq                 0.17 [0.11,0.23]0.14 [0.09,0.19]0.08 [0.05,0.12]0.02 [0.00,0.04]0.10 [0.08,0.13]          +0.15*      69
+w3a16:method=awq:calib=wiki       0.25 [0.17,0.33]0.16 [0.12,0.22]0.08 [0.04,0.11]0.03 [0.01,0.07]0.13 [0.10,0.15]          +0.22*      58
+w4a4:method=rot+gptq:calib=wiki   0.26 [0.19,0.33]0.14 [0.09,0.19]0.09 [0.06,0.13]0.04 [0.01,0.08]0.13 [0.10,0.16]          +0.22*      64
+w4a16:method=noise                0.18 [0.12,0.25]0.12 [0.07,0.16]0.09 [0.05,0.12]0.02 [0.00,0.04]0.10 [0.07,0.13]          +0.16*      61
+w3a16:method=noise                0.25 [0.18,0.33]0.20 [0.14,0.25]0.08 [0.05,0.11]0.05 [0.02,0.09]0.14 [0.11,0.17]          +0.20*      47
+w3a16:wtok=image                  0.12 [0.07,0.18]0.14 [0.09,0.19]0.07 [0.04,0.11]0.01 [0.00,0.03]0.09 [0.07,0.11]          +0.11*      68
+w3a16:wtok=text                   0.33 [0.25,0.42]0.19 [0.14,0.25]0.11 [0.07,0.15]0.08 [0.03,0.13]0.17 [0.15,0.20]          +0.26*      54
+w3a16+lorast=runs_qwen/lorast     0.21 [0.14,0.28]0.13 [0.08,0.18]0.07 [0.04,0.10]0.04 [0.00,0.09]0.11 [0.08,0.14]          +0.17*      67
+w3a16+lorast=runs_qwen/lorast@0.5 0.30 [0.22,0.38]0.20 [0.15,0.27]0.09 [0.05,0.12]0.07 [0.02,0.12]0.16 [0.13,0.19]          +0.23*      54
+bnb-nf4                           0.19 [0.12,0.25]0.11 [0.07,0.15]0.04 [0.01,0.06]0.03 [0.00,0.06]0.09 [0.07,0.11]          +0.16*      62
+w3a16+lorast=runs_qwen/lorast_qa  0.24 [0.17,0.33]0.16 [0.11,0.23]0.05 [0.03,0.08]0.06 [0.01,0.11]0.13 [0.10,0.16]          +0.19*      69
+w3a16+lorast=runs_qwen/lorast_qa@0.50.27 [0.20,0.35]0.19 [0.14,0.25]0.07 [0.03,0.11]0.06 [0.01,0.11]0.14 [0.11,0.17]          +0.21*      56
+w3a16:method=noise:seed=1         0.29 [0.22,0.37]0.21 [0.15,0.27]0.10 [0.06,0.14]0.05 [0.02,0.09]0.16 [0.13,0.19]          +0.24*      57
+w3a16:method=noise:seed=2         0.27 [0.19,0.34]0.15 [0.10,0.20]0.06 [0.03,0.09]0.01 [0.00,0.03]0.12 [0.09,0.14]          +0.26*      91
+w4a16:method=noise:seed=1         0.19 [0.13,0.25]0.16 [0.12,0.22]0.08 [0.04,0.11]0.00 [0.00,0.00]0.11 [0.09,0.14]          +0.19*      71
+w3a16+lorast=runs_qwen/lorast_qa_allpos.pt0.25 [0.18,0.32]0.22 [0.16,0.28]0.05 [0.03,0.08]0.02 [0.00,0.04]0.13 [0.11,0.16]          +0.23*      64
+
+most-dropped categories, pooled over rungs (drops / reference mentions per rung):
+   person            250 drops   0.08 per mention
+   car               131 drops   0.34 per mention
+   chair              98 drops   0.30 per mention
+   bottle             70 drops   0.19 per mention
+   tv                 63 drops   0.20 per mention
+   dining table       61 drops   0.10 per mention
+   bowl               58 drops   0.20 per mention
+   mouse              57 drops   0.38 per mention
+   backpack           54 drops   0.36 per mention
+   cup                49 drops   0.32 per mention
+   traffic light      41 drops   0.72 per mention
+   book               36 drops   0.27 per mention
+
+Reading: compare each method's size profile with method=noise. Drops concentrated in small objects beyond the noise control = visual detail lost to quantization.
+written to runs/q1_qwen/object_analysis.json

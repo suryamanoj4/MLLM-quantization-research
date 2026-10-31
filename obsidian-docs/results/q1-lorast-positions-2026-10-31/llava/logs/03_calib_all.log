@@ -1,0 +1,72 @@
+[env] {'torch': '2.6.0+cu124', 'transformers': '4.53.3', 'cuda': '12.4', 'device': 'NVIDIA A100-SXM4-80GB'}
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00, 34.71it/s]
+[quant] wrapped 224 Linear layers (6.48B params) at W3A16, group_size=128, targets=('language',)
+[loras-t] w3a16 ready (9s): {}
+[data] train2014 annotations not found; calibrating from a disjoint slice of val2014
+[loras-t] FP16 captions 8/192 (4s)
+[loras-t] FP16 captions 16/192 (8s)
+[loras-t] FP16 captions 24/192 (12s)
+[loras-t] FP16 captions 32/192 (16s)
+[loras-t] FP16 captions 40/192 (20s)
+[loras-t] FP16 captions 48/192 (23s)
+[loras-t] FP16 captions 56/192 (27s)
+[loras-t] FP16 captions 64/192 (31s)
+[loras-t] FP16 captions 72/192 (35s)
+[loras-t] FP16 captions 80/192 (39s)
+[loras-t] FP16 captions 88/192 (42s)
+[loras-t] FP16 captions 96/192 (46s)
+[loras-t] FP16 captions 104/192 (50s)
+[loras-t] FP16 captions 112/192 (54s)
+[loras-t] FP16 captions 120/192 (58s)
+[loras-t] FP16 captions 128/192 (61s)
+[loras-t] FP16 captions 136/192 (65s)
+[loras-t] FP16 captions 144/192 (69s)
+[loras-t] FP16 captions 152/192 (73s)
+[loras-t] FP16 captions 160/192 (77s)
+[loras-t] FP16 captions 168/192 (80s)
+[loras-t] FP16 captions 176/192 (84s)
+[loras-t] FP16 captions 184/192 (88s)
+[loras-t] FP16 captions 192/192 (92s)
+[data] train2014 annotations not found; calibrating from a disjoint slice of val2014
+[loras-t] 384 FP16 yes/no answers on 192 calibration images (31s, 220 yes)
+[loras-t] held-out KL(fp16||w3a16) = 0.0667  top-1 agreement 0.878  (4441 tokens)
+[loras-t] held-out yes/no: |dP(yes)| = 0.0459  mean shift -0.0315  (72 questions)
+[loras-t] positions=all: FP16 targets recomputed per block
+[loras-t] L00 rel_err=0.0083 rank= 64 fit=0.906 val=0.900 ceiling=0.931 tokens=308649 massive=1450 (11s)
+[loras-t] L01 rel_err=0.0239 rank= 64 fit=0.921 val=0.917 ceiling=0.950 tokens=307696 massive=2631 (13s)
+[loras-t] L02 rel_err=0.0227 rank= 64 fit=0.685 val=0.674 ceiling=0.838 tokens=307665 massive=2664 (15s)
+[loras-t] L03 rel_err=0.0326 rank= 64 fit=0.589 val=0.578 ceiling=0.808 tokens=307603 massive=2736 (17s)
+[loras-t] L04 rel_err=0.0436 rank= 64 fit=0.531 val=0.519 ceiling=0.795 tokens=307523 massive=2829 (19s)
+[loras-t] L05 rel_err=0.0555 rank= 64 fit=0.494 val=0.479 ceiling=0.791 tokens=307389 massive=3004 (21s)
+[loras-t] L06 rel_err=0.0715 rank= 64 fit=0.503 val=0.490 ceiling=0.797 tokens=307287 massive=3127 (23s)
+[loras-t] L07 rel_err=0.0868 rank= 64 fit=0.465 val=0.451 ceiling=0.780 tokens=307217 massive=3213 (25s)
+[loras-t] L08 rel_err=0.1022 rank= 64 fit=0.438 val=0.426 ceiling=0.759 tokens=307293 massive=3119 (27s)
+[loras-t] L09 rel_err=0.1137 rank= 64 fit=0.385 val=0.373 ceiling=0.719 tokens=307390 massive=2996 (29s)
+[loras-t] L10 rel_err=0.1274 rank= 64 fit=0.356 val=0.347 ceiling=0.689 tokens=307612 massive=2725 (31s)
+[loras-t] L11 rel_err=0.1434 rank= 64 fit=0.338 val=0.325 ceiling=0.660 tokens=307662 massive=2669 (33s)
+[loras-t] L12 rel_err=0.1528 rank= 64 fit=0.296 val=0.284 ceiling=0.623 tokens=307710 massive=2614 (35s)
+[loras-t] L13 rel_err=0.1623 rank= 64 fit=0.292 val=0.281 ceiling=0.611 tokens=307750 massive=2567 (37s)
+[loras-t] L14 rel_err=0.1785 rank= 64 fit=0.267 val=0.257 ceiling=0.583 tokens=307764 massive=2548 (39s)
+[loras-t] L15 rel_err=0.1885 rank= 64 fit=0.245 val=0.235 ceiling=0.559 tokens=307799 massive=2503 (41s)
+[loras-t] L16 rel_err=0.1953 rank= 64 fit=0.213 val=0.203 ceiling=0.532 tokens=307860 massive=2436 (43s)
+[loras-t] L17 rel_err=0.2056 rank= 64 fit=0.199 val=0.188 ceiling=0.512 tokens=307886 massive=2407 (45s)
+[loras-t] L18 rel_err=0.2129 rank= 64 fit=0.199 val=0.190 ceiling=0.503 tokens=307934 massive=2352 (47s)
+[loras-t] L19 rel_err=0.2164 rank= 64 fit=0.174 val=0.165 ceiling=0.477 tokens=307998 massive=2278 (49s)
+[loras-t] L20 rel_err=0.2191 rank= 64 fit=0.142 val=0.133 ceiling=0.448 tokens=308080 massive=2179 (50s)
+[loras-t] L21 rel_err=0.2214 rank= 64 fit=0.111 val=0.102 ceiling=0.417 tokens=308147 massive=2093 (52s)
+[loras-t] L22 rel_err=0.2239 rank= 64 fit=0.120 val=0.110 ceiling=0.416 tokens=308264 massive=1946 (54s)
+[loras-t] L23 rel_err=0.2252 rank= 64 fit=0.086 val=0.077 ceiling=0.385 tokens=308377 massive=1813 (56s)
+[loras-t] L24 rel_err=0.2182 rank= 64 fit=0.084 val=0.075 ceiling=0.377 tokens=308591 massive=1539 (58s)
+[loras-t] L25 rel_err=0.2246 rank= 64 fit=0.077 val=0.069 ceiling=0.367 tokens=308673 massive=1426 (60s)
+[loras-t] L26 rel_err=0.2230 rank= 64 fit=0.077 val=0.068 ceiling=0.365 tokens=308850 massive=1225 (62s)
+[loras-t] L27 rel_err=0.2286 rank= 64 fit=0.078 val=0.070 ceiling=0.362 tokens=308887 massive=1168 (64s)
+[loras-t] L28 rel_err=0.2316 rank= 64 fit=0.074 val=0.066 ceiling=0.357 tokens=308902 massive=1152 (66s)
+[loras-t] L29 rel_err=0.2306 rank= 64 fit=0.071 val=0.063 ceiling=0.353 tokens=308902 massive=1152 (68s)
+[loras-t] L30 rel_err=0.5956 rank= 64 fit=0.865 val=0.857 ceiling=0.904 tokens=309831 massive=1 (70s)
+[loras-t] L31 rel_err=0.2261 rank= 64 fit=0.207 val=0.189 ceiling=0.430 tokens=309832 massive=0 (72s)
+[loras-t] held-out KL with LoRAS-T = 0.0357  top-1 agreement 0.909
+[loras-t] held-out yes/no with LoRAS-T: |dP(yes)| = 0.0330  mean shift +0.0036
+[loras-t]   scale 0.5: KL 0.0379  top-1 0.905  |dP(yes)| 0.0342 shift -0.0132
+[loras-t]   scale 1.5: KL 0.0633  top-1 0.881  |dP(yes)| 0.0417 shift +0.0182
+[loras-t] 32 correctors, 16.9M parameters (32 MiB fp16) -> runs/lorast/w3_rtn_qa_allpos.pt  total 25.4 min

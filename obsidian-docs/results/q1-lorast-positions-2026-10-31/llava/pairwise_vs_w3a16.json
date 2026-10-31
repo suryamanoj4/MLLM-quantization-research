@@ -1,0 +1,215 @@
+{
+  "reference": "w3a16",
+  "summary": {
+    "w3a16": {
+      "verdict": "reference",
+      "direction": "none",
+      "health_reasons": [],
+      "lm_damaged": false,
+      "vs_reference": {},
+      "ptq": {}
+    },
+    "w3a16+lorast=runs/lorast/w3_rtn_qa.pt": {
+      "verdict": "degraded (LM intact: grounding-specific)",
+      "direction": "fallback",
+      "health_reasons": [],
+      "lm_damaged": false,
+      "vs_reference": {
+        "adversarial": {
+          "delta": -0.007507386452558107,
+          "lo": -0.022545054208649495,
+          "hi": 0.006377661805250456,
+          "p": 0.332,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "random": {
+          "delta": -0.004771018834428986,
+          "lo": -0.019315509739459502,
+          "hi": 0.009372544617802014,
+          "p": 0.531,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "pope_f1": {
+          "delta": -0.007616521409624877,
+          "lo": -0.020706442762188026,
+          "hi": 0.005448248128786082,
+          "p": 0.256,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "pope_precision": {
+          "delta": -0.03527367027146322,
+          "lo": -0.05211773151471644,
+          "hi": -0.020912034538586144,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 100
+        },
+        "pope_recall": {
+          "delta": 0.023333333333333317,
+          "lo": 0.009999999999999898,
+          "hi": 0.043333333333333335,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 100
+        },
+        "pope_yes": {
+          "delta": 0.036111111111111205,
+          "lo": 0.02388888888888885,
+          "hi": 0.04888888888888898,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 100
+        },
+        "pope_auroc": {
+          "delta": 0.0007450617283950578,
+          "lo": -0.0019864197530864436,
+          "hi": 0.0035549382716049127,
+          "p": 0.656,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "chair_i": {
+          "delta": 0.04462511827721441,
+          "lo": 0.022248377391337254,
+          "hi": 0.06671632364781149,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 300
+        },
+        "coverage": {
+          "delta": 0.06009244992295837,
+          "lo": 0.04009252120277562,
+          "hi": 0.08009331259720065,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 300
+        },
+        "length": {
+          "delta": 2.8666666666666742,
+          "lo": 1.3966666666666612,
+          "hi": 4.353333333333325,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 300
+        },
+        "blind_ppl_ratio": 0.8850883316269718
+      },
+      "ptq": {
+        "lorast": {
+          "path": "runs/lorast/w3_rtn_qa.pt",
+          "scale": 1.0,
+          "rank": 64,
+          "params": 16908288
+        }
+      }
+    },
+    "w3a16+lorast=runs/lorast/w3_rtn_qa_allpos.pt": {
+      "verdict": "degraded (LM intact: grounding-specific)",
+      "direction": "fallback",
+      "health_reasons": [],
+      "lm_damaged": false,
+      "vs_reference": {
+        "adversarial": {
+          "delta": -0.011097844649202382,
+          "lo": -0.024707377071337966,
+          "hi": 0.0014233954451345898,
+          "p": 0.081,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "random": {
+          "delta": -0.0025997019307270053,
+          "lo": -0.016071942643288817,
+          "hi": 0.010005149709409356,
+          "p": 0.696,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "pope_f1": {
+          "delta": -0.007599508989140302,
+          "lo": -0.019601969054001245,
+          "hi": 0.0035915889284920954,
+          "p": 0.199,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "pope_precision": {
+          "delta": -0.029596337258765093,
+          "lo": -0.046121731777886366,
+          "hi": -0.016285516285516333,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 100
+        },
+        "pope_recall": {
+          "delta": 0.016666666666666607,
+          "lo": 0.0033333333333332993,
+          "hi": 0.033333333333333326,
+          "p": 0.013,
+          "significant": true,
+          "n_clusters": 100
+        },
+        "pope_yes": {
+          "delta": 0.02833333333333332,
+          "lo": 0.01777777777777778,
+          "hi": 0.04055555555555557,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 100
+        },
+        "pope_auroc": {
+          "delta": 0.003908024691357981,
+          "lo": 0.0013876543209876413,
+          "hi": 0.00655246913580243,
+          "p": 0.006,
+          "significant": true,
+          "n_clusters": 100
+        },
+        "chair_i": {
+          "delta": 0.03374020679710596,
+          "lo": 0.010490958212137858,
+          "hi": 0.05589729781676478,
+          "p": 0.003,
+          "significant": true,
+          "n_clusters": 300
+        },
+        "coverage": {
+          "delta": 0.04391371340523875,
+          "lo": 0.02379125095932466,
+          "hi": 0.06230529595015577,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 300
+        },
+        "length": {
+          "delta": 2.1300000000000097,
+          "lo": 0.5566666666666578,
+          "hi": 3.6899999999999977,
+          "p": 0.008,
+          "significant": true,
+          "n_clusters": 300
+        },
+        "blind_ppl_ratio": 0.8687346792725302
+      },
+      "ptq": {
+        "lorast": {
+          "path": "runs/lorast/w3_rtn_qa_allpos.pt",
+          "scale": 1.0,
+          "rank": 64,
+          "params": 16908288
+        }
+      }
+    }
+  },
+  "candidates": [
+    "w3a16+lorast=runs/lorast/w3_rtn_qa.pt",
+    "w3a16+lorast=runs/lorast/w3_rtn_qa_allpos.pt"
+  ],
+  "grounding_specific": [
+    "w3a16+lorast=runs/lorast/w3_rtn_qa.pt",
+    "w3a16+lorast=runs/lorast/w3_rtn_qa_allpos.pt"
+  ]
+}

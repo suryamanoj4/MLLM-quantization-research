@@ -11,6 +11,12 @@ calibration images (disjoint from every evaluation image).
     python scripts/12_calibrate_lorast.py --coco-root data/coco-mini \
         --precision w3a16:method=gptq:calib=wiki --out runs/lorast/w3_gptq.pt
 
+Ablation: --positions all fits the same correctors (same rank, layers, data) at every
+position, image tokens included, to test whether the text-side placement matters:
+
+    python scripts/12_calibrate_lorast.py --coco-root data/coco-mini --precision w3a16 \
+        --qa-per-image 2 --positions all --out runs/lorast/w3_rtn_qa_allpos.pt
+
 Then evaluate as extra ladder rungs next to the Gate-2 rows (same pool, --resume):
 
     python scripts/00_precision_ladder.py --coco-root data/coco-mini --out runs/gate2 \
@@ -75,6 +81,8 @@ def main():
     p.add_argument("--energy", type=float, default=None)
     p.add_argument("--ridge", type=float, default=1e-2)
     p.add_argument("--layers", default="", help="comma list; empty = every layer")
+    p.add_argument("--positions", default="text", choices=["text", "all"],
+                   help="text = LoRAS-T; all = ablation that also corrects image positions")
     p.add_argument("--layers-per-pass", type=int, default=1)
     p.add_argument("--val-every", type=int, default=5, help="every k-th sequence is held out")
     p.add_argument("--dtype", default="float16")
@@ -123,7 +131,7 @@ def main():
 
     correctors, diag = LT.calibrate(lm, cal_items, layer_ids, rank=a.rank, ridge=a.ridge,
                                     layers_per_pass=a.layers_per_pass, energy=a.energy,
-                                    val_every=a.val_every)
+                                    val_every=a.val_every, positions=a.positions)
     after = heldout_kl(lm, seqs, val_idx, steer=True)
     print(f"[loras-t] held-out KL with LoRAS-T = {after['kl']:.4f}  "
           f"top-1 agreement {after['top1_agree']:.3f}", flush=True)
@@ -146,6 +154,7 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
     n_params = sum(c.A.numel() + c.B.numel() + c.bias.numel() for c in correctors.values())
     meta = {"precision": a.precision, "rank": a.rank, "ridge": a.ridge, "source": a.source,
+            "positions": a.positions,
             "n_calib": len(seqs), "qa_per_image": a.qa_per_image, "n_qa_batches": len(qa_cal),
             "layers": layer_ids, "params": n_params,
             "kl_before": before, "kl_after": after}

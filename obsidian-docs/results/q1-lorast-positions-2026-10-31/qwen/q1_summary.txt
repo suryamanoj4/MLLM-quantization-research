@@ -1,0 +1,20 @@
+== change vs FP16 (paired, image-clustered 95% CI; * = excludes 0) ==
+W3 RTN                       dCov=-0.061* [-0.085,-0.037]  dCHAIR_i=-0.004  [-0.027,+0.019]  dF1=+0.003  [-0.013,+0.021]  dyes=+0.007  [-0.005,+0.021]  dAUROC=-0.002  [-0.007,+0.003]
++ LoRAS-T text (Q1 ref)      dCov=-0.017  [-0.039,+0.002]  dCHAIR_i=+0.002  [-0.017,+0.021]  dF1=-0.003  [-0.016,+0.011]  dyes=-0.001  [-0.012,+0.009]  dAUROC=-0.000  [-0.004,+0.004]
++ same, ALL positions        dCov=-0.019  [-0.040,+0.001]  dCHAIR_i=-0.008  [-0.029,+0.013]  dF1=-0.034* [-0.052,-0.015]  dyes=-0.026* [-0.039,-0.013]  dAUROC=+0.003  [-0.002,+0.007]
+
+== ALL positions minus TEXT positions (same rank, same calibration data) ==
+  dCov=-0.002  [-0.021,+0.017]  dCHAIR_i=-0.010  [-0.031,+0.011]  dF1=-0.031* [-0.047,-0.015]  dyes=-0.025* [-0.036,-0.014]  dAUROC=+0.003  [-0.000,+0.006]  drecall=-0.047* [-0.069,-0.026]  dlen=+1.240* [+0.650,+1.843]
+
+== each correction minus W3 RTN ==
++ LoRAS-T text (Q1 ref)      dCov=+0.044* [+0.019,+0.068]  dCHAIR_i=+0.006  [-0.016,+0.027]  dF1=-0.006  [-0.024,+0.011]
++ same, ALL positions        dCov=+0.042* [+0.017,+0.066]  dCHAIR_i=-0.004  [-0.030,+0.020]  dF1=-0.037* [-0.059,-0.016]
+
+== share of FP16-mentioned objects dropped (small <1% / large >20% / all) ==
+W3 RTN                       0.360 / 0.118 / 0.205
++ LoRAS-T text (Q1 ref)      0.245 / 0.059 / 0.125
++ same, ALL positions        0.252 / 0.017 / 0.134
+
+== calibration (held-out, from the .json next to each .pt) ==
+text: runs_qwen/lorast_qa.json missing
+all   positions=all params=12.9M KL 0.2761->0.0892 top1 0.729->0.852 mean val_red 0.177 skipped []

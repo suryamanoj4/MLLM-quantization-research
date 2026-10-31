@@ -40,6 +40,7 @@ status: complete
 | W4 weights lower visual attention (H2) | ❌ Qwen attention **rises** (W4A16 +13.9%* POPE vs LLaVA −14.0%*) | — | §0.3 |
 | Visual attention fades through the caption (H4) | ✅ | ✅ (last/first 10%: 0.40 vs 0.44) | §0.3 |
 | Matched noise effect is draw-dependent | ✅ | ✅ (Qwen W3 draws −.042*, −.045*, +.008) | §0.1 |
+| LoRAS-T's gain comes from text-side placement (Q1: text ≥ all at equal params) | ✅ | cost of all-positions differs: coverage on LLaVA, POPE on Qwen | §0.6 |
 
 ## 0.1 Paper Table 1 replication
 
@@ -78,6 +79,8 @@ dashes. `–` means **not run / not measured**, not zero.
 
 ### Dashes in this table
 
+All Qwen dashes were filled by the v3 pass (2026-10-31, A100-80GB; `results/qwen-2.5vl-2026-10-25/`
+v3 artifacts). Only one LLaVA dash remains.
 
 | Cell(s) | Status |
 |---|---|
@@ -151,10 +154,26 @@ not steepen it. So the omission / small-object pattern, which does replicate, oc
 an attention loss — reduced visual attention is a LLaVA-specific correlate, not the general mechanism;
 this is consistent with the attribution result that text-position damage drives the omission.
 
-Caveats: LLaVA's W8A8/W4A8 used real kernels (TorchAO / Quanto) and auto_gptq, Qwen's are simulated
-(GPTQ wiki-calibrated); raw entropies are not comparable across models (Qwen's image-token count varies,
+Caveats: both models' rungs are simulated (fake-quant), but the recipes differ — see the rung
+comparison below; raw entropies are not comparable across models (Qwen's image-token count varies,
 mean ceiling 8.36 bits vs LLaVA's 9.17); one draw at n = 100; no r_pb (H3) on Qwen yet. W8A8's
 CHAIR −10.7% has a wide CI and sits against +7.7% on POPE — treat it as unresolved.
+
+**Rung recipes differ between the two attention studies** (LLaVA: `evidence-study/.../models/load.py`;
+Qwen: `phoenix`, `13_attention_probe.py`). Scope is the same (decoder Linears only, lm_head FP16).
+
+| Rung | LLaVA (evidence study) | Qwen (attention probe) |
+|---|---|---|
+| W8A8 | int8 **per-channel** RTN weights + int8 per-token acts | int8 RTN weights, **g128**, + int8 per-token acts |
+| W4A16 | auto_gptq int4 g128, **act-order on, damp 0.1**, calibrated on 128 **COCO caption texts** | phoenix GPTQ int4 g128, act-order off, damp 0.01, 64 **WikiText** sequences |
+| W4A8 | the **same GPTQ** weights as W4A16 + int8 acts (isolates the activation axis) | **RTN** int4 g128 weights + int8 acts (different weights from W4A16) |
+| Hardware / dtype | T4, fp16, transformers 4.46 | A100, bf16, transformers 4.53 |
+| Items | resampled 100 images (seed 42) | method-study eval pool, 100 POPE images/split + 100 captions (seed 0) |
+| POPE tokens | ≤ 8 | ≤ 16 |
+
+So the W4A16 rows are both GPTQ but with different calibration text and settings, and W4A8 is GPTQ on
+LLaVA but RTN on Qwen. Running `13_attention_probe.py` on LLaVA with the Qwen recipe is the clean way to
+tell a model difference from a recipe difference.
 
 ## 0.4 The three reviewer questions (answered, v3)
 
@@ -232,6 +251,33 @@ python scripts/13_attention_probe.py --coco-root data/coco-mini \
 **The POPE "yes" confound does not explain the reversal.** On LLaVA, saying "yes" pulls attention onto
 the image ([[Results]] §5.3). Qwen's W4A16 says "yes" slightly *less* (Δyes −.009*), which would lower
 attention, yet attention rose +13.9%; and captions (no yes/no) also rise (+8.8%*).
+
+## 0.6 Q1 — LoRAS-T placement ablation (text vs all positions)
+
+Same rank-64 corrector, same layers and calibration data (captions + 2 yes/no questions per
+image), equal parameters; fitted at text positions (LoRAS-T) or at **all** positions, image
+tokens included. W3 RTN base, Study-2 eval. Full write-up, setup and files:
+`results/q1-lorast-positions-2026-10-31/README.md`.
+
+| All minus text (paired) | LLaVA | Qwen |
+|---|---:|---:|
+| ΔCov | **−.016*** | −.002 |
+| ΔF1 | +.000 | **−.031*** |
+| Δyes-ratio | −.008 | **−.025*** |
+| Δrecall | −.007 | **−.047*** |
+| Small-object drop, text → all | .140 → .181 | .245 → .252 |
+| Held-out KL after, text vs all | .031 vs .036 | .075 vs .089 |
+| Yes/no \|ΔP(yes)\| after, text vs all | .023 vs .033 | .014 vs .023 |
+
+vs FP16: LLaVA text ΔCov −.012 (n.s., the paper's value, reproduced), all −.029*; Qwen
+text −.017 / F1 −.003, all −.019 / F1 −.034*.
+
+**Conclusion: text ≥ all on both models.** Correcting image positions too never improves a
+grounding metric and costs coverage on LLaVA and POPE on Qwen, while fitting held-out FP16
+outputs less well despite 6–7.5× more tokens. LoRAS-T works because of where it corrects,
+not because of its added capacity — consistent with the attribution result that
+text-position damage drives the omission. One draw per variant, unadjusted CIs; the LLaVA
+coverage gap is close to 0.
 
 ## 1. FP16 baseline
 
@@ -468,8 +514,8 @@ overheads are what transfer. No LLaVA latency table exists in the vault.
   reports are provisional. It is still consistent for gross failures: blind PPL is
   identical for `w4a4` and the text-at-A4 arm (30,260), and for `w4a8` and the
   image-at-A4 arm (117.9), as it must be with no image.
-- **No Qwen attention / `r_pb` measurement** in the archive; the LLaVA attention
-  comparison (Table 2 / `r_pb`) has no cross-model counterpart yet.
+- **Qwen attention measured in v3** (`13_attention_probe.py`, [[Results Comparison]] §0.3): the LLaVA
+  attention drop does **not** replicate (W4A16 +13.9%* on POPE); `r_pb` (H3) is still not measured.
 - Qwen FP16 is more conservative (coverage 0.559 vs 0.744; CHAIR_i 0.109 vs 0.220);
   do not compare absolute scores across models.
 - Qwen Gate 1 is 16/17: `w3a16:method=gptq:calib=text` fails (non-positive-definite

@@ -1,0 +1,45 @@
+300 captions. Reference (fp16) mentions annotated objects:
+      <1%: 265/436 = 0.61
+     1-5%: 260/326 = 0.80
+    5-20%: 239/266 = 0.90
+     >20%: 131/142 = 0.92
+
+share of the reference's mentioned objects that each rung DROPS (95% CI over images)
+rung                                          <1%           1-5%          5-20%           >20%            all     small-large  gained
+w4a16:method=gptq:calib=wiki      0.16 [0.12,0.21]0.08 [0.05,0.11]0.02 [0.00,0.04]0.04 [0.01,0.07]0.08 [0.07,0.10]          +0.12*      52
+w3a16                             0.28 [0.23,0.33]0.19 [0.15,0.23]0.04 [0.02,0.06]0.06 [0.02,0.10]0.16 [0.14,0.18]          +0.22*      49
+w3a16:method=gptq:calib=wiki      0.24 [0.19,0.28]0.15 [0.11,0.20]0.03 [0.01,0.05]0.05 [0.02,0.09]0.13 [0.11,0.15]          +0.18*      56
+w3a16:method=gptq                 0.20 [0.16,0.25]0.13 [0.09,0.17]0.02 [0.00,0.03]0.05 [0.02,0.08]0.11 [0.09,0.13]          +0.16*      63
+w3a16:method=awq:calib=wiki       0.22 [0.17,0.27]0.12 [0.09,0.16]0.04 [0.02,0.07]0.05 [0.02,0.08]0.12 [0.10,0.14]          +0.17*      57
+w4a4:method=rot+gptq:calib=wiki   0.14 [0.10,0.18]0.06 [0.04,0.09]0.03 [0.01,0.06]0.03 [0.01,0.06]0.07 [0.06,0.09]          +0.11*      60
+w4a16:method=noise                0.13 [0.09,0.16]0.12 [0.08,0.16]0.04 [0.02,0.07]0.06 [0.02,0.10]0.09 [0.07,0.11]          +0.07*      47
+w3a16:method=noise                0.31 [0.26,0.37]0.21 [0.16,0.26]0.08 [0.05,0.12]0.07 [0.03,0.11]0.19 [0.16,0.21]          +0.24*      43
+w3a16:wtok=image                  0.13 [0.09,0.17]0.07 [0.04,0.10]0.02 [0.00,0.03]0.05 [0.02,0.09]0.07 [0.05,0.09]          +0.08*      51
+w3a16:wtok=text                   0.28 [0.23,0.33]0.18 [0.14,0.22]0.03 [0.01,0.05]0.08 [0.04,0.13]0.15 [0.13,0.17]          +0.20*      54
+w3a16:method=noise:seed=1         0.25 [0.20,0.30]0.18 [0.13,0.22]0.06 [0.03,0.09]0.08 [0.03,0.13]0.15 [0.13,0.18]          +0.18*      50
+w3a16:method=noise:seed=2         0.18 [0.14,0.23]0.10 [0.07,0.15]0.04 [0.02,0.06]0.05 [0.02,0.09]0.10 [0.08,0.12]          +0.13*      70
+w4a16:method=noise:seed=1         0.17 [0.13,0.21]0.10 [0.07,0.14]0.03 [0.01,0.05]0.03 [0.01,0.06]0.09 [0.07,0.11]          +0.14*      54
+nf4                               0.12 [0.08,0.15]0.06 [0.03,0.09]0.03 [0.01,0.05]0.05 [0.02,0.08]0.06 [0.05,0.08]          +0.07*      50
+bnb-nf4                           0.11 [0.07,0.15]0.07 [0.04,0.10]0.03 [0.01,0.05]0.05 [0.02,0.08]0.07 [0.05,0.08]          +0.06*      52
+w3a16+lorast=runs/lorast/w3_rtn.pt0.17 [0.13,0.21]0.10 [0.07,0.14]0.03 [0.01,0.05]0.06 [0.03,0.10]0.10 [0.08,0.11]          +0.11*      53
+w3a16:method=gptq:calib=wiki+lorast=runs/lorast/w3_gptq.pt0.13 [0.09,0.17]0.10 [0.07,0.14]0.03 [0.01,0.06]0.05 [0.01,0.08]0.08 [0.07,0.10]          +0.09*      59
+w3a16+lorast=runs/lorast/w3_rtn_qa.pt0.14 [0.10,0.18]0.08 [0.05,0.11]0.04 [0.02,0.06]0.05 [0.02,0.08]0.08 [0.06,0.10]          +0.09*      61
+w3a16:method=gptq:calib=wiki+lorast=runs/lorast/w3_gptq_qa.pt0.15 [0.11,0.19]0.12 [0.08,0.16]0.03 [0.01,0.05]0.06 [0.03,0.10]0.09 [0.08,0.11]          +0.09*      56
+w3a16+lorast=runs/lorast/w3_rtn_qa_allpos.pt0.18 [0.14,0.23]0.08 [0.06,0.12]0.03 [0.01,0.05]0.05 [0.02,0.09]0.09 [0.08,0.11]          +0.13*      52
+
+most-dropped categories, pooled over rungs (drops / reference mentions per rung):
+   handbag           141 drops   0.35 per mention
+   bottle            127 drops   0.25 per mention
+   person            104 drops   0.03 per mention
+   car               102 drops   0.12 per mention
+   chair             102 drops   0.13 per mention
+   truck              85 drops   0.22 per mention
+   bowl               85 drops   0.21 per mention
+   cup                75 drops   0.14 per mention
+   backpack           74 drops   0.23 per mention
+   tie                73 drops   0.41 per mention
+   spoon              63 drops   0.29 per mention
+   potted plant       59 drops   0.42 per mention
+
+Reading: compare each method's size profile with method=noise. Drops concentrated in small objects beyond the noise control = visual detail lost to quantization.
+written to runs/q1_llava/object_analysis.json

@@ -1,0 +1,399 @@
+{
+  "meta": {
+    "precision": "w3a16",
+    "rank": 64,
+    "ridge": 0.01,
+    "source": "gen",
+    "positions": "all",
+    "n_calib": 192,
+    "qa_per_image": 2,
+    "n_qa_batches": 48,
+    "layers": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31
+    ],
+    "params": 16908288,
+    "kl_before": {
+      "kl": 0.06672401971522819,
+      "top1_agree": 0.8781805899572168,
+      "tokens": 4441,
+      "qa": {
+        "abs": 0.04585929587483406,
+        "shift": -0.03148077428340912,
+        "n": 72
+      }
+    },
+    "kl_after": {
+      "kl": 0.03566015080754968,
+      "top1_agree": 0.9088043233505967,
+      "tokens": 4441,
+      "qa": {
+        "abs": 0.03301335871219635,
+        "shift": 0.003647541394457221,
+        "n": 72
+      },
+      "scale_0.5": {
+        "kl": 0.037913695564948606,
+        "top1_agree": 0.9049763566764242,
+        "tokens": 4441,
+        "qa": {
+          "abs": 0.03423362225294113,
+          "shift": -0.013222917914390564,
+          "n": 72
+        }
+      },
+      "scale_1.5": {
+        "kl": 0.06332762309544475,
+        "top1_agree": 0.8808826840801621,
+        "tokens": 4441,
+        "qa": {
+          "abs": 0.041662514209747314,
+          "shift": 0.01820784993469715,
+          "n": 72
+        }
+      }
+    }
+  },
+  "layers": {
+    "0": {
+      "rank": 64,
+      "rel_mse_reduction": 0.9056216687095091,
+      "ceiling": 0.9305554934216134,
+      "n_tokens": 308649,
+      "val_red": 0.8997862187952174,
+      "massive_excluded": 1450,
+      "rel_err_before": 0.008333380940705242
+    },
+    "1": {
+      "rank": 64,
+      "rel_mse_reduction": 0.9211382489481084,
+      "ceiling": 0.9496553385894289,
+      "n_tokens": 307696,
+      "val_red": 0.9173591208595695,
+      "massive_excluded": 2631,
+      "rel_err_before": 0.023908942324946954
+    },
+    "2": {
+      "rank": 64,
+      "rel_mse_reduction": 0.6851053569050678,
+      "ceiling": 0.8380236288570005,
+      "n_tokens": 307665,
+      "val_red": 0.6737564602213608,
+      "massive_excluded": 2664,
+      "rel_err_before": 0.022665935277869014
+    },
+    "3": {
+      "rank": 64,
+      "rel_mse_reduction": 0.589247481914283,
+      "ceiling": 0.8075385817734451,
+      "n_tokens": 307603,
+      "val_red": 0.5784253788289636,
+      "massive_excluded": 2736,
+      "rel_err_before": 0.0326001635870142
+    },
+    "4": {
+      "rank": 64,
+      "rel_mse_reduction": 0.5312304272553655,
+      "ceiling": 0.7951153426368396,
+      "n_tokens": 307523,
+      "val_red": 0.518937771057302,
+      "massive_excluded": 2829,
+      "rel_err_before": 0.04359943542820584
+    },
+    "5": {
+      "rank": 64,
+      "rel_mse_reduction": 0.4935466695100559,
+      "ceiling": 0.7905679288891666,
+      "n_tokens": 307389,
+      "val_red": 0.4789543068299936,
+      "massive_excluded": 3004,
+      "rel_err_before": 0.055462395296343746
+    },
+    "6": {
+      "rank": 64,
+      "rel_mse_reduction": 0.5034811726056025,
+      "ceiling": 0.797020490899178,
+      "n_tokens": 307287,
+      "val_red": 0.4901682307911832,
+      "massive_excluded": 3127,
+      "rel_err_before": 0.07148976182028265
+    },
+    "7": {
+      "rank": 64,
+      "rel_mse_reduction": 0.4647090969525999,
+      "ceiling": 0.780065048427709,
+      "n_tokens": 307217,
+      "val_red": 0.4505147524302524,
+      "massive_excluded": 3213,
+      "rel_err_before": 0.08681015856069547
+    },
+    "8": {
+      "rank": 64,
+      "rel_mse_reduction": 0.438176822493211,
+      "ceiling": 0.7590241147518217,
+      "n_tokens": 307293,
+      "val_red": 0.4255569130521166,
+      "massive_excluded": 3119,
+      "rel_err_before": 0.10215688532069385
+    },
+    "9": {
+      "rank": 64,
+      "rel_mse_reduction": 0.3847210480787443,
+      "ceiling": 0.7191706596278051,
+      "n_tokens": 307390,
+      "val_red": 0.3725861231012795,
+      "massive_excluded": 2996,
+      "rel_err_before": 0.11372036404121334
+    },
+    "10": {
+      "rank": 64,
+      "rel_mse_reduction": 0.3561857872771761,
+      "ceiling": 0.6887227600346495,
+      "n_tokens": 307612,
+      "val_red": 0.34663734132336443,
+      "massive_excluded": 2725,
+      "rel_err_before": 0.12739147261712072
+    },
+    "11": {
+      "rank": 64,
+      "rel_mse_reduction": 0.33752357779487796,
+      "ceiling": 0.6597693379939988,
+      "n_tokens": 307662,
+      "val_red": 0.32532447979717327,
+      "massive_excluded": 2669,
+      "rel_err_before": 0.1433918961504706
+    },
+    "12": {
+      "rank": 64,
+      "rel_mse_reduction": 0.295882678194182,
+      "ceiling": 0.623161589842246,
+      "n_tokens": 307710,
+      "val_red": 0.28432717408522334,
+      "massive_excluded": 2614,
+      "rel_err_before": 0.15281722931291652
+    },
+    "13": {
+      "rank": 64,
+      "rel_mse_reduction": 0.2917213424349113,
+      "ceiling": 0.610597390511689,
+      "n_tokens": 307750,
+      "val_red": 0.28122653425987876,
+      "massive_excluded": 2567,
+      "rel_err_before": 0.1622623030733643
+    },
+    "14": {
+      "rank": 64,
+      "rel_mse_reduction": 0.2667388880075863,
+      "ceiling": 0.5826484828728655,
+      "n_tokens": 307764,
+      "val_red": 0.25700891077700905,
+      "massive_excluded": 2548,
+      "rel_err_before": 0.1785490789942401
+    },
+    "15": {
+      "rank": 64,
+      "rel_mse_reduction": 0.2445459286488767,
+      "ceiling": 0.559375038907935,
+      "n_tokens": 307799,
+      "val_red": 0.23539233711073804,
+      "massive_excluded": 2503,
+      "rel_err_before": 0.18853075694751698
+    },
+    "16": {
+      "rank": 64,
+      "rel_mse_reduction": 0.21253586403795754,
+      "ceiling": 0.532363489507383,
+      "n_tokens": 307860,
+      "val_red": 0.20327968117945117,
+      "massive_excluded": 2436,
+      "rel_err_before": 0.19530446817434619
+    },
+    "17": {
+      "rank": 64,
+      "rel_mse_reduction": 0.19853935373062104,
+      "ceiling": 0.5115834016146199,
+      "n_tokens": 307886,
+      "val_red": 0.18820819546861056,
+      "massive_excluded": 2407,
+      "rel_err_before": 0.20559207270643864
+    },
+    "18": {
+      "rank": 64,
+      "rel_mse_reduction": 0.1991514149207384,
+      "ceiling": 0.5026516588257295,
+      "n_tokens": 307934,
+      "val_red": 0.18987111562495385,
+      "massive_excluded": 2352,
+      "rel_err_before": 0.21290083313994224
+    },
+    "19": {
+      "rank": 64,
+      "rel_mse_reduction": 0.17397804386790694,
+      "ceiling": 0.47697088333129545,
+      "n_tokens": 307998,
+      "val_red": 0.16476185476180982,
+      "massive_excluded": 2278,
+      "rel_err_before": 0.216402896009087
+    },
+    "20": {
+      "rank": 64,
+      "rel_mse_reduction": 0.14238984879849503,
+      "ceiling": 0.4483578823899751,
+      "n_tokens": 308080,
+      "val_red": 0.13265481514445754,
+      "massive_excluded": 2179,
+      "rel_err_before": 0.21911743625933985
+    },
+    "21": {
+      "rank": 64,
+      "rel_mse_reduction": 0.11066158158868478,
+      "ceiling": 0.41741421202833884,
+      "n_tokens": 308147,
+      "val_red": 0.10202140645870927,
+      "massive_excluded": 2093,
+      "rel_err_before": 0.2214198352393045
+    },
+    "22": {
+      "rank": 64,
+      "rel_mse_reduction": 0.11971004980782463,
+      "ceiling": 0.4156437048002265,
+      "n_tokens": 308264,
+      "val_red": 0.11002591901278869,
+      "massive_excluded": 1946,
+      "rel_err_before": 0.22386147711387072
+    },
+    "23": {
+      "rank": 64,
+      "rel_mse_reduction": 0.08563433029163525,
+      "ceiling": 0.38483285674785705,
+      "n_tokens": 308377,
+      "val_red": 0.07711980049476519,
+      "massive_excluded": 1813,
+      "rel_err_before": 0.22516167835100903
+    },
+    "24": {
+      "rank": 64,
+      "rel_mse_reduction": 0.08403156266144995,
+      "ceiling": 0.37657634415627084,
+      "n_tokens": 308591,
+      "val_red": 0.0751988875143419,
+      "massive_excluded": 1539,
+      "rel_err_before": 0.2182177950593912
+    },
+    "25": {
+      "rank": 64,
+      "rel_mse_reduction": 0.0773748848388055,
+      "ceiling": 0.3667357882538709,
+      "n_tokens": 308673,
+      "val_red": 0.06850404294080381,
+      "massive_excluded": 1426,
+      "rel_err_before": 0.22463789219467775
+    },
+    "26": {
+      "rank": 64,
+      "rel_mse_reduction": 0.07695746950274962,
+      "ceiling": 0.36524060618326804,
+      "n_tokens": 308850,
+      "val_red": 0.06822784601146215,
+      "massive_excluded": 1225,
+      "rel_err_before": 0.22296443603764612
+    },
+    "27": {
+      "rank": 64,
+      "rel_mse_reduction": 0.0777375072181854,
+      "ceiling": 0.36166037056173217,
+      "n_tokens": 308887,
+      "val_red": 0.06975880153535441,
+      "massive_excluded": 1168,
+      "rel_err_before": 0.2285771359545317
+    },
+    "28": {
+      "rank": 64,
+      "rel_mse_reduction": 0.07419604775909183,
+      "ceiling": 0.3571402214523349,
+      "n_tokens": 308902,
+      "val_red": 0.06586312871109934,
+      "massive_excluded": 1152,
+      "rel_err_before": 0.23158578569666022
+    },
+    "29": {
+      "rank": 64,
+      "rel_mse_reduction": 0.07086146904816926,
+      "ceiling": 0.35316302534069943,
+      "n_tokens": 308902,
+      "val_red": 0.06261862824095943,
+      "massive_excluded": 1152,
+      "rel_err_before": 0.23064811702859944
+    },
+    "30": {
+      "rank": 64,
+      "rel_mse_reduction": 0.8650339090946982,
+      "ceiling": 0.9041960321892759,
+      "n_tokens": 309831,
+      "val_red": 0.8572605947005979,
+      "massive_excluded": 1,
+      "rel_err_before": 0.5956209802148926
+    },
+    "31": {
+      "rank": 64,
+      "rel_mse_reduction": 0.20680277131801006,
+      "ceiling": 0.43009126742383785,
+      "n_tokens": 309832,
+      "val_red": 0.1887756108398071,
+      "massive_excluded": 0,
+      "rel_err_before": 0.2260550924724787
+    }
+  },
+  "calib_captions": [
+    "The image features an elderly woman sitting on a bench next to a statue of a man. The woman appears to be enjoying her time, possibly posing for a picture. The bench is located in a park setting, with a potted plant nearby.\n\nThere are several other people in the background, some of them standing and others sitting on other benches. A handbag can be seen placed on the ground near the woman, and a book is also visible in the scene.",
+    "The image features a group of people gathered on a rooftop, enjoying a sunny day. Two women are standing on the rooftop, flying a kite together. The kite is soaring high in the sky, capturing the attention of the people around them. \n\nThere are several other people in the scene, some of them standing closer to the edge of the rooftop, while others are further back. A chair is also visible on the rooftop, providing a place to sit and relax. The atmosphere appears to be lively and fun, with everyone engaged in the",
+    "The image features a white SUV driving down a runway, with a large jetliner flying in the background. The SUV is positioned near the center of the scene, and the airplane is visible in the upper part of the image. \n\nThere are two traffic cones on the runway, one closer to the left side and the other near the center. The cones are likely placed to guide the SUV and ensure its safe passage on the runway. The scene captures the unique combination of a vehicle and an airplane sharing the same space.",
+    "The image features a white plate with a bowl filled with pasta and broccoli. The bowl is placed on the plate, and the pasta and broccoli are arranged in a visually appealing manner. The pasta appears to be macaroni, and the broccoli is scattered around the dish. \n\nIn addition to the main dish, there are a few carrots placed on the plate, adding a pop of color and a touch of freshness to the meal. The overall presentation of the dish is inviting and appetizing.",
+    "The image features a large gray naval ship floating on a body of water, possibly a river or a lake. The ship is equipped with a radar system and has a tall mast on the top. There are several people on the ship, some of them standing near the edge, possibly enjoying the view or attending to their duties.\n\nIn addition to the main ship, there are two smaller boats visible in the scene, one located closer to the left side and the other towards the right side of the image. The presence of these boats suggests that the area might be a popular spot for boating or water-based",
+    "The image features a man wearing glasses and a brown shirt, lying on the ground with his arms outstretched. He appears to be playing with a frisbee, which is located near his right hand. Another person is standing nearby, watching the man play.\n\nThe scene takes place on a beach, with a car visible in the background. There are also a few chairs scattered around the area, providing seating options for beachgoers. Additionally, a handbag can be seen placed on the ground, possibly belonging to one of the people in the scene.",
+    "The image features a bedroom with a large bed situated in the center of the room. The bed is covered with a tan comforter, and there is a brown blanket on top of it. A nightstand is placed next to the bed, and a lamp is positioned on the left side of the bed. \n\nIn addition to the bed and nightstand, there are three pictures hanging on the wall above the bed. The room also contains a bookshelf filled with various books, and a remote control can be seen placed on the bed. The overall atmosphere of the room is cozy and inviting.",
+    "The image features a beautiful beach scene with two lawn chairs positioned on the sand, facing the ocean. One chair is located closer to the left side of the scene, while the other is situated more towards the right. A large red umbrella is set up above the chairs, providing shade and protection from the sun. The umbrella is open, covering both chairs and extending over a significant portion of the beach. The scene is perfect for relaxation and enjoying the ocean view.",
+    "The image features a blue double-decker bus driving down a street, with a person sitting at the wheel. The bus is quite large and occupies a significant portion of the scene. There are several other vehicles on the street, including a car and a truck.\n\nIn addition to the bus, there are two traffic lights visible in the scene, one on the left side and another on the right side of the street. A person can be seen standing near the left traffic light, possibly waiting to cross the street or observing the traffic.",
+    "The image depicts a snowy street with a car driving down it. The street is lined with trees, creating a picturesque winter scene. The car is positioned in the middle of the street, and there are several other cars parked along the sides of the road.\n\nIn addition to the cars, there are two fire hydrants visible in the scene, one on the left side and another on the right side of the street. The snow-covered street and the presence of trees and cars create a serene winter atmosphere.",
+    "The image features a cat sitting on a blue towel, with its paws resting on top of a pair of shoes. The cat appears to be looking at the camera, possibly curious about the person taking the picture. The shoes are placed on the floor, and the cat seems to be enjoying the warmth and comfort of the towel.",
+    "The image features a white toilet with a unique and artistic design on the wall behind it. The wallpaper is adorned with a pattern of women's faces, creating a visually interesting and unconventional appearance. The toilet is situated in a bathroom, and the overall scene is quite unusual and eye-catching.",
+    "The image features a man sitting in the back of a golf cart, talking on his cell phone. He is wearing a hard hat, which suggests that he might be working in a construction or industrial setting. The golf cart is parked on a grassy area, and there are several other people in the scene, some of whom are standing or walking around.\n\nIn the background, there are a few trucks parked, possibly indicating that the location is a construction site or a busy area with ongoing activities. The presence of multiple people and vehicles suggests that this is a bustling environment.",
+    "The image features a stop sign with a street sign attached to it, located in a rural area. The stop sign is positioned in the foreground, while the street sign is placed above it. The street sign reads \"Bochnow Rd.\" and is attached to the stop sign.\n\nIn the background, there are mountains visible, adding to the scenic beauty of the location. The stop sign and street sign are situated in front of a building, which can be seen in the background.",
+    "The image features a white toilet with a person's foot resting on the edge of the seat. The toilet appears to be in a bathroom, and the person's foot is positioned near the toilet bowl. The scene is captured from a low angle, giving a unique perspective of the bathroom.",
+    "The image captures a man skillfully riding a wave on a surfboard in the ocean. He is positioned in the center of the scene, with the surfboard beneath him as he skillfully navigates the wave. The man appears to be enjoying the thrill of surfing, showcasing his talent and balance.\n\nThe wave itself is quite large, extending from the left side of the image to the right, providing an exciting and challenging environment for the surfer. The man's surfboard is visible in the foreground, with the wave's crest in the",
+    "The image features two zebras standing close to each other in a dry grass field. They appear to be interacting or engaging in a friendly behavior, possibly nuzzling each other. The zebras are positioned near a tree, which provides a natural backdrop to the scene. The field is sparsely covered with grass, giving the impression of a dry environment.",
+    "The image features a man wearing a top hat and a suit, sitting at a table with a laptop computer. He appears to be working or using the laptop, possibly for a painting or other artistic endeavor. The man is positioned in the center of the scene, with the laptop placed in front of him.\n\nThe room has a painting on the wall behind the man, adding an artistic touch to the setting. There is also a chair located near the table, possibly for additional seating or for someone else to join the man in his work.",
+    "The image captures a thrilling moment of a dirt bike rider skillfully navigating a muddy track. The rider is leaning low to the ground, maintaining control of the motorcycle as they race around the curve. The motorcycle is positioned in the center of the scene, with the rider's body leaning towards it.\n\nThere are several other people in the image, likely spectators or fellow racers, scattered around the track. Some are standing closer to the rider, while others are further away, watching the action unfold. The scene is filled with excitement and anticipation",
+    "The image features a man standing next to a red train, which appears to be a model or a decoration. The man is wearing a backpack and is looking at his cell phone. There are several potted plants surrounding the train, adding a touch of greenery to the scene. \n\nIn addition to the man and the train, there are two other people in the background, one on the left side and another on the right side of the image. A bench can also be seen in the background, providing a place for people to sit and enjoy the surroundings."
+  ]
+}
