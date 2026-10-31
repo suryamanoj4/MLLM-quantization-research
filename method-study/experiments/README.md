@@ -32,3 +32,6 @@ complete, runnable copy per experiment:
 
 The trade-off is some duplicated support code. That is deliberate here; these are
 experimental branches, not new defaults for the main pipeline.
+
+The original zips are kept locally in `_sources/` for provenance and are gitignored;
+the extracted directories above are the maintained code.
