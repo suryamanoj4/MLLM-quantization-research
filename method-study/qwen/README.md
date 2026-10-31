@@ -103,6 +103,10 @@ for both **noise** rungs was **not measured**; the archive only has wiki-calibra
 W3 GPTQ = 9.324. The noise rungs used **seed 0** (one draw per bit width; add
 `:seed=1` for another). See `obsidian-docs/results/qwen-2.5vl-2026-10-25/README.md`
 for the table and the command to fill the missing PPL rows.
+**v3 update (2026-10-31):** all three gaps are filled — QA-calibrated LoRAS-T (`--qa-per-image 2`,
+mean F1 0.8302, |ΔP(yes)| 0.014), PPL_wiki W3 GPTQ-mm 1.36× / W4 noise 1.05× / W3 noise 1.29×,
+noise seeds 1 and 2 (`:seed=N`). Visual attention: `scripts/13_attention_probe.py`. See
+`obsidian-docs/Results Comparison.md` §0.3–0.5.
 
 ## Setup
 

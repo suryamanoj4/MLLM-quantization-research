@@ -37,6 +37,9 @@ status: complete
 | Per-rung Gate-1 verdicts (w4a16 fallback, `w4a4:rot` −2.0 F1) | ❌ | — | §8 |
 | Realistic W4A4 (`rot+GPTQ`) is graceful | ❌ Qwen −6.3 POPE-F1* | — | §2, §8 |
 | A-CAB high-α brevity trap | ❌ no brevity trap on Qwen | — | §7 |
+| W4 weights lower visual attention (H2) | ❌ Qwen attention **rises** (W4A16 +13.9%* POPE vs LLaVA −14.0%*) | — | §0.3 |
+| Visual attention fades through the caption (H4) | ✅ | ✅ (last/first 10%: 0.40 vs 0.44) | §0.3 |
+| Matched noise effect is draw-dependent | ✅ | ✅ (Qwen W3 draws −.042*, −.045*, +.008) | §0.1 |
 
 ## 0.1 Paper Table 1 replication
 
@@ -46,17 +49,17 @@ dashes. `–` means **not run / not measured**, not zero.
 | Setting | LLaVA Cov | LLaVA CHAIR_i | LLaVA yes-ratio | LLaVA AUROC | LLaVA small | LLaVA PPL∅ | Qwen Cov | Qwen CHAIR_i | Qwen F1 | Qwen PPL_wiki |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | **FP16 (absolute values)** | .744 | .220 | .542 | – | | 15.6 | .559 | .109 | .833 | 8.28 |
-| NF4 (bitsandbytes kernels) | −.005 | +.016 | +.006 | −.001 | .11 | 1.01× | – | – | – | 1.01× |
-| W4A4 rot. + GPTQ (wiki) | −.002 | −.001 | +.007 | −.001 | .14 | 1.06× | −.019 | −.013 | −.063* | 1.25× |
+| NF4 (bitsandbytes kernels) | −.005 | +.016 | +.006 | −.001 | .11 | 1.01× | +.003 | −.006 | +.018* | 1.01× |
+| W4A4 rot. + GPTQ (wiki) | −.002 | −.001 | +.007 | −.001 | .14 | 1.06× | −.019 | −.013 | −.063* | 1.21× |
 | W4 GPTQ (wiki) | −.018* | −.026* | +.002 | .000 | .16 | 1.01× | +.015 | −.007 | −.007 | 1.02× |
-| W3 GPTQ (img+cap) | −.025* | −.036* | +.033* | −.006* | .20 | 1.13× | −.004 | +.019 | +.016 | – |
+| W3 GPTQ (img+cap) | −.025* | −.036* | +.033* | −.006* | .20 | 1.13× | −.004 | +.019 | +.016 | 1.36× |
 | W3 AWQ (wiki) | −.042* | −.014 | +.061* | −.004 | .22 | 1.10× | −.025* | +.009 | +.004 | 1.24× |
 | W3 GPTQ (wiki) | −.045* | −.028* | +.006 | −.007* | .24 | 1.09× | −.046* | +.006 | −.017 | 1.13× |
 | W3 RTN | −.072* | −.035* | −.031* | −.001 | .28 | 1.08× | −.061* | −.004 | +.003 | 1.29× |
 | *Matched noise: Gaussian weight noise with RTN's per-group error energy* | | | | | | | | | | |
-| W4 noise | −.027* | −.030* | +.034* | −.003* | .13 | 1.09× | −.009 | +.010 | −.007 | – |
-| W3 noise | −.097* | −.046* | +.009 | −.010* | .31 | 1.14× | −.042* | +.004 | −.036* | – |
-| W3 noise, other draws | Cov −.069*, −.018; CHAIR_i −.066*, +.040* | | | | | | | | | |
+| W4 noise | −.027* | −.030* | +.034* | −.003* | .13 | 1.09× | −.009 | +.010 | −.007 | 1.05× |
+| W3 noise | −.097* | −.046* | +.009 | −.010* | .31 | 1.14× | −.042* | +.004 | −.036* | 1.29× |
+| W3 noise, other draws | Cov −.069*, −.018; CHAIR_i −.066*, +.040* | | | | | | Cov −.045*, +.008; CHAIR_i +.001, −.001 | | | |
 | *Position-selective quantization: W3 RTN weights at one position type, FP16 weights at the other* | | | | | | | | | | |
 | image positions only | −.008 | −.006 | −.017* | +.001 | .13 | 1.00× | +.004 | +.005 | −.012 | 1.00× |
 | text positions only | −.069* | −.040* | −.022* | .002 | .28 | 1.08× | −.059* | −.006 | −.016 | 1.29× |
@@ -70,18 +73,165 @@ dashes. `–` means **not run / not measured**, not zero.
 > or W3 RTN by construction in the last two rows, as the test has no image. Noise rows:
 > first draw on each model (LLaVA, W4: a second draw gives −.018 coverage, n.s.).
 > `–`: not run.
+>
+> PPL_wiki is corrected 1.25× → 1.21×. Qwen W4 noise second draw: Cov −.007 (n.s.).
 
 ### Dashes in this table
 
-| Cell(s) | Why |
+
+| Cell(s) | Status |
 |---|---|
-| LLaVA FP16 **AUROC** | Reference row; AUROC is otherwise shown as a delta. Absolute pooled AUROC can be computed from the existing eval JSON. |
-| LLaVA FP16 **small** | Blank, not a dash: the cell would be a drop relative to FP16 itself. FP16 mention rates are in §3. |
-| Qwen NF4 **Cov / CHAIR_i / F1** | Qwen NF4 behavior was not run; only its WikiText PPL (1.01×) exists. |
-| Qwen W3 GPTQ (img+cap) **PPL_wiki** | WikiText PPL for the mm-calibrated GPTQ row was not measured. |
-| Qwen W4 noise **PPL_wiki** | Noise-control WikiText PPL was not measured. |
-| Qwen W3 noise **PPL_wiki** | Noise-control WikiText PPL was not measured. |
-| “W3 noise, other draws” Qwen columns | LLaVA-only extra draws; no Qwen extra seeds were run. |
+| LLaVA FP16 **AUROC** | Still `–`. Reference row; computable from the existing LLaVA Gate-2 JSON, no GPU needed. |
+| LLaVA FP16 **small** | Blank by design (a drop relative to FP16 itself). |
+| Qwen NF4 **Cov / CHAIR_i / F1** | Filled: real bitsandbytes NF4 rung added to Qwen Gate 2 (`--ladder-extra bnb-nf4`). Matches simulated NF4 in Gate 1 (F1 +.018*). |
+| Qwen W3 GPTQ (img+cap) **PPL_wiki** | Filled: 11.285 → **1.36×**. Worse than W3 RTN on WikiText (fitted to captions); identical to LLaVA's W3 GPTQ-mm WikiText ratio (9.869 / 7.27 = 1.36×). |
+| Qwen W4 / W3 noise **PPL_wiki** | Filled: 8.666 → **1.05×**, 10.722 → **1.29×** — matched to RTN's text damage (W4 RTN ≈1.07×, W3 RTN 1.29×), so the noise control is calibrated. |
+| Qwen W4A4 rot.+GPTQ (wiki) **PPL_wiki** | **Corrected 1.25× → 1.21×.** The old value came from the mm-calibrated model (`09_validate_ptq.py` default), not the wiki-calibrated one whose POPE/CHAIR are in the row. |
+| Qwen "W3 noise, other draws" | Filled: `seed=1`, `seed=2` (seed 0 is the main row). Two of three draws give a significant omission (−.042*, −.045*), one none (+.008) — the same draw-dependence as LLaVA (−.097*, −.069*, −.018). Qwen W4 second draw: Cov −.007 (n.s.; first draw −.009). |
+
+### 0.2 Qwen columns not in the paper table
+
+Gate 2, Qwen, change vs FP16 (`*`: CI excludes 0). Small = drop rate of FP16-named objects
+<1% of the image (`10_object_analysis.py`).
+
+| Setting | Cov | CHAIR_i | F1 | yes-ratio | AUROC | small |
+|---|---:|---:|---:|---:|---:|---:|
+| NF4 (bitsandbytes) | +.003 | −.006 | +.018* | +.021* | −.000 | .19 |
+| W4A4 rot.+GPTQ (wiki) | −.019 | −.013 | −.063* | −.044* | −.013* | .26 |
+| W4 GPTQ (wiki) | +.015 | −.007 | −.007 | −.009* | +.000 | .16 |
+| W3 GPTQ (img+cap) | −.004 | +.019 | +.016 | +.017* | −.001 | .17 |
+| W3 AWQ (wiki) | −.025* | +.009 | +.004 | +.004 | +.003 | .25 |
+| W3 GPTQ (wiki) | −.046* | +.006 | −.017 | −.010 | −.011* | .35 |
+| W3 RTN | −.061* | −.004 | +.003 | +.007 | −.002 | .36 |
+| W4 noise (seed 0 / 1) | −.009 / −.007 | +.010 / +.006 | −.007 / −.026* | −.004 / −.021* | +.002 / +.001 | .18 / .19 |
+| W3 noise (seed 0 / 1 / 2) | −.042* / −.045* / +.008 | +.004 / +.001 / −.001 | −.036* / −.033* / −.010 | −.027* / −.023* / −.003 | −.000 / −.002 / +.004 | .25 / .29 / .27 |
+| image positions only | +.004 | +.005 | −.012 | −.007 | −.001 | .12 |
+| text positions only | −.059* | −.006 | −.016 | −.011 | −.003 | .33 |
+| W3 + LoRAS-T (caption calib) | −.009 | +.007 | −.002 | +.002 | −.002 | .21 |
+| W3 + LoRAS-T (caption + yes/no calib) | −.017 | +.002 | −.003 | −.001 | −.000 | .24 |
+
+Qwen's FP16 small-object miss reference and the LLaVA "small" column are on the same definition, but
+Qwen drops more of its own objects at every setting (cf. §8 object-drop table).
+
+**LoRAS-T with yes/no calibration (`--qa-per-image 2`).** Held-out |ΔP(yes)| 0.027 → **0.014** with
+the correctors (shift +0.017 → −0.003; KL 0.075, top-1 0.862), the Qwen counterpart of LLaVA's 0.023.
+On the eval it changes nothing material relative to caption-only LoRAS-T: POPE was already at FP16 level
+(W3 RTN F1 +.003), and both remove W3 RTN's significant coverage loss (−.061* → −.009 / −.017, n.s.).
+At scale 0.5 both recover only partly (−.045*, −.039*).
+
+### 0.3 Visual-token attention (H2/H4) on Qwen
+
+`scripts/13_attention_probe.py` (new; the method-study port of the evidence study's
+`AttentionTracker`, which is LLaVA-only). Same quantities: per generated token, attention mass on the
+image tokens averaged over all layers and heads; entropy (bits) renormalised over image tokens; drift of
+the most-attended image token. 100 POPE images × 3 splits (1,800 questions), 100 captions (256 tokens),
+greedy, paired change vs FP16 with image-cluster bootstrap (2,000).
+
+| Image attention vs FP16 | LLaVA POPE | **Qwen POPE** | LLaVA CHAIR | **Qwen CHAIR** |
+|---|---:|---:|---:|---:|
+| FP16 (absolute) | 10.3% | 8.0% | 10.0% | 9.1% |
+| W8A8 | +2.0%* | **+7.7%*** [+6.2, +9.3] | +3.9%* | **−10.7%*** [−17.5, −3.3] |
+| W4A16 (GPTQ) | **−14.0%*** | **+13.9%*** [+12.4, +15.4] | **−18.3%*** | **+8.8%*** [+3.5, +14.9] |
+| W4A8 | −12.9%* | **+11.2%*** [+9.7, +12.6] | −17.5%* | +2.6% [−2.5, +8.6] |
+
+Per POPE split (Qwen): W8A8 +5.6 / +8.7 / +9.0%; W4A16 +11.7 / +15.1 / +14.9%; W4A8 +8.4 / +12.5 /
++12.5% (random / popular / adversarial), all significant.
+
+| Rung (Qwen) | Entropy POPE / CHAIR (bits; ceiling 8.36) | Drift POPE / CHAIR | CHAIR first → last 10% |
+|---|---|---|---|
+| FP16 | 6.51 / 6.43 | 0.537 / 0.524 | 0.131 → 0.052 (0.40) |
+| W8A8 | 6.48 / 6.37 | 0.546 / 0.485 | 0.132 → 0.042 (0.32) |
+| W4A16 (GPTQ) | 6.52 / 6.51 | 0.564 / 0.562 | 0.142 → 0.055 (0.39) |
+| W4A8 | 6.51 / 6.48 | 0.546 / 0.559 | 0.140 → 0.050 (0.36) |
+
+**Reading.** H2 does **not** replicate: W4 weights *raise* Qwen's attention to the image (+11–14% on
+POPE, every split) where they lowered LLaVA's (−13–14%), and entropy does not move (LLaVA +0.8 bits).
+H4 replicates: attention fades through every caption on both models (Qwen 0.40, LLaVA 0.44) and W4 does
+not steepen it. So the omission / small-object pattern, which does replicate, occurs on Qwen **without**
+an attention loss — reduced visual attention is a LLaVA-specific correlate, not the general mechanism;
+this is consistent with the attribution result that text-position damage drives the omission.
+
+Caveats: LLaVA's W8A8/W4A8 used real kernels (TorchAO / Quanto) and auto_gptq, Qwen's are simulated
+(GPTQ wiki-calibrated); raw entropies are not comparable across models (Qwen's image-token count varies,
+mean ceiling 8.36 bits vs LLaVA's 9.17); one draw at n = 100; no r_pb (H3) on Qwen yet. W8A8's
+CHAIR −10.7% has a wide CI and sits against +7.7% on POPE — treat it as unresolved.
+
+## 0.4 The three reviewer questions (answered, v3)
+
+**1) Was Qwen's LoRAS-T calibrated with the yes/no questions, and what are its POPE numbers?**
+Originally **no**: the v1 correctors (`runs_qwen/lorast`) used captions only (`qa_per_image=0`,
+192 FP16 captions, rank 64, all 28 layers). v3 adds the **question-augmented** version
+(`--qa-per-image 2`, otherwise identical; `runs_qwen/lorast_qa`), the counterpart of LLaVA's.
+Held-out |ΔP(yes)|: 0.027 without → **0.014** with the correctors (LLaVA: 0.023).
+
+| W3 RTN + LoRAS-T, scale 1.0 | random | popular | adversarial | mean F1 | ΔF1 vs FP16 | Δyes | ΔAUROC | ΔCov |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| FP16 (reference) | 0.8378 | 0.8298 | 0.8314 | 0.8330 | — | — | — | — |
+| captions only (v1) | 0.8346 | 0.8298 | 0.8298 | 0.8314 | −.002 | +.002 | −.002 | −.009 |
+| **captions + yes/no (v3)** | **0.8362** | **0.8269** | **0.8276** | **0.8302** | **−.003** [−.016, +.011] | −.001 | −.000 | −.017 [−.039, +.002] |
+| captions + yes/no, scale 0.5 | 0.8423 | 0.8403 | 0.8343 | 0.8390 | +.006 | +.004 | −.001 | −.039* |
+
+All scale-1.0 deltas are n.s.; W3 RTN alone is ΔF1 +.003, ΔCov −.061*. Adding yes/no calibration
+does not change the eval picture on Qwen: POPE stays at FP16 level and the W3 coverage loss is removed
+either way.
+
+**2) WikiText perplexity for W3 GPTQ (img+cap) and the noise settings?**
+Measured in v3 (`validate_missing.json`, 40 × 2048-token windows, FP16 = 8.281):
+
+| Setting | PPL_wiki | ratio | compare |
+|---|---:|---:|---|
+| W3 GPTQ (img+cap) | 11.285 | **1.36×** | W3 RTN 1.29×, W3 GPTQ-wiki 1.13×; LLaVA W3 GPTQ-mm 1.36× |
+| W4 noise | 8.666 | **1.05×** | W4 RTN ≈1.07× |
+| W3 noise | 10.722 | **1.29×** | W3 RTN 1.29× |
+| W4A4 rot.+GPTQ (wiki) | 10.004 | **1.21×** | replaces the 1.25× that came from the mm-calibrated model |
+
+The noise rungs match RTN's text-side damage, so they are a fair control; image+caption-calibrated
+GPTQ is the worst W3 setting on WikiText, exactly as on LLaVA.
+
+**3) Which noise seed?**
+The main noise rows use **seed 0** (`QuantConfig.rot_seed = 0`; per-layer generator
+`rot_seed * 1_000_003 + crc32(layer_name)`). v3 adds draws with the rung option `:seed=1/2`:
+
+| Draw | W3 Cov | W3 CHAIR_i | W3 F1 | W4 Cov | W4 F1 |
+|---|---:|---:|---:|---:|---:|
+| seed 0 (table row) | −.042* | +.004 | −.036* | −.009 | −.007 |
+| seed 1 | −.045* | +.001 | −.033* | −.007 | −.026* |
+| seed 2 | +.008 | −.001 | −.010 | — | — |
+
+Two of three W3 draws give a significant omission, one none — the same draw-dependence as LLaVA
+(−.097*, −.069*, −.018). Report the noise rows as "usually omission", not as a fixed size.
+
+## 0.5 Attention probe (`scripts/13_attention_probe.py`)
+
+Results are in §0.3. **What it is:** a method-study port of the evidence study's `AttentionTracker`
+(`evidence-study/.../experiment/decoding.py`, LLaVA-only: hard-codes `LlavaForConditionalGeneration`,
+image token 32000, auto_gptq), so it runs on Qwen (and LLaVA) through `phoenix`.
+
+**How it measures (same definitions as LLaVA §5.4 of [[Results]]):**
+1. Load the rung exactly like the ladder (`load_model` → `apply_ptq` → `quantize_model`), switch to
+   eager attention, greedy-decode one item at a time.
+2. For every *generated* token (decode steps only; the prefill row belongs to the prompt), in each of
+   the 28 layers × 28 heads take the attention row, sum the part on the image-token positions
+   (`input_ids == image_token_id`, so Qwen's variable count is exact), average over heads and layers.
+   Entropy = bits of that row renormalised over the image tokens; drift = share of (layer, head) whose
+   most-attended image token changes between consecutive steps.
+3. Average per item over its generated tokens; captions also keep the per-step series → 10 deciles.
+4. Rung vs FP16: paired relative change (Σ rung − Σ FP16) / Σ FP16 over identical items, image-cluster
+   bootstrap (2,000); POPE also per split.
+
+**Run (v3):** fp16, w8a8, w4a16:method=gptq:calib=wiki, w4a8; 100 POPE images × 3 splits (1,800
+questions, ≤16 tokens), 100 captions (≤256 tokens, as LLaVA); ~33–58 min per rung on A100-80GB.
+
+```bash
+python scripts/13_attention_probe.py --coco-root data/coco-mini \
+  --model-id Qwen/Qwen2.5-VL-7B-Instruct --dtype bfloat16 \
+  --precisions fp16,w8a8,w4a16:method=gptq:calib=wiki,w4a8 \
+  --out runs_qwen/attention --resume
+```
+
+**The POPE "yes" confound does not explain the reversal.** On LLaVA, saying "yes" pulls attention onto
+the image ([[Results]] §5.3). Qwen's W4A16 says "yes" slightly *less* (Δyes −.009*), which would lower
+attention, yet attention rose +13.9%; and captions (no yes/no) also rise (+8.8%*).
 
 ## 1. FP16 baseline
 

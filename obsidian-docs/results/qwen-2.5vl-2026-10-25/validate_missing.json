@@ -1,0 +1,48 @@
+{
+  "_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+  "fp16": {
+    "ppl": 8.280965461087115,
+    "ptq": {},
+    "minutes": 0.28089356106550745
+  },
+  "w3a16:method=gptq:calib=mm": {
+    "ppl": 11.285339887650196,
+    "ptq": {
+      "method": "gptq",
+      "calib": "mm",
+      "gptq": {
+        "mean_loss_ratio_vs_rtn": 0.1760900873556826
+      },
+      "minutes": 4.225653443698927
+    },
+    "minutes": 4.441793702434127
+  },
+  "w4a16:method=noise": {
+    "ppl": 8.666470556681912,
+    "ptq": {},
+    "minutes": 0.22500886239965137
+  },
+  "w3a16:method=noise": {
+    "ppl": 10.721882155948434,
+    "ptq": {},
+    "minutes": 0.2287433997533905
+  },
+  "w4a4:method=rot+gptq:calib=wiki": {
+    "ppl": 10.004118209344844,
+    "ptq": {
+      "method": "rot+gptq",
+      "calib": "wiki",
+      "rot": {
+        "rotations": {
+          "3584": "hadamard (x) orthogonal",
+          "18944": "hadamard (x) orthogonal"
+        }
+      },
+      "gptq": {
+        "mean_loss_ratio_vs_rtn": 0.19823827935217078
+      },
+      "minutes": 4.815209455233222
+    },
+    "minutes": 5.210979317683571
+  }
+}

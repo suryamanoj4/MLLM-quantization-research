@@ -54,6 +54,10 @@ extracted and reduced to the compact artifacts below. Full raw runs (including
 
 ## Calibration, PPL and seed details
 
+> **Superseded by v3 (2026-10-31):** QA-calibrated LoRAS-T, the missing WikiText PPLs and noise
+> seeds 1/2 were run — see the v3 section at the end and [[Results Comparison]] §0.4. The text
+> below describes the v1 state.
+
 ### LoRAS-T was calibrated on captions only (no yes/no questions)
 
 `lorast.json` records `source: gen`, `qa_per_image: 0`, `n_qa_batches: 0`,
@@ -118,3 +122,15 @@ to the rung spec.
 - Qwen's FP16 baseline is more conservative than LLaVA's: coverage 0.559 vs 0.744,
   CHAIR_i 0.109 vs 0.220, POPE-F1 ≈0.833 vs 0.854. Compare **deltas**, not absolute
   scores, across models.
+
+## v3 pass (2026-10-31, A100-80GB)
+
+Fills the Qwen gaps in the paper's Table 1 and adds the attention probe.
+
+| File | Contents |
+|---|---|
+| `gate2_ladder_report.json`, `gate2_object_analysis.json` | **Replaced** with supersets: the 13 v1 rungs unchanged (resumed) plus `bnb-nf4`, `w3a16+lorast=runs_qwen/lorast_qa` (@1.0, @0.5; `--qa-per-image 2`), `w3a16:method=noise:seed=1,2`, `w4a16:method=noise:seed=1` |
+| `validate_missing.json` | WikiText-2 PPL: fp16 8.281, W3 GPTQ-mm 11.285, W4 noise 8.666, W3 noise 10.722, W4A4 rot+GPTQ (wiki) 10.004 |
+| `attention_report.json`, `attention.json` | `scripts/13_attention_probe.py`, fp16 / w8a8 / w4a16 GPTQ-wiki / w4a8; 1,800 POPE questions, 100 captions (256 tokens) |
+
+LoRAS-T with yes/no calibration: held-out |ΔP(yes)| 0.027 → 0.014 (KL 0.075, top-1 0.862).
