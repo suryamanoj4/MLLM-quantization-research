@@ -514,6 +514,20 @@ tests/           test_smoke.py  (41 checks: solver, quant, LoRAS, A-CAB, decode 
                  both CPU-only, no GPU, no network, no model download
 ```
 
+### `experiments/` — standalone side studies
+
+These are self-contained branches, each with its own `phoenix/` copy because they
+change core model/quantization/steering code. They do not alter the main pipeline.
+
+| Directory | Question | Entry point |
+|---|---|---|
+| [`experiments/patching_qwen/`](experiments/patching_qwen/) | Where in the network (layer / component / position) does quantization lose grounding? | `bash run.sh` |
+| [`experiments/q1_lorast_positions/`](experiments/q1_lorast_positions/) | Is LoRAS-T's text-position placement the reason it works, or just its added capacity? | `bash run.sh` |
+
+The wrapper scripts reuse the shared `../../.venv-phoenix` and `../../data/coco-mini`;
+new artifacts stay inside each experiment. See
+[`experiments/README.md`](experiments/README.md) for the rationale and paths.
+
 ---
 
 ## 6. How to read the results
