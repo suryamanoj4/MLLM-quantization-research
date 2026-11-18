@@ -65,7 +65,9 @@ def apply_ptq(lm, cfg: QuantConfig, coco_root=None, seqs=None, seed: int = 0) ->
         info["gptq"] = gptq(lm, capture_layer0(lm, seqs), cfg)
     for k in ("awq", "gptq"):
         if k in info:
-            info[k] = {"mean_loss_ratio_vs_rtn": info[k]["mean_loss_ratio_vs_rtn"]}
+            info[k] = {"mean_loss_ratio_vs_rtn": info[k]["mean_loss_ratio_vs_rtn"],
+                       **({"chol_retries": info[k]["chol_retries"]}
+                          if info[k].get("chol_retries") else {})}
     info["minutes"] = (time.perf_counter() - t0) / 60
     print(f"[ptq] {cfg.method} done in {info['minutes']:.1f} min", flush=True)
     del seqs

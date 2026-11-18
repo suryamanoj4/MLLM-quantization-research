@@ -65,12 +65,18 @@ _OPT_KEYS = {"clip": ("a_clip", float), "gs": ("group_size", int),
              "wfmt": ("w_format", str), "alpha": ("sq_alpha", float),
              "actorder": ("gptq_actorder", "bool"), "damp": ("gptq_damp", float),
              "backend": ("backend", str), "seed": ("rot_seed", int),
-             "wtok": ("w_tokens", str)}
+             "wtok": ("w_tokens", str),
+             # 4-bit study: reference GPTQ grid
+             "grid": ("w_grid", str)}
 
 # noise = control: Gaussian weight noise with the same per-group energy as RTN's error
 METHODS = ("rtn", "awq", "gptq", "sq", "rot", "rot+gptq", "sq+gptq", "noise")
 CALIB_MODES = ("mm", "text", "wiki")
 W_FORMATS = ("int", "nf4")
+# ours = min/max of the group (the original Phoenix grid, the default so old rows
+# reproduce); ref = the GPTQ reference grid: asymmetric over [min(0,min), max(0,max)],
+# symmetric as scale = 2*absmax/(2^b-1) with a fixed zero point 2^(b-1).
+W_GRIDS = ("ours", "ref")
 # spec aliases: name -> (weight bits, act bits, implied options)
 ALIASES = {"nf4": (4, 16, {"w_format": "nf4"}),
            "bnb-nf4": (4, 16, {"w_format": "nf4", "backend": "bnb"})}
@@ -150,6 +156,7 @@ class QuantConfig:
     # only at text positions ("text"); the other positions use the FP16 weights.
     # Generated (decode) tokens are text. Keeps FP weights, doubles the matmuls.
     w_tokens: str | None = None
+    w_grid: str = "ours"           # ours | ref (see W_GRIDS); int weights, RTN and GPTQ
 
     def __post_init__(self):
         if self.method not in METHODS:
@@ -173,6 +180,11 @@ class QuantConfig:
             raise KeyError("gptq needs quantized weights (w_bits < 16)")
         if self.method == "noise" and (self.w_bits >= 16 or self.w_format != "int"):
             raise KeyError("method=noise matches int RTN error; use it with w<bits> < 16")
+        if self.w_grid not in W_GRIDS:
+            raise KeyError(f"unknown grid '{self.w_grid}'; known: {W_GRIDS}")
+        if self.w_grid == "ref" and (self.w_format != "int" or "awq" in self.method):
+            raise KeyError("grid=ref is the GPTQ reference int grid; AWQ's reference already "
+                           "uses the min/max grid, and nf4 has its own code book")
         if self.w_tokens not in (None, "image", "text"):
             raise KeyError("wtok must be image or text")
         if self.w_tokens and self.token_selective:
@@ -251,9 +263,44 @@ def quantize_weight_nf4(w: torch.Tensor, block: int = 64) -> torch.Tensor:
     return deq.reshape(-1)[: w.numel()].view_as(w).to(w.dtype)
 
 
+def int_grid(x: torch.Tensor, bits: int, symmetric: bool, grid: str = "ours"):
+    """(scale, zero, unsigned) of the int grid over the last dim of x (keepdim).
+
+    unsigned=True: q = clamp(round(x/scale) + zero, 0, 2^b-1), deq = (q - zero) * scale.
+    unsigned=False: q = clamp(round(x/scale), -2^(b-1), 2^(b-1)-1), deq = q * scale.
+    """
+    if symmetric and grid == "ours":
+        qmax = 2 ** (bits - 1) - 1
+        scale = x.abs().amax(dim=-1, keepdim=True).clamp(min=1e-8) / qmax
+        return scale, torch.zeros_like(scale), False
+    qmax = 2 ** bits - 1
+    if symmetric:                                    # grid == "ref"
+        xmax = x.abs().amax(dim=-1, keepdim=True)
+        xmax = torch.where(xmax == 0, torch.ones_like(xmax), xmax)
+        scale = 2 * xmax / qmax
+        return scale, torch.full_like(scale, float(2 ** (bits - 1))), True
+    mx = x.amax(dim=-1, keepdim=True)
+    mn = x.amin(dim=-1, keepdim=True)
+    if grid == "ref":
+        mn, mx = mn.clamp(max=0), mx.clamp(min=0)
+        both0 = (mn == 0) & (mx == 0)
+        mn = torch.where(both0, -torch.ones_like(mn), mn)
+        mx = torch.where(both0, torch.ones_like(mx), mx)
+    scale = ((mx - mn) / qmax).clamp(min=1e-8)
+    return scale, _round_ste(-mn / scale), True
+
+
+def int_qdq(x: torch.Tensor, scale, zero, unsigned: bool, bits: int) -> torch.Tensor:
+    if unsigned:
+        q = (_round_ste(x / scale) + zero).clamp(0, 2 ** bits - 1)
+        return (q - zero) * scale
+    qmax = 2 ** (bits - 1) - 1
+    return _round_ste(x / scale).clamp(-qmax - 1, qmax) * scale
+
+
 @torch.no_grad()
 def quantize_weight(w: torch.Tensor, bits: int, group_size: int, symmetric: bool,
-                    fmt: str = "int") -> torch.Tensor:
+                    fmt: str = "int", grid: str = "ours") -> torch.Tensor:
     """RTN quantize-dequantize a [out, in] weight matrix, grouped along `in`."""
     if fmt == "nf4":
         return quantize_weight_nf4(w, group_size if group_size and group_size > 0 else 64)
@@ -264,21 +311,8 @@ def quantize_weight(w: torch.Tensor, bits: int, group_size: int, symmetric: bool
     if in_f % gs != 0:                      # fall back to per-channel if not divisible
         gs = in_f
     wg = w.reshape(out_f, in_f // gs, gs).float()
-
-    if symmetric:
-        qmax = 2 ** (bits - 1) - 1
-        scale = wg.abs().amax(dim=-1, keepdim=True).clamp(min=1e-8) / qmax
-        q = _round_ste(wg / scale).clamp(-qmax - 1, qmax)
-        deq = q * scale
-    else:
-        qmax = 2 ** bits - 1
-        mx = wg.amax(dim=-1, keepdim=True)
-        mn = wg.amin(dim=-1, keepdim=True)
-        scale = ((mx - mn) / qmax).clamp(min=1e-8)
-        zero = _round_ste(-mn / scale)
-        q = (_round_ste(wg / scale) + zero).clamp(0, qmax)
-        deq = (q - zero) * scale
-
+    scale, zero, unsigned = int_grid(wg, bits, symmetric, grid)
+    deq = int_qdq(wg, scale, zero, unsigned, bits)
     return deq.reshape(out_f, in_f).to(w.dtype)
 
 
@@ -323,7 +357,8 @@ def matched_noise(w: torch.Tensor, cfg: "QuantConfig", name: str = "") -> torch.
     out_f, in_f = w.shape
     gs = cfg.group_size if cfg.group_size and cfg.group_size > 0 and in_f % cfg.group_size == 0 \
         else in_f
-    err = (quantize_weight(w, cfg.w_bits, cfg.group_size, cfg.w_symmetric).float() - w.float())
+    err = (quantize_weight(w, cfg.w_bits, cfg.group_size, cfg.w_symmetric,
+                           grid=cfg.w_grid).float() - w.float())
     std = err.reshape(out_f, in_f // gs, gs).pow(2).mean(-1, keepdim=True).sqrt()
     g = torch.Generator(device=w.device).manual_seed(
         cfg.rot_seed * 1_000_003 + zlib.crc32(name.encode()))
@@ -355,7 +390,7 @@ class FakeQuantLinear(nn.Module):
             wq = matched_noise(base.weight.data, cfg, name)
         else:
             wq = quantize_weight(base.weight.data, cfg.w_bits, cfg.group_size,
-                                 cfg.w_symmetric, cfg.w_format)
+                                 cfg.w_symmetric, cfg.w_format, cfg.w_grid)
         self.register_buffer("weight_q", wq, persistent=False)
         self.prequantized = pre is not None
         rot = getattr(base, "phoenix_in_rot", None)       # set by ptq/rotate.py
