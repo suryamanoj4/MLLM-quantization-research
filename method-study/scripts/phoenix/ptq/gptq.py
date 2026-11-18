@@ -15,40 +15,64 @@ decoder layer's inputs come from the quantized layer. Inputs are what the quanti
 will see, so after rotation H is computed from the rotated activations (QuaRot does
 GPTQ this way).
 
-One convention differs from the reference: the asymmetric grid is min/max of the group
-(our RTN grid) instead of min(0, min)/max(0, max), so GPTQ vs RTN differs only in the
-rounding, not in the grid.
+Grid (spec key grid=): the default "ours" fits the asymmetric grid to min/max of the
+group (our RTN grid), so GPTQ vs RTN differs only in the rounding, not in the grid.
+grid=ref uses the reference's min(0, min)/max(0, max) grid (and its symmetric form);
+RTN accepts the same key, so a GPTQ-vs-RTN comparison can be made on either grid.
+
+If the damped Hessian is not positive definite, the Cholesky is retried with the
+dampening multiplied by 10, up to CHOL_RETRIES times, then it raises.
 """
 from __future__ import annotations
 
 import torch
 
+from ..quant import int_grid, int_qdq
 from .engine import GROUPS, LayerInput, input_hooks, layer_forward, progress, sub
 
-
-def _grid(x: torch.Tensor, bits: int, sym: bool):
-    """x: [rows, k] -> per-row (scale, zero) on our RTN grid."""
-    if sym:
-        qmax = 2 ** (bits - 1) - 1
-        scale = x.abs().amax(1).clamp(min=1e-8) / qmax
-        return scale, torch.zeros_like(scale)
-    qmax = 2 ** bits - 1
-    mx, mn = x.amax(1), x.amin(1)
-    scale = ((mx - mn) / qmax).clamp(min=1e-8)
-    return scale, torch.round(-mn / scale)
+CHOL_RETRIES = 3
 
 
-def _q(w: torch.Tensor, scale, zero, bits: int, sym: bool) -> torch.Tensor:
-    if sym:
-        qmax = 2 ** (bits - 1) - 1
-        return torch.clamp(torch.round(w / scale), -qmax - 1, qmax) * scale
-    qmax = 2 ** bits - 1
-    return (torch.clamp(torch.round(w / scale) + zero, 0, qmax) - zero) * scale
+def _grid(x: torch.Tensor, bits: int, sym: bool, grid: str = "ours"):
+    """x: [rows, k] -> per-row (scale, zero, unsigned)."""
+    scale, zero, unsigned = int_grid(x, bits, sym, grid)
+    return scale[:, 0], zero[:, 0], unsigned
+
+
+def _q(w: torch.Tensor, scale, zero, bits: int, unsigned: bool) -> torch.Tensor:
+    return int_qdq(w, scale, zero, unsigned, bits)
+
+
+def damped_inverse_cholesky(H: torch.Tensor, damp: float, retries: int = CHOL_RETRIES,
+                            info: dict | None = None) -> torch.Tensor:
+    """Upper Cholesky factor of (H + damp*mean(diag H)*I)^-1, retrying with damp x10."""
+    cols = H.shape[0]
+    eye = torch.eye(cols, device=H.device, dtype=H.dtype)
+    mean_diag = torch.mean(torch.diag(H))
+    d, last = damp, None
+    for attempt in range(retries + 1):
+        try:
+            L = torch.linalg.cholesky(H + d * mean_diag * eye)
+            Hinv = torch.linalg.cholesky(torch.cholesky_inverse(L), upper=True)
+            if not bool(torch.isfinite(Hinv).all()):
+                raise RuntimeError("non-finite inverse Hessian factor")
+            if info is not None:
+                info["damp"], info["retries"] = d, attempt
+            if attempt:
+                print(f"[gptq] Cholesky needed damp={d:g} ({attempt} retr"
+                      f"{'y' if attempt == 1 else 'ies'})", flush=True)
+            return Hinv
+        except RuntimeError as e:                # torch.linalg.LinAlgError subclasses it
+            last = e
+            d *= 10
+    raise RuntimeError(f"GPTQ Cholesky failed after {retries} retries "
+                       f"(damp {damp:g} -> {d / 10:g}): {last}")
 
 
 @torch.no_grad()
 def gptq_quantize(W: torch.Tensor, H: torch.Tensor, bits: int, group_size: int,
-                  sym: bool = False, actorder: bool = False, damp: float = 0.01) -> torch.Tensor:
+                  sym: bool = False, actorder: bool = False, damp: float = 0.01,
+                  grid: str = "ours", info: dict | None = None) -> torch.Tensor:
     W = W.float().clone()
     H = H.float().clone()
     rows, cols = W.shape
@@ -60,20 +84,19 @@ def gptq_quantize(W: torch.Tensor, H: torch.Tensor, bits: int, group_size: int,
     static = None
     if actorder:
         # static groups: fitted on the original W, in the original column order
-        static = [_grid(W[:, g:g + gs], bits, sym) for g in range(0, cols, gs)]
+        static = [_grid(W[:, g:g + gs], bits, sym, grid) for g in range(0, cols, gs)]
         perm = torch.argsort(torch.diag(H), descending=True)
         W, H = W[:, perm], H[perm][:, perm]
         invperm = torch.argsort(perm)
 
-    H += damp * torch.mean(torch.diag(H)) * torch.eye(cols, device=H.device)
-    L = torch.linalg.cholesky(H)
-    Hinv = torch.linalg.cholesky(torch.cholesky_inverse(L), upper=True)
+    Hinv = damped_inverse_cholesky(H, damp, info=info)
 
     bs = gs if gs <= 1024 else 128
     Q = torch.zeros_like(W)
     scale = zero = None
+    unsigned = int_grid(W[:1, :1], bits, sym, grid)[2]
     if gs == cols and not actorder:
-        scale, zero = _grid(W, bits, sym)
+        scale, zero, _ = _grid(W, bits, sym, grid)
     for i1 in range(0, cols, bs):
         i2 = min(i1 + bs, cols)
         W1 = W[:, i1:i2].clone()
@@ -83,11 +106,11 @@ def gptq_quantize(W: torch.Tensor, H: torch.Tensor, bits: int, group_size: int,
         for i in range(i2 - i1):
             c = i1 + i
             if actorder:
-                scale, zero = static[int(perm[c]) // gs]
+                scale, zero, _ = static[int(perm[c]) // gs]
             elif gs < cols and c % gs == 0:
-                scale, zero = _grid(W1[:, i:i + gs], bits, sym)
+                scale, zero, _ = _grid(W1[:, i:i + gs], bits, sym, grid)
             w = W1[:, i]
-            q = _q(w, scale, zero, bits, sym)
+            q = _q(w, scale, zero, bits, unsigned)
             Q1[:, i] = q
             e = (w - q) / Hi[i, i]
             W1[:, i:] -= e[:, None] * Hi[i, i:][None, :]
@@ -124,11 +147,17 @@ def gptq(lm, inps: list[LayerInput], cfg) -> dict:
             for n in names:
                 fc = sub(layer, n)
                 W = fc.weight.data
+                ci: dict = {}
                 Q = gptq_quantize(W, H, cfg.w_bits, cfg.group_size, cfg.w_symmetric,
-                                  cfg.gptq_actorder, cfg.gptq_damp)
-                # layer-wise proxy loss, GPTQ vs RTN, on these inputs
+                                  cfg.gptq_actorder, cfg.gptq_damp,
+                                  grid=getattr(cfg, "w_grid", "ours"), info=ci)
+                if ci.get("retries"):
+                    stats.setdefault("chol_retries", []).append(
+                        {"linear": n, "damp": ci["damp"], "retries": ci["retries"]})
+                # layer-wise proxy loss, GPTQ vs RTN (same grid), on these inputs
                 from ..quant import quantize_weight
-                R = quantize_weight(W, cfg.w_bits, cfg.group_size, cfg.w_symmetric).float()
+                R = quantize_weight(W, cfg.w_bits, cfg.group_size, cfg.w_symmetric,
+                                    grid=getattr(cfg, "w_grid", "ours")).float()
                 dq, dr = Q - W.float(), R - W.float()
                 row[n] = (float((dr @ H * dr).sum()), float((dq @ H * dq).sum()))
                 originals[n] = W.clone()

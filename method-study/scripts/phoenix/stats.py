@@ -144,6 +144,25 @@ def compare_mean(xs_a: Sequence[float], xs_b: Sequence[float], image_ids: Sequen
     return paired_bootstrap(m(xs_a), m(xs_b), image_ids, n_boot, seed)
 
 
+def benjamini_hochberg(pvals: Sequence[float]) -> list[float]:
+    """Benjamini-Hochberg adjusted p-values (q-values), same order as the input.
+
+    q_(i) = min_{j >= i} p_(j) * m / j over the ascending p-values, capped at 1.
+    Rejecting q < alpha controls the false discovery rate at alpha (independent or
+    positively dependent tests -- the paired deltas here are positively dependent)."""
+    m = len(pvals)
+    if m == 0:
+        return []
+    order = sorted(range(m), key=lambda i: pvals[i])
+    q = [0.0] * m
+    run = 1.0
+    for rank in range(m, 0, -1):
+        i = order[rank - 1]
+        run = min(run, pvals[i] * m / rank)
+        q[i] = min(run, 1.0)
+    return q
+
+
 def fmt_delta(r: dict, pct: bool = False) -> str:
     f = (lambda x: f"{100*x:+.1f}") if pct else (lambda x: f"{x:+.3f}")
     star = "*" if r["significant"] else " "

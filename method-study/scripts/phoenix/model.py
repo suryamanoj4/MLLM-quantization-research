@@ -120,11 +120,19 @@ def load_model(model_id: str = DEFAULT_MODEL,
                device: str = "cuda",
                attn_implementation: str = "sdpa",
                low_cpu_mem: bool = True,
-               bnb_4bit: tuple | None = None) -> LoadedModel:
+               bnb_4bit: tuple | None = None,
+               packed: bool = False,
+               processor_id: str | None = None) -> LoadedModel:
     """Load a LLaVA-1.5 or Qwen2.5-VL checkpoint and install the prompt adapter.
 
     bnb_4bit=("language",) loads real bitsandbytes NF4 kernels for those parts
     (the Hugging Face `load_in_4bit` path) instead of FP16 weights.
+
+    packed=True loads an already-quantized checkpoint (AWQ / GPTQ, its
+    `quantization_config` decides the kernels) as-is, on `device`. AWQ kernels are
+    fp16-only, so a bfloat16 request becomes float16 (printed). processor_id loads the
+    processor from another repo (the base model), so preprocessing is identical to
+    the unquantized rows.
     """
     global _FAMILY, _PROCESSOR
     from .env import require_cuda
@@ -143,7 +151,7 @@ def load_model(model_id: str = DEFAULT_MODEL,
     else:                                                     # pragma: no cover
         from transformers import AutoModelForVision2Seq as _Cls
 
-    processor = AutoProcessor.from_pretrained(model_id)
+    processor = AutoProcessor.from_pretrained(processor_id or model_id)
     # Qwen2.5-VL's default max_pixels is 12.8M: a large image can become >16k visual
     # tokens.  Cap it so per-image cost stays in the LLaVA range and runs are paired.
     if family == "qwen2_5_vl":
@@ -173,13 +181,35 @@ def load_model(model_id: str = DEFAULT_MODEL,
             load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=dtype,
             bnb_4bit_use_double_quant=False, llm_int8_skip_modules=keep)
         kw["device_map"] = {"": device}
+    if packed:
+        if processor_id and processor_id != model_id:
+            base = getattr(AutoConfig.from_pretrained(processor_id), "model_type", "")
+            if base != family:
+                raise RuntimeError(f"ckpt {model_id} is a {family}, but the base model "
+                                   f"{processor_id} is a {base}: rows would not be comparable")
+        qc = getattr(cfg, "quantization_config", None)
+        qc = qc if isinstance(qc, dict) else (qc.to_dict() if qc is not None else {})
+        qm = str(qc.get("quant_method", "")).lower()
+        if not qm:
+            raise RuntimeError(f"{model_id} has no quantization_config: not a packed checkpoint")
+        if qm in ("awq", "gptq") and dtype == torch.bfloat16:
+            print(f"[model] {qm} kernels are fp16-only: loading {model_id} in float16 "
+                  "(requested bfloat16)", flush=True)
+            dtype = torch.float16
+        if qm == "awq":
+            try:
+                import awq  # noqa: F401
+            except ImportError as e:
+                raise RuntimeError("this AWQ checkpoint needs autoawq: "
+                                   "pip install autoawq==0.2.9 --no-deps") from e
+        kw["device_map"] = {"": device}
     # transformers renamed torch_dtype -> dtype in 5.x
     try:
         model = _Cls.from_pretrained(model_id, dtype=dtype, **kw)
     except TypeError:
         model = _Cls.from_pretrained(model_id, torch_dtype=dtype, **kw)
     model.eval().requires_grad_(False)
-    if not bnb_4bit:
+    if not bnb_4bit and not packed:
         model.to(device)
 
     # deterministic padding for batched prefill

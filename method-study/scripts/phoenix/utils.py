@@ -82,6 +82,43 @@ def human_env() -> dict:
     return info
 
 
+def versions() -> dict:
+    """Library / CUDA / driver / GPU versions, logged in every output JSON."""
+    import importlib.metadata as md
+    import platform
+    import shutil
+    import subprocess
+    out = {"python": platform.python_version(), "torch": torch.__version__,
+           "cuda": torch.version.cuda,
+           "cudnn": torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else None}
+    for pkg in ("transformers", "accelerate", "bitsandbytes", "autoawq", "gptqmodel",
+                "nvidia-ml-py", "pynvml"):
+        try:
+            out[pkg] = md.version(pkg)
+        except md.PackageNotFoundError:
+            out[pkg] = None
+    out["gpu"] = torch.cuda.get_device_name(0) if torch.cuda.is_available() else None
+    out["gpu_count"] = torch.cuda.device_count() if torch.cuda.is_available() else 0
+    out["gpu_mem_gb"] = (torch.cuda.get_device_properties(0).total_memory / 2 ** 30
+                         if torch.cuda.is_available() else None)
+    out["driver"] = None
+    try:
+        import pynvml
+        pynvml.nvmlInit()
+        d = pynvml.nvmlSystemGetDriverVersion()
+        out["driver"] = d.decode() if isinstance(d, bytes) else d
+    except Exception:                                    # noqa: BLE001
+        exe = shutil.which("nvidia-smi")
+        if exe:
+            try:
+                out["driver"] = subprocess.run(
+                    [exe, "--query-gpu=driver_version", "--format=csv,noheader"],
+                    capture_output=True, text=True, timeout=20).stdout.strip().splitlines()[0]
+            except Exception:                            # noqa: BLE001
+                pass
+    return out
+
+
 def resolve_dtype(name: str) -> torch.dtype:
     return {"float16": torch.float16, "fp16": torch.float16,
             "bfloat16": torch.bfloat16, "bf16": torch.bfloat16,

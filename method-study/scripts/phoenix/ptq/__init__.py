@@ -65,7 +65,9 @@ def apply_ptq(lm, cfg: QuantConfig, coco_root=None, seqs=None, seed: int = 0) ->
         info["gptq"] = gptq(lm, capture_layer0(lm, seqs), cfg)
     for k in ("awq", "gptq"):
         if k in info:
-            info[k] = {"mean_loss_ratio_vs_rtn": info[k]["mean_loss_ratio_vs_rtn"]}
+            info[k] = {"mean_loss_ratio_vs_rtn": info[k]["mean_loss_ratio_vs_rtn"],
+                       **({"chol_retries": info[k]["chol_retries"]}
+                          if info[k].get("chol_retries") else {})}
     info["minutes"] = (time.perf_counter() - t0) / 60
     print(f"[ptq] {cfg.method} done in {info['minutes']:.1f} min", flush=True)
     del seqs
@@ -73,6 +75,15 @@ def apply_ptq(lm, cfg: QuantConfig, coco_root=None, seqs=None, seed: int = 0) ->
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
     return info
+
+
+def load_packed(model_id: str, cfg: QuantConfig, *, dtype=torch.float16, device="cuda",
+                attn_implementation: str = "sdpa"):
+    """Load cfg.ckpt as-is, with the base model's processor. PTQ is skipped."""
+    from ..model import load_model
+    return load_model(cfg.ckpt, dtype=dtype, device=device,
+                      attn_implementation=attn_implementation, packed=True,
+                      processor_id=model_id)
 
 
 def load_quantized(model_id: str, spec: str, coco_root=None, *, dtype=torch.float16,
@@ -84,6 +95,14 @@ def load_quantized(model_id: str, spec: str, coco_root=None, *, dtype=torch.floa
     """
     from ..model import load_model
     cfg = QuantConfig.from_ladder(spec, **cfg_kw)
+    if cfg.backend == "packed":
+        if keep_fp:
+            raise ValueError(f"{spec}: a packed checkpoint has no FP16 shadow weights, so it "
+                             "cannot be calibrated against (LoRAS / LoRAS-T fitting); "
+                             "fit on a sim rung and attach the result")
+        lm = load_packed(model_id, cfg, dtype=dtype, device=device,
+                         attn_implementation=attn_implementation)
+        return lm, cfg, {"method": f"packed checkpoint {cfg.ckpt} (real kernels)"}
     if cfg.backend == "bnb":
         lm = load_model(model_id, dtype=dtype, device=device,
                         attn_implementation=attn_implementation,

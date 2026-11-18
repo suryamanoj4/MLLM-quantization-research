@@ -31,6 +31,14 @@ through two hooks this module honours on an nn.Linear before it is wrapped:
 
 Select them in a precision spec: `w3a16:method=awq`, `w4a4:method=rot+gptq`,
 `w8a8:method=sq`, `nf4` (= w4a16:wfmt=nf4, the bitsandbytes 4-bit format).
+
+Microscaling FP4 formats (simulated, backend=sim):
+  * wfmt=nvfp4  E2M1 values in blocks of 16 along the input dim, each block scaled by
+                an FP8-E4M3 factor, times one FP32 scale per tensor
+  * wfmt=mxfp4  E2M1 values in blocks of 32, each block scaled by a power of two (E8M0)
+  * afmt=nvfp4|mxfp4  the same on activations, blocks along the hidden dim of each
+                token (the NVFP4 FP32 scale is then per token, so a row never depends
+                on the rest of the batch): `w4a4:wfmt=nvfp4:afmt=nvfp4`
 """
 from __future__ import annotations
 
@@ -65,15 +73,26 @@ _OPT_KEYS = {"clip": ("a_clip", float), "gs": ("group_size", int),
              "wfmt": ("w_format", str), "alpha": ("sq_alpha", float),
              "actorder": ("gptq_actorder", "bool"), "damp": ("gptq_damp", float),
              "backend": ("backend", str), "seed": ("rot_seed", int),
-             "wtok": ("w_tokens", str)}
+             "wtok": ("w_tokens", str),
+             # 4-bit study: reference GPTQ grid
+             "grid": ("w_grid", str), "afmt": ("a_format", str),
+             # a ready-made quantized checkpoint (backend=packed), loaded as-is
+             "ckpt": ("ckpt", str)}
 
 # noise = control: Gaussian weight noise with the same per-group energy as RTN's error
 METHODS = ("rtn", "awq", "gptq", "sq", "rot", "rot+gptq", "sq+gptq", "noise")
 CALIB_MODES = ("mm", "text", "wiki")
-W_FORMATS = ("int", "nf4")
+W_FORMATS = ("int", "nf4", "nvfp4", "mxfp4")
+A_FORMATS = ("int", "nvfp4", "mxfp4")
+FP4_BLOCK = {"nvfp4": 16, "mxfp4": 32}
+# ours = min/max of the group (the original Phoenix grid, the default so old rows
+# reproduce); ref = the GPTQ reference grid: asymmetric over [min(0,min), max(0,max)],
+# symmetric as scale = 2*absmax/(2^b-1) with a fixed zero point 2^(b-1).
+W_GRIDS = ("ours", "ref")
 # spec aliases: name -> (weight bits, act bits, implied options)
 ALIASES = {"nf4": (4, 16, {"w_format": "nf4"}),
            "bnb-nf4": (4, 16, {"w_format": "nf4", "backend": "bnb"})}
+BACKENDS = ("sim", "bnb", "packed")
 
 
 def parse_precision(spec: str) -> tuple[int, int, dict]:
@@ -145,11 +164,18 @@ class QuantConfig:
     gptq_actorder: bool = False    # GPTQ column reordering (static groups)
     gptq_damp: float = 0.01        # GPTQ Hessian dampening, fraction of mean diag
     backend: str = "sim"           # sim | bnb (real bitsandbytes kernels, nf4 only)
+                                   # | packed (a ready-made checkpoint, ckpt=<hf id>)
     rot_seed: int = 0              # seed of the random rotation (and of method=noise)
     # Weight-path attribution: quantized weights only at image positions ("image") or
     # only at text positions ("text"); the other positions use the FP16 weights.
     # Generated (decode) tokens are text. Keeps FP weights, doubles the matmuls.
     w_tokens: str | None = None
+    w_grid: str = "ours"           # ours | ref (see W_GRIDS); int weights, RTN and GPTQ
+    a_format: str = "int"          # int | nvfp4 | mxfp4 (dynamic, per-token blocks)
+    # backend=packed: Hugging Face id of an already-quantized checkpoint (e.g.
+    # Qwen/Qwen2.5-VL-7B-Instruct-AWQ). Loaded as-is with its own kernels; no PTQ, no
+    # wrapping, no FP16 shadow weights.
+    ckpt: str | None = None
 
     def __post_init__(self):
         if self.method not in METHODS:
@@ -164,8 +190,42 @@ class QuantConfig:
             if "gptq" in self.method or "awq" in self.method:
                 raise KeyError("nf4 is a data format quantized by absmax rounding; "
                                "it does not combine with awq/gptq here")
-        if self.backend not in ("sim", "bnb"):
-            raise KeyError("backend must be sim or bnb")
+        if self.w_format in FP4_BLOCK:
+            blk = FP4_BLOCK[self.w_format]
+            if self.w_bits != 4:
+                raise KeyError(f"wfmt={self.w_format} is a 4-bit format; use w4a*")
+            if self.method != "rtn":
+                raise KeyError(f"wfmt={self.w_format} is rounded to nearest here; "
+                               "it does not combine with a PTQ method")
+            if self.group_size != blk:
+                raise KeyError(f"wfmt={self.w_format} has a fixed block of {blk}; "
+                               f"drop gs= (got {self.group_size})")
+        if self.a_format not in A_FORMATS:
+            raise KeyError(f"unknown afmt '{self.a_format}'; known: {A_FORMATS}")
+        if self.a_format != "int":
+            if self.a_bits != 4:
+                raise KeyError(f"afmt={self.a_format} is a 4-bit format; use w*a4")
+            if self.token_selective or self.a_clip < 1.0:
+                raise KeyError(f"afmt={self.a_format} has its own block scales; "
+                               "clip= and abits_image/abits_text do not apply")
+        if self.backend not in BACKENDS:
+            raise KeyError(f"backend must be one of {BACKENDS}")
+        if self.backend == "packed":
+            if not self.ckpt:
+                raise KeyError("backend=packed needs ckpt=<hf id>, e.g. "
+                               "w4a16:backend=packed:ckpt=Qwen/Qwen2.5-VL-7B-Instruct-AWQ")
+            if self.w_tokens:
+                raise KeyError("wtok= needs FP16 and quantized weights side by side; a packed "
+                               "checkpoint has no FP16 weights. Use a sim rung.")
+            if self.token_selective:
+                raise KeyError("abits_image/abits_text simulate activation quantization; a "
+                               "packed checkpoint runs its own kernels. Use a sim rung.")
+            if (self.method != "rtn" or self.a_bits < 16 or self.w_format != "int"
+                    or self.a_format != "int" or self.w_grid != "ours"):
+                raise KeyError("backend=packed loads the checkpoint as-is: method=, a<16, "
+                               "wfmt=, afmt= and grid= do not apply")
+        elif self.ckpt:
+            raise KeyError("ckpt= is only used with backend=packed")
         if self.backend == "bnb" and (self.w_format != "nf4" or self.a_bits < 16
                                       or self.method != "rtn"):
             raise KeyError("backend=bnb only supports weight-only nf4 (spec 'bnb-nf4')")
@@ -173,6 +233,11 @@ class QuantConfig:
             raise KeyError("gptq needs quantized weights (w_bits < 16)")
         if self.method == "noise" and (self.w_bits >= 16 or self.w_format != "int"):
             raise KeyError("method=noise matches int RTN error; use it with w<bits> < 16")
+        if self.w_grid not in W_GRIDS:
+            raise KeyError(f"unknown grid '{self.w_grid}'; known: {W_GRIDS}")
+        if self.w_grid == "ref" and (self.w_format != "int" or "awq" in self.method):
+            raise KeyError("grid=ref is the GPTQ reference int grid; AWQ's reference already "
+                           "uses the min/max grid, and nf4 has its own code book")
         if self.w_tokens not in (None, "image", "text"):
             raise KeyError("wtok must be image or text")
         if self.w_tokens and self.token_selective:
@@ -200,12 +265,16 @@ class QuantConfig:
         merged.update(opts)
         if merged.get("w_format") == "nf4" and "group_size" not in opts:
             merged["group_size"] = 64              # bitsandbytes' default blocksize
+        if merged.get("w_format") in FP4_BLOCK and "group_size" not in opts:
+            merged["group_size"] = FP4_BLOCK[merged["w_format"]]
         if "skip_names" in opts:
             merged["skip_names"] = tuple(kw.get("skip_names", ("lm_head",))) + opts["skip_names"]
         return cls(w_bits=w, a_bits=a, **merged)
 
     @property
     def is_identity(self) -> bool:
+        if self.backend == "packed":
+            return False
         bits = [self.a_bits] + [b for b in (self.a_bits_image, self.a_bits_text) if b is not None]
         return self.w_bits >= 16 and min(bits) >= 16 and self.method == "rtn"
 
@@ -216,6 +285,16 @@ class QuantConfig:
     @property
     def token_selective(self) -> bool:
         return self.bits_for("image") != self.bits_for("text")
+
+    @property
+    def row_backend(self) -> str:
+        """Result-row tag: fp16 (unquantized) | sim | bnb | packed (real kernels)."""
+        return "fp16" if self.is_identity else self.backend
+
+    @property
+    def real_kernels(self) -> bool:
+        """Rows whose latency / memory mean something (never a simulated rung)."""
+        return self.row_backend in ("fp16", "bnb", "packed")
 
 
 # --------------------------------------------------------------------------- #
@@ -251,10 +330,122 @@ def quantize_weight_nf4(w: torch.Tensor, block: int = 64) -> torch.Tensor:
     return deq.reshape(-1)[: w.numel()].view_as(w).to(w.dtype)
 
 
+def int_grid(x: torch.Tensor, bits: int, symmetric: bool, grid: str = "ours"):
+    """(scale, zero, unsigned) of the int grid over the last dim of x (keepdim).
+
+    unsigned=True: q = clamp(round(x/scale) + zero, 0, 2^b-1), deq = (q - zero) * scale.
+    unsigned=False: q = clamp(round(x/scale), -2^(b-1), 2^(b-1)-1), deq = q * scale.
+    """
+    if symmetric and grid == "ours":
+        qmax = 2 ** (bits - 1) - 1
+        scale = x.abs().amax(dim=-1, keepdim=True).clamp(min=1e-8) / qmax
+        return scale, torch.zeros_like(scale), False
+    qmax = 2 ** bits - 1
+    if symmetric:                                    # grid == "ref"
+        xmax = x.abs().amax(dim=-1, keepdim=True)
+        xmax = torch.where(xmax == 0, torch.ones_like(xmax), xmax)
+        scale = 2 * xmax / qmax
+        return scale, torch.full_like(scale, float(2 ** (bits - 1))), True
+    mx = x.amax(dim=-1, keepdim=True)
+    mn = x.amin(dim=-1, keepdim=True)
+    if grid == "ref":
+        mn, mx = mn.clamp(max=0), mx.clamp(min=0)
+        both0 = (mn == 0) & (mx == 0)
+        mn = torch.where(both0, -torch.ones_like(mn), mn)
+        mx = torch.where(both0, torch.ones_like(mx), mx)
+    scale = ((mx - mn) / qmax).clamp(min=1e-8)
+    return scale, _round_ste(-mn / scale), True
+
+
+def int_qdq(x: torch.Tensor, scale, zero, unsigned: bool, bits: int) -> torch.Tensor:
+    if unsigned:
+        q = (_round_ste(x / scale) + zero).clamp(0, 2 ** bits - 1)
+        return (q - zero) * scale
+    qmax = 2 ** (bits - 1) - 1
+    return _round_ste(x / scale).clamp(-qmax - 1, qmax) * scale
+
+
+# --------------------------------------------------------------------------- #
+# microscaling FP4 (NVFP4 / MXFP4)
+# --------------------------------------------------------------------------- #
+E2M1_POS = (0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0)   # FP4 E2M1 magnitudes
+E2M1_MAX = 6.0
+E4M3_MAX = 448.0
+
+
+def round_e2m1(x: torch.Tensor) -> torch.Tensor:
+    """Nearest E2M1 value, ties to the even code (as hardware RNE), saturating at +-6."""
+    a = x.abs().clamp(max=E2M1_MAX)
+    code = torch.tensor(E2M1_POS, device=x.device, dtype=a.dtype)
+    mid = (code[1:] + code[:-1]) / 2
+    idx = torch.bucketize(a, mid)                   # a == mid[i] -> lower code i
+    tie = a == mid[idx.clamp(max=len(mid) - 1)]
+    idx = idx + (tie & (idx % 2 == 1)).long()       # odd lower code on a tie -> go up
+    return torch.sign(x) * code[idx]
+
+
+def round_e4m3(x: torch.Tensor) -> torch.Tensor:
+    """Nearest FP8-E4M3 (fn) value of a non-negative tensor, saturating at 448."""
+    return x.clamp(max=E4M3_MAX).to(torch.float8_e4m3fn).float()
+
+
+@torch.no_grad()
+def fp4_qdq(x: torch.Tensor, fmt: str, global_scale: str = "tensor") -> torch.Tensor:
+    """Quantize-dequantize to NVFP4 / MXFP4 with blocks along the last dim.
+
+    nvfp4: block of 16; scale_b = E4M3(amax_b / 6 / s), s = amax / (6 * 448) is the FP32
+           scale over the whole tensor (global_scale="tensor") or each row ("row").
+    mxfp4: block of 32; scale_b = 2^(floor(log2 amax_b) - 2), E8M0 (OCP MX v1.0).
+    """
+    block = FP4_BLOCK[fmt]
+    xf = x.float()
+    shape, d = xf.shape, xf.shape[-1]
+    pad = (-d) % block
+    if pad:
+        xf = torch.nn.functional.pad(xf, (0, pad))
+    xb = xf.reshape(*shape[:-1], -1, block)
+    bmax = xb.abs().amax(-1, keepdim=True)
+    if fmt == "nvfp4":
+        if global_scale == "row":
+            g = xb.abs().amax(dim=(-1, -2), keepdim=True)
+        else:
+            g = xb.abs().amax()
+        s = g / (E2M1_MAX * E4M3_MAX)
+        s = torch.where(s > 0, s, torch.ones_like(s))
+        scale = round_e4m3(bmax / E2M1_MAX / s) * s
+    else:
+        _, e = torch.frexp(bmax)                    # bmax = m * 2^e, m in [0.5, 1)
+        e = (e - 1 - 2).clamp(-127, 127)            # floor(log2 bmax) - emax(E2M1)
+        scale = torch.where(bmax > 0, torch.exp2(e.float()), torch.ones_like(bmax))
+    safe = torch.where(scale > 0, scale, torch.ones_like(scale))
+    q = round_e2m1(xb / safe) * scale               # scale 0 (E4M3 underflow) -> 0
+    q = q.reshape(*shape[:-1], -1)[..., :d]
+    return q.to(x.dtype)
+
+
+def effective_wbits(cfg: "QuantConfig") -> float:
+    """Storage bits per weight incl. block metadata (scales/zeros), for the bits axis.
+
+    int asym: b + (16 + b)/g  (fp16 scale + b-bit zero, as GPTQ/AWQ packing stores it)
+    int sym:  b + 16/g        nf4: 4 + 32/64 (fp32 absmax per 64, no double quant)
+    nvfp4:    4 + 8/16        mxfp4: 4 + 8/32        (per-tensor FP32 scale ignored)
+    """
+    if cfg.w_bits >= 16:
+        return 16.0
+    if cfg.w_format == "nf4":
+        return 4 + 32 / max(cfg.group_size, 1)
+    if cfg.w_format in FP4_BLOCK:
+        return 4 + 8 / FP4_BLOCK[cfg.w_format]
+    g = cfg.group_size if cfg.group_size and cfg.group_size > 0 else 4096
+    return cfg.w_bits + (16 if cfg.w_symmetric else 16 + cfg.w_bits) / g
+
+
 @torch.no_grad()
 def quantize_weight(w: torch.Tensor, bits: int, group_size: int, symmetric: bool,
-                    fmt: str = "int") -> torch.Tensor:
+                    fmt: str = "int", grid: str = "ours") -> torch.Tensor:
     """RTN quantize-dequantize a [out, in] weight matrix, grouped along `in`."""
+    if fmt in FP4_BLOCK:
+        return fp4_qdq(w, fmt, global_scale="tensor")
     if fmt == "nf4":
         return quantize_weight_nf4(w, group_size if group_size and group_size > 0 else 64)
     if bits >= 16:
@@ -264,21 +455,8 @@ def quantize_weight(w: torch.Tensor, bits: int, group_size: int, symmetric: bool
     if in_f % gs != 0:                      # fall back to per-channel if not divisible
         gs = in_f
     wg = w.reshape(out_f, in_f // gs, gs).float()
-
-    if symmetric:
-        qmax = 2 ** (bits - 1) - 1
-        scale = wg.abs().amax(dim=-1, keepdim=True).clamp(min=1e-8) / qmax
-        q = _round_ste(wg / scale).clamp(-qmax - 1, qmax)
-        deq = q * scale
-    else:
-        qmax = 2 ** bits - 1
-        mx = wg.amax(dim=-1, keepdim=True)
-        mn = wg.amin(dim=-1, keepdim=True)
-        scale = ((mx - mn) / qmax).clamp(min=1e-8)
-        zero = _round_ste(-mn / scale)
-        q = (_round_ste(wg / scale) + zero).clamp(0, qmax)
-        deq = (q - zero) * scale
-
+    scale, zero, unsigned = int_grid(wg, bits, symmetric, grid)
+    deq = int_qdq(wg, scale, zero, unsigned, bits)
     return deq.reshape(out_f, in_f).to(w.dtype)
 
 
@@ -323,7 +501,8 @@ def matched_noise(w: torch.Tensor, cfg: "QuantConfig", name: str = "") -> torch.
     out_f, in_f = w.shape
     gs = cfg.group_size if cfg.group_size and cfg.group_size > 0 and in_f % cfg.group_size == 0 \
         else in_f
-    err = (quantize_weight(w, cfg.w_bits, cfg.group_size, cfg.w_symmetric).float() - w.float())
+    err = (quantize_weight(w, cfg.w_bits, cfg.group_size, cfg.w_symmetric,
+                           grid=cfg.w_grid).float() - w.float())
     std = err.reshape(out_f, in_f // gs, gs).pow(2).mean(-1, keepdim=True).sqrt()
     g = torch.Generator(device=w.device).manual_seed(
         cfg.rot_seed * 1_000_003 + zlib.crc32(name.encode()))
@@ -355,7 +534,7 @@ class FakeQuantLinear(nn.Module):
             wq = matched_noise(base.weight.data, cfg, name)
         else:
             wq = quantize_weight(base.weight.data, cfg.w_bits, cfg.group_size,
-                                 cfg.w_symmetric, cfg.w_format)
+                                 cfg.w_symmetric, cfg.w_format, cfg.w_grid)
         self.register_buffer("weight_q", wq, persistent=False)
         self.prequantized = pre is not None
         rot = getattr(base, "phoenix_in_rot", None)       # set by ptq/rotate.py
@@ -392,6 +571,8 @@ class FakeQuantLinear(nn.Module):
         c = self.cfg
         if c.token_selective:
             x = self._quantize_by_token_type(x)
+        elif c.a_bits < 16 and c.a_format != "int":
+            x = fp4_qdq(x, c.a_format, global_scale="row")
         elif c.a_bits < 16:
             x = quantize_activation(x, c.a_bits, c.a_symmetric, c.a_granularity, c.a_clip)
         if c.w_tokens:
@@ -431,7 +612,8 @@ class FakeQuantLinear(nn.Module):
     def extra_repr(self) -> str:
         a = (f"a{self.cfg.a_bits}" if not self.cfg.token_selective else
              f"a{self.cfg.bits_for('image')}(image)/a{self.cfg.bits_for('text')}(text)")
-        extra = "".join([", nf4" if self.cfg.w_format == "nf4" else "",
+        extra = "".join([f", {self.cfg.w_format}" if self.cfg.w_format != "int" else "",
+                         f", act {self.cfg.a_format}" if self.cfg.a_format != "int" else "",
                          f", quantized weights at {self.cfg.w_tokens} tokens only"
                          if self.cfg.w_tokens else "",
                          ", prequantized" if self.prequantized else "",
@@ -485,6 +667,11 @@ def quantize_model(model: nn.Module, cfg: QuantConfig, verbose: bool = True) -> 
         if verbose:
             print("[quant] fp16 requested -- no layers wrapped")
         return []
+    if cfg.backend == "packed":
+        if verbose:
+            print(f"[quant] packed checkpoint {cfg.ckpt} -- runs its own kernels, "
+                  "no layers wrapped")
+        return []
 
     wrapped: list[FakeQuantLinear] = []
     for root_name, root in _submodule_roots(model, cfg.targets):
@@ -505,8 +692,10 @@ def quantize_model(model: nn.Module, cfg: QuantConfig, verbose: bool = True) -> 
             tag = " as RTN-matched Gaussian NOISE (control)"
         if cfg.w_tokens:
             tag += f", quantized weights at {cfg.w_tokens} tokens only"
-        if cfg.w_format == "nf4":
-            tag += " (NF4)"
+        if cfg.w_format != "int":
+            tag += f" ({cfg.w_format.upper()})"
+        if cfg.a_format != "int":
+            tag += f", activations {cfg.a_format.upper()}"
         print(f"[quant] wrapped {len(wrapped)} Linear layers "
               f"({n_params/1e9:.2f}B params){tag} at W{cfg.w_bits}"
               + (f"A{cfg.a_bits}" if not cfg.token_selective else
