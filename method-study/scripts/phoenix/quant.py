@@ -75,7 +75,9 @@ _OPT_KEYS = {"clip": ("a_clip", float), "gs": ("group_size", int),
              "backend": ("backend", str), "seed": ("rot_seed", int),
              "wtok": ("w_tokens", str),
              # 4-bit study: reference GPTQ grid
-             "grid": ("w_grid", str), "afmt": ("a_format", str)}
+             "grid": ("w_grid", str), "afmt": ("a_format", str),
+             # a ready-made quantized checkpoint (backend=packed), loaded as-is
+             "ckpt": ("ckpt", str)}
 
 # noise = control: Gaussian weight noise with the same per-group energy as RTN's error
 METHODS = ("rtn", "awq", "gptq", "sq", "rot", "rot+gptq", "sq+gptq", "noise")
@@ -90,6 +92,7 @@ W_GRIDS = ("ours", "ref")
 # spec aliases: name -> (weight bits, act bits, implied options)
 ALIASES = {"nf4": (4, 16, {"w_format": "nf4"}),
            "bnb-nf4": (4, 16, {"w_format": "nf4", "backend": "bnb"})}
+BACKENDS = ("sim", "bnb", "packed")
 
 
 def parse_precision(spec: str) -> tuple[int, int, dict]:
@@ -161,6 +164,7 @@ class QuantConfig:
     gptq_actorder: bool = False    # GPTQ column reordering (static groups)
     gptq_damp: float = 0.01        # GPTQ Hessian dampening, fraction of mean diag
     backend: str = "sim"           # sim | bnb (real bitsandbytes kernels, nf4 only)
+                                   # | packed (a ready-made checkpoint, ckpt=<hf id>)
     rot_seed: int = 0              # seed of the random rotation (and of method=noise)
     # Weight-path attribution: quantized weights only at image positions ("image") or
     # only at text positions ("text"); the other positions use the FP16 weights.
@@ -168,6 +172,10 @@ class QuantConfig:
     w_tokens: str | None = None
     w_grid: str = "ours"           # ours | ref (see W_GRIDS); int weights, RTN and GPTQ
     a_format: str = "int"          # int | nvfp4 | mxfp4 (dynamic, per-token blocks)
+    # backend=packed: Hugging Face id of an already-quantized checkpoint (e.g.
+    # Qwen/Qwen2.5-VL-7B-Instruct-AWQ). Loaded as-is with its own kernels; no PTQ, no
+    # wrapping, no FP16 shadow weights.
+    ckpt: str | None = None
 
     def __post_init__(self):
         if self.method not in METHODS:
@@ -200,8 +208,24 @@ class QuantConfig:
             if self.token_selective or self.a_clip < 1.0:
                 raise KeyError(f"afmt={self.a_format} has its own block scales; "
                                "clip= and abits_image/abits_text do not apply")
-        if self.backend not in ("sim", "bnb"):
-            raise KeyError("backend must be sim or bnb")
+        if self.backend not in BACKENDS:
+            raise KeyError(f"backend must be one of {BACKENDS}")
+        if self.backend == "packed":
+            if not self.ckpt:
+                raise KeyError("backend=packed needs ckpt=<hf id>, e.g. "
+                               "w4a16:backend=packed:ckpt=Qwen/Qwen2.5-VL-7B-Instruct-AWQ")
+            if self.w_tokens:
+                raise KeyError("wtok= needs FP16 and quantized weights side by side; a packed "
+                               "checkpoint has no FP16 weights. Use a sim rung.")
+            if self.token_selective:
+                raise KeyError("abits_image/abits_text simulate activation quantization; a "
+                               "packed checkpoint runs its own kernels. Use a sim rung.")
+            if (self.method != "rtn" or self.a_bits < 16 or self.w_format != "int"
+                    or self.a_format != "int" or self.w_grid != "ours"):
+                raise KeyError("backend=packed loads the checkpoint as-is: method=, a<16, "
+                               "wfmt=, afmt= and grid= do not apply")
+        elif self.ckpt:
+            raise KeyError("ckpt= is only used with backend=packed")
         if self.backend == "bnb" and (self.w_format != "nf4" or self.a_bits < 16
                                       or self.method != "rtn"):
             raise KeyError("backend=bnb only supports weight-only nf4 (spec 'bnb-nf4')")
@@ -249,6 +273,8 @@ class QuantConfig:
 
     @property
     def is_identity(self) -> bool:
+        if self.backend == "packed":
+            return False
         bits = [self.a_bits] + [b for b in (self.a_bits_image, self.a_bits_text) if b is not None]
         return self.w_bits >= 16 and min(bits) >= 16 and self.method == "rtn"
 
@@ -259,6 +285,16 @@ class QuantConfig:
     @property
     def token_selective(self) -> bool:
         return self.bits_for("image") != self.bits_for("text")
+
+    @property
+    def row_backend(self) -> str:
+        """Result-row tag: fp16 (unquantized) | sim | bnb | packed (real kernels)."""
+        return "fp16" if self.is_identity else self.backend
+
+    @property
+    def real_kernels(self) -> bool:
+        """Rows whose latency / memory mean something (never a simulated rung)."""
+        return self.row_backend in ("fp16", "bnb", "packed")
 
 
 # --------------------------------------------------------------------------- #
@@ -630,6 +666,11 @@ def quantize_model(model: nn.Module, cfg: QuantConfig, verbose: bool = True) -> 
     if cfg.is_identity:
         if verbose:
             print("[quant] fp16 requested -- no layers wrapped")
+        return []
+    if cfg.backend == "packed":
+        if verbose:
+            print(f"[quant] packed checkpoint {cfg.ckpt} -- runs its own kernels, "
+                  "no layers wrapped")
         return []
 
     wrapped: list[FakeQuantLinear] = []

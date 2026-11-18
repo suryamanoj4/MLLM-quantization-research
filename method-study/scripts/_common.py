@@ -76,6 +76,11 @@ def build_model(args, keep_fp: bool = False):
     if qcfg.backend == "bnb":
         raise SystemExit("bnb-nf4 has no FP16 shadow weights, so LoRAS / drift probes "
                          "cannot use it; use the simulated 'nf4' here")
+    if qcfg.backend == "packed":
+        raise SystemExit("a packed checkpoint has no FP16 shadow weights, so KV-LoRAS, "
+                         "drift probes and A-CAB studies (scripts 01-05) cannot use it; "
+                         "LoRAS-T (hidden-state correctors) works through "
+                         "00_precision_ladder.py and 15_latency.py")
     lm = load_model(args.model_id, dtype=dtype, device=args.device,
                     attn_implementation=args.attn)
     from phoenix.ptq import apply_ptq

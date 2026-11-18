@@ -77,6 +77,15 @@ def apply_ptq(lm, cfg: QuantConfig, coco_root=None, seqs=None, seed: int = 0) ->
     return info
 
 
+def load_packed(model_id: str, cfg: QuantConfig, *, dtype=torch.float16, device="cuda",
+                attn_implementation: str = "sdpa"):
+    """Load cfg.ckpt as-is, with the base model's processor. PTQ is skipped."""
+    from ..model import load_model
+    return load_model(cfg.ckpt, dtype=dtype, device=device,
+                      attn_implementation=attn_implementation, packed=True,
+                      processor_id=model_id)
+
+
 def load_quantized(model_id: str, spec: str, coco_root=None, *, dtype=torch.float16,
                    device: str = "cuda", attn_implementation: str = "sdpa",
                    keep_fp: bool = False, seed: int = 0, verbose: bool = True, **cfg_kw):
@@ -86,6 +95,14 @@ def load_quantized(model_id: str, spec: str, coco_root=None, *, dtype=torch.floa
     """
     from ..model import load_model
     cfg = QuantConfig.from_ladder(spec, **cfg_kw)
+    if cfg.backend == "packed":
+        if keep_fp:
+            raise ValueError(f"{spec}: a packed checkpoint has no FP16 shadow weights, so it "
+                             "cannot be calibrated against (LoRAS / LoRAS-T fitting); "
+                             "fit on a sim rung and attach the result")
+        lm = load_packed(model_id, cfg, dtype=dtype, device=device,
+                         attn_implementation=attn_implementation)
+        return lm, cfg, {"method": f"packed checkpoint {cfg.ckpt} (real kernels)"}
     if cfg.backend == "bnb":
         lm = load_model(model_id, dtype=dtype, device=device,
                         attn_implementation=attn_implementation,
