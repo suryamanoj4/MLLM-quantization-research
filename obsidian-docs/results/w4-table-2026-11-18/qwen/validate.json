@@ -1,0 +1,27 @@
+{
+  "_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+  "fp16": {
+    "ppl": 8.280965461087115,
+    "ptq": {},
+    "minutes": 0.27162676653824747
+  },
+  "w4a16:method=gptq:calib=mm": {
+    "ppl": 8.674200374865002,
+    "ptq": {
+      "method": "gptq",
+      "calib": "mm",
+      "gptq": {
+        "mean_loss_ratio_vs_rtn": 0.16028568035548937,
+        "chol_retries": [
+          {
+            "linear": "mlp.down_proj",
+            "damp": 0.1,
+            "retries": 1
+          }
+        ]
+      },
+      "minutes": 4.292903504217975
+    },
+    "minutes": 4.51476572555645
+  }
+}

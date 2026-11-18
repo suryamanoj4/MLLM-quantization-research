@@ -1,0 +1,402 @@
+{
+  "reference": "fp16",
+  "summary": {
+    "fp16": {
+      "verdict": "reference",
+      "direction": "none",
+      "health_reasons": [],
+      "lm_damaged": false,
+      "vs_reference": {},
+      "backend": "fp16",
+      "eff_wbits": 16.0,
+      "wall_min": 22.35405898548197,
+      "reused_from": null,
+      "ptq": {}
+    },
+    "w4a16": {
+      "verdict": "ok (no significant change)",
+      "direction": "none",
+      "health_reasons": [],
+      "lm_damaged": false,
+      "vs_reference": {
+        "adversarial": {
+          "delta": -0.005836229172235696,
+          "lo": -0.01946905915513708,
+          "hi": 0.007029044887553515,
+          "p": 0.404,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "random": {
+          "delta": -0.00904406351877185,
+          "lo": -0.0218768361490973,
+          "hi": 0.002311337108517275,
+          "p": 0.203,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "pope_f1": {
+          "delta": -0.007432040351738833,
+          "lo": -0.02024929272146092,
+          "hi": 0.004504713776675051,
+          "p": 0.235,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.7813333333333333,
+          "significant_fdr": false
+        },
+        "pope_precision": {
+          "delta": 0.004210658622423424,
+          "lo": -0.0001277502907649497,
+          "hi": 0.009904284001358454,
+          "p": 0.073,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.7813333333333333,
+          "significant_fdr": false
+        },
+        "pope_recall": {
+          "delta": -0.01333333333333342,
+          "lo": -0.033333333333333326,
+          "hi": 0.0033333333333332993,
+          "p": 0.203,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.7813333333333333,
+          "significant_fdr": false
+        },
+        "pope_yes": {
+          "delta": -0.00833333333333336,
+          "lo": -0.01777777777777778,
+          "hi": 0.0005555555555555314,
+          "p": 0.074,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.7813333333333333,
+          "significant_fdr": false
+        },
+        "pope_auroc": {
+          "delta": -0.0006111111111111178,
+          "lo": -0.004015432098765426,
+          "hi": 0.002749382716049298,
+          "p": 0.67,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 1.0,
+          "significant_fdr": false
+        },
+        "chair_i": {
+          "delta": -0.008204947753316094,
+          "lo": -0.025395541365645022,
+          "hi": 0.008765204603637888,
+          "p": 0.365,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 0.876,
+          "significant_fdr": false
+        },
+        "coverage": {
+          "delta": -0.0038520801232665436,
+          "lo": -0.021423106350420884,
+          "hi": 0.014878621769772837,
+          "p": 0.738,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 1.0,
+          "significant_fdr": false
+        },
+        "length": {
+          "delta": -0.07333333333333769,
+          "lo": -0.7166666666666686,
+          "hi": 0.5900000000000034,
+          "p": 0.842,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 1.0,
+          "significant_fdr": false
+        },
+        "blind_ppl_ratio": 0.8614648557130271
+      },
+      "backend": "sim",
+      "eff_wbits": 4.15625,
+      "wall_min": 11.515020681017388,
+      "reused_from": null,
+      "ptq": {}
+    },
+    "w4a16:method=awq:calib=wiki": {
+      "verdict": "ok (no significant change)",
+      "direction": "none",
+      "health_reasons": [],
+      "lm_damaged": false,
+      "vs_reference": {
+        "adversarial": {
+          "delta": 0.0028680897646414794,
+          "lo": -0.007619047619047525,
+          "hi": 0.014118135575625468,
+          "p": 0.611,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "random": {
+          "delta": 0.004469854469854373,
+          "lo": -0.006512035765883106,
+          "hi": 0.015563164213615588,
+          "p": 0.505,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "pope_f1": {
+          "delta": 0.003396494280327955,
+          "lo": -0.007266369954508356,
+          "hi": 0.014654189853170685,
+          "p": 0.525,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 1.0,
+          "significant_fdr": false
+        },
+        "pope_precision": {
+          "delta": -0.0027648340088070045,
+          "lo": -0.007477790323611511,
+          "hi": 0.00033199331496458484,
+          "p": 0.238,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.7813333333333333,
+          "significant_fdr": false
+        },
+        "pope_recall": {
+          "delta": 0.006666666666666599,
+          "lo": -0.010000000000000009,
+          "hi": 0.023333333333333317,
+          "p": 0.505,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 1.0,
+          "significant_fdr": false
+        },
+        "pope_yes": {
+          "delta": 0.0044444444444444176,
+          "lo": -0.003333333333333355,
+          "hi": 0.012222222222222245,
+          "p": 0.293,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.7813333333333333,
+          "significant_fdr": false
+        },
+        "pope_auroc": {
+          "delta": 0.0014827160493826597,
+          "lo": -0.0003895061728395044,
+          "hi": 0.0033506172839505854,
+          "p": 0.128,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.7813333333333333,
+          "significant_fdr": false
+        },
+        "chair_i": {
+          "delta": 0.0010732352353275826,
+          "lo": -0.01664281364190011,
+          "hi": 0.019315714374340834,
+          "p": 0.881,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 1.0,
+          "significant_fdr": false
+        },
+        "coverage": {
+          "delta": -0.012326656394452962,
+          "lo": -0.029526029526029562,
+          "hi": 0.0031897926634768536,
+          "p": 0.148,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 0.7813333333333333,
+          "significant_fdr": false
+        },
+        "length": {
+          "delta": -0.01999999999999602,
+          "lo": -0.5600000000000023,
+          "hi": 0.5066666666666748,
+          "p": 0.952,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 1.0,
+          "significant_fdr": false
+        },
+        "blind_ppl_ratio": 0.9235054876546933
+      },
+      "backend": "sim",
+      "eff_wbits": 4.15625,
+      "wall_min": 13.638886970250557,
+      "reused_from": null,
+      "ptq": {
+        "method": "awq",
+        "calib": "wiki",
+        "awq": {
+          "mean_loss_ratio_vs_rtn": 0.7496590338689075
+        },
+        "minutes": 2.257194222028678
+      }
+    },
+    "w4a16:method=gptq": {
+      "verdict": "ok (no significant change)",
+      "direction": "none",
+      "health_reasons": [],
+      "lm_damaged": false,
+      "vs_reference": {
+        "adversarial": {
+          "delta": 0.0,
+          "lo": -0.011044962048786133,
+          "hi": 0.011581417749000567,
+          "p": 1.0,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "random": {
+          "delta": 0.0,
+          "lo": -0.01106796687699474,
+          "hi": 0.011602453532173596,
+          "p": 1.0,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "pope_f1": {
+          "delta": 0.0007461550922628346,
+          "lo": -0.010275312414116389,
+          "hi": 0.012340489479555017,
+          "p": 0.944,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 1.0,
+          "significant_fdr": false
+        },
+        "pope_precision": {
+          "delta": 2.7258354685755215e-05,
+          "lo": -0.00041408809610476993,
+          "hi": 0.0005233714735843886,
+          "p": 0.946,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 1.0,
+          "significant_fdr": false
+        },
+        "pope_recall": {
+          "delta": 0.0011111111111110628,
+          "lo": -0.015555555555555545,
+          "hi": 0.01777777777777778,
+          "p": 0.944,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 1.0,
+          "significant_fdr": false
+        },
+        "pope_yes": {
+          "delta": 0.0005555555555555314,
+          "lo": -0.007777777777777772,
+          "hi": 0.00888888888888889,
+          "p": 0.944,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 1.0,
+          "significant_fdr": false
+        },
+        "pope_auroc": {
+          "delta": 0.0010401234567900541,
+          "lo": -0.0008333333333333526,
+          "hi": 0.0030228395061727698,
+          "p": 0.292,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.7813333333333333,
+          "significant_fdr": false
+        },
+        "chair_i": {
+          "delta": -0.003291123938468976,
+          "lo": -0.01987735379675161,
+          "hi": 0.012459341901016385,
+          "p": 0.689,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 1.0,
+          "significant_fdr": false
+        },
+        "coverage": {
+          "delta": 0.0,
+          "lo": -0.01743745261561791,
+          "hi": 0.017926734216679674,
+          "p": 1.0,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 1.0,
+          "significant_fdr": false
+        },
+        "length": {
+          "delta": -0.013333333333335418,
+          "lo": -0.5166666666666657,
+          "hi": 0.4933333333333252,
+          "p": 0.969,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 1.0,
+          "significant_fdr": false
+        },
+        "blind_ppl_ratio": 0.8421867348934738
+      },
+      "backend": "sim",
+      "eff_wbits": 4.15625,
+      "wall_min": 15.62176675198134,
+      "reused_from": null,
+      "ptq": {
+        "method": "gptq",
+        "calib": "mm",
+        "gptq": {
+          "mean_loss_ratio_vs_rtn": 0.16028568035548937,
+          "chol_retries": [
+            {
+              "linear": "mlp.down_proj",
+              "damp": 0.1,
+              "retries": 1
+            }
+          ]
+        },
+        "minutes": 4.283224139750625
+      }
+    }
+  },
+  "candidates": [],
+  "grounding_specific": [],
+  "fdr": {
+    "method": "benjamini-hochberg",
+    "alpha": 0.05,
+    "n_tests": 24,
+    "metrics": [
+      "pope_f1",
+      "pope_auroc",
+      "pope_precision",
+      "pope_recall",
+      "pope_yes",
+      "chair_i",
+      "coverage",
+      "length"
+    ]
+  },
+  "versions": {
+    "python": "3.10.22",
+    "torch": "2.6.0+cu124",
+    "cuda": "12.4",
+    "cudnn": 90100,
+    "transformers": "4.53.3",
+    "accelerate": "1.15.0",
+    "bitsandbytes": null,
+    "autoawq": null,
+    "gptqmodel": null,
+    "nvidia-ml-py": null,
+    "pynvml": null,
+    "gpu": "NVIDIA A100-SXM4-80GB",
+    "gpu_count": 1,
+    "gpu_mem_gb": 79.250732421875,
+    "driver": "595.58.03"
+  }
+}

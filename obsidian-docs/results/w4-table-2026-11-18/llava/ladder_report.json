@@ -1,0 +1,399 @@
+{
+  "reference": "fp16",
+  "summary": {
+    "fp16": {
+      "verdict": "reference",
+      "direction": "none",
+      "health_reasons": [],
+      "lm_damaged": false,
+      "vs_reference": {},
+      "backend": "fp16",
+      "eff_wbits": 16.0,
+      "wall_min": 8.204740700180022,
+      "reused_from": null,
+      "ptq": {}
+    },
+    "w4a16": {
+      "verdict": "degraded (LM intact: grounding-specific)",
+      "direction": "fallback",
+      "health_reasons": [],
+      "lm_damaged": false,
+      "vs_reference": {
+        "adversarial": {
+          "delta": -0.0020551347746496917,
+          "lo": -0.013065232639700608,
+          "hi": 0.00962272583378343,
+          "p": 0.721,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "random": {
+          "delta": 0.0033804745501614386,
+          "lo": -0.009538409129620229,
+          "hi": 0.017508548673332514,
+          "p": 0.602,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "pope_f1": {
+          "delta": 0.002304830449687656,
+          "lo": -0.00844247105754714,
+          "hi": 0.014353400222965385,
+          "p": 0.683,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.7805714285714287,
+          "significant_fdr": false
+        },
+        "pope_precision": {
+          "delta": -0.009528998138923161,
+          "lo": -0.01890836470947388,
+          "hi": -0.00039610235284803785,
+          "p": 0.041,
+          "significant": true,
+          "n_clusters": 100,
+          "q_bh": 0.1968,
+          "significant_fdr": false
+        },
+        "pope_recall": {
+          "delta": 0.016666666666666607,
+          "lo": -0.0033333333333332993,
+          "hi": 0.036666666666666736,
+          "p": 0.127,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.381,
+          "significant_fdr": false
+        },
+        "pope_yes": {
+          "delta": 0.016666666666666607,
+          "lo": 0.0050000000000000044,
+          "hi": 0.029444444444444384,
+          "p": 0.003,
+          "significant": true,
+          "n_clusters": 100,
+          "q_bh": 0.024000000000000004,
+          "significant_fdr": true
+        },
+        "pope_auroc": {
+          "delta": -0.001913580246913571,
+          "lo": -0.004418518518518488,
+          "hi": 0.00046111111111113434,
+          "p": 0.106,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.381,
+          "significant_fdr": false
+        },
+        "chair_i": {
+          "delta": -0.0027674670911780053,
+          "lo": -0.02167780428649993,
+          "hi": 0.0159362927949733,
+          "p": 0.79,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 0.8618181818181818,
+          "significant_fdr": false
+        },
+        "coverage": {
+          "delta": -0.006933744221879867,
+          "lo": -0.02384615384615385,
+          "hi": 0.009708737864077666,
+          "p": 0.457,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 0.76,
+          "significant_fdr": false
+        },
+        "length": {
+          "delta": 0.7933333333333366,
+          "lo": -0.4066666666666663,
+          "hi": 2.0566666666666578,
+          "p": 0.182,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 0.4853333333333334,
+          "significant_fdr": false
+        },
+        "blind_ppl_ratio": 0.9916571358996856
+      },
+      "backend": "sim",
+      "eff_wbits": 4.15625,
+      "wall_min": 6.942345221728707,
+      "reused_from": null,
+      "ptq": {}
+    },
+    "w4a16:method=awq:calib=wiki": {
+      "verdict": "ok (no significant change)",
+      "direction": "none",
+      "health_reasons": [],
+      "lm_damaged": false,
+      "vs_reference": {
+        "adversarial": {
+          "delta": 0.0,
+          "lo": -0.00704027290130016,
+          "hi": 0.0067335226387740255,
+          "p": 1.0,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "random": {
+          "delta": 0.0029082195324519056,
+          "lo": -0.008016366523997953,
+          "hi": 0.013514827418570574,
+          "p": 0.6,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "pope_f1": {
+          "delta": 0.0031948808970966303,
+          "lo": -0.0049113913531255715,
+          "hi": 0.01119420103683988,
+          "p": 0.401,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.76,
+          "significant_fdr": false
+        },
+        "pope_precision": {
+          "delta": 0.0059164916797685985,
+          "lo": -0.001380198748619832,
+          "hi": 0.014113340984521772,
+          "p": 0.112,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.381,
+          "significant_fdr": false
+        },
+        "pope_recall": {
+          "delta": 0.0,
+          "lo": -0.013333333333333308,
+          "hi": 0.013333333333333308,
+          "p": 1.0,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 1.0,
+          "significant_fdr": false
+        },
+        "pope_yes": {
+          "delta": -0.0038888888888889417,
+          "lo": -0.012222222222222245,
+          "hi": 0.0050000000000000044,
+          "p": 0.416,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.76,
+          "significant_fdr": false
+        },
+        "pope_auroc": {
+          "delta": -0.0009969135802468942,
+          "lo": -0.003461111111111137,
+          "hi": 0.0007413580246914409,
+          "p": 0.332,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.76,
+          "significant_fdr": false
+        },
+        "chair_i": {
+          "delta": -0.006410840701242676,
+          "lo": -0.025807929011020442,
+          "hi": 0.012214768014937344,
+          "p": 0.52,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 0.76,
+          "significant_fdr": false
+        },
+        "coverage": {
+          "delta": -0.007704160246533087,
+          "lo": -0.02313030069390898,
+          "hi": 0.008668242710795915,
+          "p": 0.382,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 0.76,
+          "significant_fdr": false
+        },
+        "length": {
+          "delta": 0.2600000000000051,
+          "lo": -0.9566666666666777,
+          "hi": 1.4666666666666686,
+          "p": 0.657,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 0.7805714285714287,
+          "significant_fdr": false
+        },
+        "blind_ppl_ratio": 1.0464426628464498
+      },
+      "backend": "sim",
+      "eff_wbits": 4.15625,
+      "wall_min": 9.103377033622625,
+      "reused_from": null,
+      "ptq": {
+        "method": "awq",
+        "calib": "wiki",
+        "awq": {
+          "mean_loss_ratio_vs_rtn": 0.9062970239218358
+        },
+        "minutes": 2.2839439327983806
+      }
+    },
+    "w4a16:method=gptq": {
+      "verdict": "ok (no significant change)",
+      "direction": "none",
+      "health_reasons": [],
+      "lm_damaged": false,
+      "vs_reference": {
+        "adversarial": {
+          "delta": 0.0013467163268312543,
+          "lo": -0.008935765033325938,
+          "hi": 0.01128510170685959,
+          "p": 0.793,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "random": {
+          "delta": 0.0006622625296238693,
+          "lo": -0.01095709570957093,
+          "hi": 0.01340472267984627,
+          "p": 0.941,
+          "significant": false,
+          "n_clusters": 100
+        },
+        "pope_f1": {
+          "delta": 0.0031914234012454523,
+          "lo": -0.006763352473384221,
+          "hi": 0.01394667323837806,
+          "p": 0.554,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.76,
+          "significant_fdr": false
+        },
+        "pope_precision": {
+          "delta": 0.01173325396247582,
+          "lo": 0.0034690666637327006,
+          "hi": 0.021527021266518287,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 100,
+          "q_bh": 0.0,
+          "significant_fdr": true
+        },
+        "pope_recall": {
+          "delta": -0.00666666666666671,
+          "lo": -0.023333333333333317,
+          "hi": 0.010000000000000009,
+          "p": 0.57,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.76,
+          "significant_fdr": false
+        },
+        "pope_yes": {
+          "delta": -0.011666666666666714,
+          "lo": -0.02111111111111108,
+          "hi": -0.002777777777777768,
+          "p": 0.015,
+          "significant": true,
+          "n_clusters": 100,
+          "q_bh": 0.09,
+          "significant_fdr": false
+        },
+        "pope_auroc": {
+          "delta": 0.0005833333333332691,
+          "lo": -0.0012882716049382736,
+          "hi": 0.0024753086419753156,
+          "p": 0.55,
+          "significant": false,
+          "n_clusters": 100,
+          "q_bh": 0.76,
+          "significant_fdr": false
+        },
+        "chair_i": {
+          "delta": -0.0003416195635875252,
+          "lo": -0.01786531495302046,
+          "hi": 0.018660541817114545,
+          "p": 0.999,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 1.0,
+          "significant_fdr": false
+        },
+        "coverage": {
+          "delta": -0.0038520801232665436,
+          "lo": -0.019425019425019396,
+          "hi": 0.011727912431587217,
+          "p": 0.678,
+          "significant": false,
+          "n_clusters": 300,
+          "q_bh": 0.7805714285714287,
+          "significant_fdr": false
+        },
+        "length": {
+          "delta": 1.9333333333333371,
+          "lo": 0.7666666666666657,
+          "hi": 3.066666666666677,
+          "p": 0.0,
+          "significant": true,
+          "n_clusters": 300,
+          "q_bh": 0.0,
+          "significant_fdr": true
+        },
+        "blind_ppl_ratio": 1.0349294449302946
+      },
+      "backend": "sim",
+      "eff_wbits": 4.15625,
+      "wall_min": 10.494346502042996,
+      "reused_from": null,
+      "ptq": {
+        "method": "gptq",
+        "calib": "mm",
+        "gptq": {
+          "mean_loss_ratio_vs_rtn": 0.13184172066269492
+        },
+        "minutes": 3.646255397594844
+      }
+    }
+  },
+  "candidates": [
+    "w4a16"
+  ],
+  "grounding_specific": [
+    "w4a16"
+  ],
+  "fdr": {
+    "method": "benjamini-hochberg",
+    "alpha": 0.05,
+    "n_tests": 24,
+    "metrics": [
+      "pope_f1",
+      "pope_auroc",
+      "pope_precision",
+      "pope_recall",
+      "pope_yes",
+      "chair_i",
+      "coverage",
+      "length"
+    ]
+  },
+  "versions": {
+    "python": "3.10.22",
+    "torch": "2.6.0+cu124",
+    "cuda": "12.4",
+    "cudnn": 90100,
+    "transformers": "4.53.3",
+    "accelerate": "1.15.0",
+    "bitsandbytes": null,
+    "autoawq": null,
+    "gptqmodel": null,
+    "nvidia-ml-py": null,
+    "pynvml": null,
+    "gpu": "NVIDIA A100-SXM4-80GB",
+    "gpu_count": 1,
+    "gpu_mem_gb": 79.250732421875,
+    "driver": "595.58.03"
+  }
+}

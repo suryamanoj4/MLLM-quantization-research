@@ -52,7 +52,10 @@ dashes. `–` means **not run / not measured**, not zero.
 | **FP16 (absolute values)** | .744 | .220 | .542 | – | | 15.6 | .559 | .109 | .833 | 8.28 |
 | NF4 (bitsandbytes kernels) | −.005 | +.016 | +.006 | −.001 | .11 | 1.01× | +.003 | −.006 | +.018* | 1.01× |
 | W4A4 rot. + GPTQ (wiki) | −.002 | −.001 | +.007 | −.001 | .14 | 1.06× | −.019 | −.013 | −.063* | 1.21× |
+| W4 GPTQ (img+cap)† | −.004 | .000 | −.012* | +.001 | .10 | 1.03× | .000 | −.003 | +.001 | 1.05× |
+| W4 AWQ (wiki)† | −.008 | −.006 | −.004 | −.001 | .13 | 1.05× | −.012 | +.001 | +.003 | 1.05× |
 | W4 GPTQ (wiki) | −.018* | −.026* | +.002 | .000 | .16 | 1.01× | +.015 | −.007 | −.007 | 1.02× |
+| W4 RTN† | −.007 | −.003 | +.017* | −.002 | .15 | 0.99× | −.004 | −.008 | −.007 | 1.07× |
 | W3 GPTQ (img+cap) | −.025* | −.036* | +.033* | −.006* | .20 | 1.13× | −.004 | +.019 | +.016 | 1.36× |
 | W3 AWQ (wiki) | −.042* | −.014 | +.061* | −.004 | .22 | 1.10× | −.025* | +.009 | +.004 | 1.24× |
 | W3 GPTQ (wiki) | −.045* | −.028* | +.006 | −.007* | .24 | 1.09× | −.046* | +.006 | −.017 | 1.13× |
@@ -76,6 +79,17 @@ dashes. `–` means **not run / not measured**, not zero.
 > `–`: not run.
 >
 > PPL_wiki is corrected 1.25× → 1.21×. Qwen W4 noise second draw: Cov −.007 (n.s.).
+>
+> **† W4 rows (2026-11-18, not yet in the paper):** `scripts/run_4bit_table.sh`,
+> `results/w4-table-2026-11-18/`. Same Study-2 settings, but no Gate-2
+> ladder was on the box, so FP16 was re-run and these deltas are paired against that
+> re-run. Qwen's FP16 re-run reproduces the row above exactly (.559 / .109 / .833); LLaVA's
+> is within noise (Cov .741, CHAIR_i .225, yes .543 vs .744 / .220 / .542). Qwen PPL_wiki:
+> RTN 8.826 and AWQ 8.657 from `validate_ptq.json`; GPTQ (img+cap) 8.674, new
+> (`results/w4-table-2026-11-18/qwen/validate.json`). No W4 coverage or CHAIR_i change is
+> significant on either model; the only starred cells are LLaVA yes-ratio (RTN +.017*,
+> GPTQ img+cap −.012*). Note W4 GPTQ (wiki), from the earlier run, is the only W4 quantizer
+> with a significant LLaVA omission (−.018*).
 
 ### Dashes in this table
 
@@ -101,7 +115,10 @@ Gate 2, Qwen, change vs FP16 (`*`: CI excludes 0). Small = drop rate of FP16-nam
 |---|---:|---:|---:|---:|---:|---:|
 | NF4 (bitsandbytes) | +.003 | −.006 | +.018* | +.021* | −.000 | .19 |
 | W4A4 rot.+GPTQ (wiki) | −.019 | −.013 | −.063* | −.044* | −.013* | .26 |
+| W4 GPTQ (img+cap)† | .000 | −.003 | +.001 | +.001 | +.001 | .17 |
+| W4 AWQ (wiki)† | −.012 | +.001 | +.003 | +.004 | +.001 | .19 |
 | W4 GPTQ (wiki) | +.015 | −.007 | −.007 | −.009* | +.000 | .16 |
+| W4 RTN† | −.004 | −.008 | −.007 | −.008 | −.001 | .20 |
 | W3 GPTQ (img+cap) | −.004 | +.019 | +.016 | +.017* | −.001 | .17 |
 | W3 AWQ (wiki) | −.025* | +.009 | +.004 | +.004 | +.003 | .25 |
 | W3 GPTQ (wiki) | −.046* | +.006 | −.017 | −.010 | −.011* | .35 |
