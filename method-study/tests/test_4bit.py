@@ -5,6 +5,7 @@
 
   * grid=ref (GPTQ reference grid) for RTN and GPTQ; the default grid is unchanged
   * GPTQ Cholesky fallback: damp x10 up to 3 retries, then raise
+  * NVFP4 / MXFP4 weight and activation formats against hand-computed values
 """
 from __future__ import annotations
 
@@ -19,7 +20,8 @@ sys.path.insert(0, str(ROOT / "tests"))
 import torch
 
 from phoenix.ptq.gptq import damped_inverse_cholesky, gptq_quantize
-from phoenix.quant import QuantConfig, quantize_weight
+from phoenix.quant import (FakeQuantLinear, QuantConfig, effective_wbits, fp4_qdq,
+                           quantize_weight, round_e2m1, round_e4m3)
 
 OK, FAIL = "  ok  ", " FAIL "
 _failures = []
@@ -145,9 +147,101 @@ def test_cholesky_fallback():
     check("NaN Hessian raises", raised)
 
 
+def test_fp4():
+    print("\n== NVFP4 / MXFP4 ==")
+    # E2M1 grid, ties to the even code, saturation
+    x = torch.tensor([0.2, 0.25, 0.3, 0.75, 1.25, 1.75, 2.5, 3.5, 5.0, 5.1, 7.0, -0.75, -2.6])
+    want = torch.tensor([0.0, 0.0, 0.5, 1.0, 1.0, 2.0, 2.0, 4.0, 4.0, 6.0, 6.0, -1.0, -3.0])
+    check("E2M1 rounding (RNE ties, saturate at 6)", torch.equal(round_e2m1(x), want),
+          str(round_e2m1(x).tolist()))
+    e = round_e4m3(torch.tensor([448.0, 500.0, 164.27, 224.0, 0.3, 17.0]))
+    # 164.27 in [128,256) has step 16 -> 160; 0.3 in [0.25,0.5) step 1/32 -> 0.3125;
+    # 17 in [16,32) step 2 -> 16 or 18: tie -> even mantissa (16)
+    check("E4M3 rounding (saturate at 448)",
+          torch.equal(e, torch.tensor([448.0, 448.0, 160.0, 224.0, 0.3125, 16.0])), str(e.tolist()))
+
+    # NVFP4: two blocks of 16 in one row. Tensor amax 6 -> s = 6/(6*448) = 1/448.
+    # block 0: amax 6 -> E4M3(448) = 448 -> block scale 1: plain E2M1 rounding
+    # block 1: amax 2.2 -> 2.2/6*448 = 164.27 -> E4M3 160 -> scale 160/448 = 0.35714
+    #          2.2 / 0.35714 = 6.16 -> 6 -> 2.142857 ; 1.0 / 0.35714 = 2.8 -> 3 -> 1.071429
+    w = torch.zeros(1, 32)
+    w[0, :4] = torch.tensor([0.3, 1.0, 5.0, -6.0])
+    w[0, 16:18] = torch.tensor([2.2, 1.0])
+    q = fp4_qdq(w, "nvfp4")
+    sc = 160 / 448
+    exp = torch.zeros(1, 32)
+    exp[0, :4] = torch.tensor([0.5, 1.0, 4.0, -6.0])
+    exp[0, 16:18] = torch.tensor([6 * sc, 3 * sc])
+    check("NVFP4 block scales: FP8-E4M3 x per-tensor FP32", torch.allclose(q, exp, atol=1e-6),
+          str(q[0, 16:18].tolist()))
+    # same tensor scaled by 1000: identical up to the factor (global scale absorbs it)
+    check("NVFP4 is scale-equivariant through the FP32 tensor scale",
+          torch.allclose(fp4_qdq(w * 1000, "nvfp4"), q * 1000, rtol=1e-5))
+    # per-row global scale (activations): row 1 = 0.01 x row 0 -> same codes
+    two = torch.cat([w, w * 0.01])
+    qr = fp4_qdq(two, "nvfp4", global_scale="row")
+    check("NVFP4 per-token FP32 scale: rows do not interact",
+          torch.allclose(qr[1], qr[0] * 0.01, rtol=1e-5) and torch.allclose(qr[0], q[0]))
+
+    # MXFP4: one block of 32. amax 7 -> floor(log2 7) = 2 -> scale 2^(2-2) = 1
+    m = torch.zeros(1, 32)
+    m[0, :4] = torch.tensor([0.3, 1.0, 5.0, -7.0])
+    qm = fp4_qdq(m, "mxfp4")
+    check("MXFP4 scale 2^(floor(log2 amax)-2), E2M1 saturates",
+          torch.allclose(qm[0, :4], torch.tensor([0.5, 1.0, 4.0, -6.0])), str(qm[0, :4].tolist()))
+    # amax 0.9 -> floor(log2) = -1 -> scale 1/8: 0.9*8 = 7.2 -> 6 -> 0.75; 0.2*8 = 1.6 -> 1.5
+    m2 = torch.zeros(1, 32)
+    m2[0, :2] = torch.tensor([0.9, 0.2])
+    check("MXFP4 power-of-two scale below 1", torch.allclose(
+        fp4_qdq(m2, "mxfp4")[0, :2], torch.tensor([0.75, 0.1875])))
+    # amax exactly a power of two: 4 -> floor(log2 4) = 2 -> scale 1 -> 4 is exact
+    m3 = torch.zeros(1, 32); m3[0, 0] = 4.0; m3[0, 1] = -2.9
+    check("MXFP4 exact power of two", torch.allclose(fp4_qdq(m3, "mxfp4")[0, :2],
+                                                     torch.tensor([4.0, -3.0])))
+    check("all-zero block stays zero", torch.equal(fp4_qdq(torch.zeros(2, 64), "nvfp4"),
+                                                   torch.zeros(2, 64)))
+    # padding: a last dim that is not a multiple of the block
+    odd = torch.randn(3, 40)
+    check("non-multiple last dim keeps its shape", fp4_qdq(odd, "mxfp4").shape == odd.shape)
+
+    # specs, fixed blocks, wiring into FakeQuantLinear
+    c = QuantConfig.from_ladder("w4a16:wfmt=nvfp4", group_size=128)
+    check("wfmt=nvfp4 -> block 16 regardless of --group-size", c.group_size == 16)
+    c = QuantConfig.from_ladder("w4a16:wfmt=mxfp4", group_size=128)
+    check("wfmt=mxfp4 -> block 32", c.group_size == 32)
+    c = QuantConfig.from_ladder("w4a4:wfmt=nvfp4:afmt=nvfp4")
+    check("w4a4 nvfp4 weights + activations parse", (c.w_format, c.a_format) == ("nvfp4", "nvfp4"))
+    bad = 0
+    for s_ in ("w3a16:wfmt=nvfp4", "w4a16:wfmt=nvfp4:gs=64", "w4a16:wfmt=mxfp4:method=gptq",
+               "w4a8:afmt=nvfp4", "w4a4:afmt=fp8", "w4a4:afmt=mxfp4:clip=0.99"):
+        try:
+            QuantConfig.from_ladder(s_)
+        except KeyError:
+            bad += 1
+    check("invalid FP4 combinations are refused", bad == 6, f"{bad}/6")
+    torch.manual_seed(0)
+    lin = torch.nn.Linear(64, 8, bias=False)
+    fq = FakeQuantLinear(lin, QuantConfig.from_ladder("w4a4:wfmt=nvfp4:afmt=nvfp4"))
+    check("FakeQuantLinear holds NVFP4 weights",
+          torch.equal(fq.weight_q, fp4_qdq(lin.weight.data, "nvfp4")))
+    xa = torch.randn(2, 5, 64)
+    y = fq(xa)
+    yref = torch.nn.functional.linear(fp4_qdq(xa, "nvfp4", "row"), fq.weight_q)
+    check("FakeQuantLinear quantizes activations per token to NVFP4",
+          torch.allclose(y, yref, atol=1e-6))
+    eb = {s_: effective_wbits(QuantConfig.from_ladder(s_)) for s_ in
+          ("fp16", "w4a16:gs=128", "w4a16:wsym=1:gs=128", "nf4", "w4a16:wfmt=nvfp4",
+           "w4a16:wfmt=mxfp4", "w3a16:gs=128")}
+    check("effective bits", eb == {"fp16": 16.0, "w4a16:gs=128": 4 + 20 / 128,
+                                   "w4a16:wsym=1:gs=128": 4.125, "nf4": 4.5,
+                                   "w4a16:wfmt=nvfp4": 4.5, "w4a16:wfmt=mxfp4": 4.25,
+                                   "w3a16:gs=128": 3 + 19 / 128}, str(eb))
+
+
 def main():
     test_grid()
     test_cholesky_fallback()
+    test_fp4()
     print("\n" + "=" * 60)
     if _failures:
         print(f"{len(_failures)} FAILED: {_failures}")
