@@ -600,6 +600,7 @@ python tests/test_data.py      # ~5 s, synthetic COCO in a temp dir
 python tests/test_ladder.py    # ladder end to end incl. PTQ rungs, verdicts, directions
 python tests/test_fixes.py     # tiny LLaVA regressions
 python tests/test_ptq.py       # published PTQ methods
+python tests/test_4bit.py      # 4-bit study: grid=ref, NVFP4/MXFP4, packed ckpts, FDR, latency
 ```
 
 `test_smoke.py` checks the machinery, not the science:
@@ -636,3 +637,35 @@ python tests/test_ptq.py       # published PTQ methods
 The remote partial-zip reader was validated against real archives (byte-identical
 extraction from a 16 MB wheel, including forced 64 KB multi-chunk streaming), and the
 POPE loader against the real `coco_pope_{random,popular,adversarial}.json`.
+
+---
+
+## 9. 4-bit settings and real-kernel latency (`runs_4bit/`)
+
+More 4-bit rungs for both models (LLaVA-1.5-7B fp16, Qwen2.5-VL-7B bf16) on the same
+evaluation set (300 caption images, 100 POPE images × 3 splits), plus a latency benchmark
+that times real kernels only. One command runs everything and resumes after a restart:
+
+```bash
+HF_HOME=/persistent/hf nohup bash scripts/run_4bit.sh > runs_4bit/run.out 2>&1 &
+```
+
+It runs the Qwen ladder (`--preset gate4bit-qwen`), stops at a checkpoint if a rung is
+broken, then runs the LLaVA ladder (`--preset gate4bit`), the LoRAS-T extras,
+`scripts/15_latency.py`, the figures (`16_figures_4bit.py`) and `17_summary_4bit.py`.
+The summary writes `runs_4bit/SUMMARY.md` and copies the small result files to
+`obsidian-docs/results/4bit-latency-<date>/`.
+
+New spec keys:
+
+| key | meaning |
+|---|---|
+| `grid=ref` | GPTQ reference grid (`min(0,min)/max(0,max)`) for RTN and GPTQ; default `ours` |
+| `wfmt=nvfp4` / `wfmt=mxfp4` | simulated microscaling FP4 weights (blocks of 16 / 32) |
+| `afmt=nvfp4` / `afmt=mxfp4` | the same on activations, per-token blocks (`w4a4:...`) |
+| `backend=packed:ckpt=<hf id>` | a ready-made quantized checkpoint, loaded as-is with its own kernels |
+
+Every result row is tagged `backend` = fp16 | sim | bnb | packed, and only fp16 / bnb /
+packed rows are ever timed. The ladder report adds Benjamini–Hochberg FDR markers (`+`)
+next to the unadjusted stars (`*`). Decisions and deviations are logged in
+`runs_4bit/DECISIONS.md`, a local untracked file whose contents SUMMARY.md includes.

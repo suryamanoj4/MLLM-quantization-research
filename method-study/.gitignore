@@ -13,6 +13,9 @@ venv/
 
 # --- Run artifacts ---
 runs/
+# 4-bit study: outputs stay local; small results are copied to obsidian-docs/results/
+runs_4bit/*
+*.pt
 *.log
 
 # --- Editors & OS ---
