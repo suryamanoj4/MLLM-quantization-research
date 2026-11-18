@@ -14,6 +14,7 @@
   * the latency harness: forced-length decode ignores EOS and reproduces greedy
     generate(), TPOT excludes the prefill, weight bytes, summaries, and
     scripts/15_latency.py end to end (tiny LLaVA, CPU clocks) incl. --resume
+  * 16_figures_4bit.py and 17_summary_4bit.py on those outputs (+ --publish size rule)
 """
 from __future__ import annotations
 
@@ -646,6 +647,63 @@ def test_latency_script():
         shutil.rmtree(tmp)
 
 
+def test_figures_and_summary():
+    print("\n== 16_figures_4bit.py / 17_summary_4bit.py on tiny outputs ==")
+    import importlib.util
+    import subprocess
+    from test_ladder import build_coco, fake_loader, load_ladder_module
+    tmp = Path(tempfile.mkdtemp())
+    try:
+        root = tmp / "coco"
+        build_coco(root)
+        runs = tmp / "runs_4bit"
+        mod = load_ladder_module()
+        base_loader, _ = fake_loader()
+        mod.load_model = lambda mid, dtype=None, device="cpu", **kw: (
+            packify(base_loader(mid, dtype, device)) if kw.get("packed") else base_loader(mid, dtype, device))
+        tiny_corrector_file(tmp / "c.pt")
+        sys.argv = ["00_precision_ladder.py", "--coco-root", str(root), "--out",
+                    str(runs / "llava" / "gate4bit"), "--ladder",
+                    f"fp16,w4a16:gs=32,w4a16:wfmt=mxfp4,w3a16,bnb-nf4,bnb-nf4+lorast={tmp / 'c.pt'}",
+                    "--n-pope-images", "6", "--n-chair-images", "4", "--max-new-tokens", "6",
+                    "--device", "cpu", "--dtype", "float32", "--n-boot", "100",
+                    "--n-blind-captions", "2"]
+        with redirect_stdout(io.StringIO()):
+            mod.main()
+        lat = {"rows": {"fp16": {"weights_gb": 14.0, "j_caption": {"median": 50.0}, "wall_min": 1},
+                        "bnb-nf4": {"weights_gb": 4.5, "j_caption": {"median": 60.0}, "wall_min": 1},
+                        "bnb-nf4+lorast": {"weights_gb": 4.6, "j_caption": {"median": 61.0},
+                                           "wall_min": 1}}, "versions": {"gpu": "test"}}
+        (runs / "latency").mkdir(parents=True)
+        (runs / "latency" / "llava.json").write_text(json.dumps(lat))
+        (runs / "latency" / "llava.md").write_text("| row |\n|---|\n| fp16 |\n")
+        (runs / "DECISIONS.md").write_text("# t\n\n- a decision\n")
+        py = sys.executable
+        r = subprocess.run([py, str(ROOT / "scripts" / "16_figures_4bit.py"), "--runs", str(runs),
+                            "--out", str(runs / "figures")], capture_output=True, text=True)
+        figs = sorted(p.name for p in (runs / "figures").glob("*.png"))
+        check("figures (a) per model and (b) written", figs == ["fig_a_llava_bits.png", "fig_b_cost.png"],
+              str(figs) + r.stderr[-200:])
+        big = runs / "latency" / "huge.json"
+        big.write_bytes(b"0" * (5 * 2 ** 20 + 1))
+        pub = tmp / "pub"
+        r = subprocess.run([py, str(ROOT / "scripts" / "17_summary_4bit.py"), "--runs", str(runs),
+                            "--publish", str(pub)], capture_output=True, text=True)
+        sm = (runs / "SUMMARY.md").read_text() if (runs / "SUMMARY.md").exists() else ""
+        check("SUMMARY.md: environment, GPU-hours, ladder table, latency, figures, deviations",
+              all(h in sm for h in ("## Environment", "## GPU-hours per rung", "`w4a16:wfmt=mxfp4`",
+                                    "## Latency", "fig_b_cost.png", "- a decision")), r.stderr[-300:])
+        check("summary ladder table shows the backend tag and both markers' legend",
+              "| `bnb-nf4` | bnb |" in sm and "Benjamini-Hochberg" in sm)
+        out = sorted(str(p.relative_to(pub)) for p in pub.rglob("*") if p.is_file())
+        check("--publish copies the small files, never ladder.json, DECISIONS.md or files > 5 MB",
+              "llava_ladder_report.json" in out and "SUMMARY.md" in out and "DECISIONS.md" not in out
+              and "figures/fig_b_cost.png" in out and not any("ladder.json" == Path(o).name for o in out)
+              and "latency/huge.json" not in out, str(out))
+    finally:
+        shutil.rmtree(tmp)
+
+
 def main():
     test_grid()
     test_cholesky_fallback()
@@ -656,6 +714,7 @@ def main():
     test_fused_corrector()
     test_latency_harness()
     test_latency_script()
+    test_figures_and_summary()
     print("\n" + "=" * 60)
     if _failures:
         print(f"{len(_failures)} FAILED: {_failures}")
