@@ -10,6 +10,7 @@
     experiments, LoRAS-T hooks + steer_mask on non-nn.Linear (packed-style) layers
   * the gate4bit presets, Benjamini-Hochberg FDR, and the ladder end to end with
     sim / bnb / packed rows tagged
+  * the fused LoRAS-T corrector path matches the default path (atol 1e-3 in fp16)
 """
 from __future__ import annotations
 
@@ -467,6 +468,70 @@ def test_ladder_backends():
         shutil.rmtree(tmp)
 
 
+def test_fused_corrector():
+    print("\n== fused LoRAS-T path ==")
+    from phoenix import loras_text as LT
+    from phoenix.loras import steer_enabled, steer_mask
+    g = torch.Generator().manual_seed(1)
+    d, r = 256, 16
+    A = (0.05 * torch.randn(d, r, generator=g)).half()
+    B = (0.05 * torch.randn(r, d, generator=g)).half()
+    bias = (0.01 * torch.randn(d, generator=g)).half()
+    h = torch.randn(3, 40, d, generator=g).half()
+    h[0, 0] *= 200                                   # a massive (BOS-like) token
+    img = torch.zeros(3, 40, dtype=torch.bool)
+    img[:, 5:25] = True
+    norm = float(torch.randn(3, 40, d, generator=g).norm(dim=-1).max()) * 1.25
+    for positions in ("text", "all"):
+        ref = LT.HiddenCorrector(A, B, bias, max_norm=norm, positions=positions)
+        fus = LT.HiddenCorrector(A, B, bias, max_norm=norm, positions=positions, fused=True)
+        for name, hh, m in (("prefill", h, img), ("decode", h[:, -1:], None)):
+            a, b = ref(hh, m), fus(hh, m)
+            diff = float((a.float() - b.float()).abs().max())
+            check(f"fused == default ({positions}, {name}) in fp16, atol 1e-3",
+                  a.dtype == b.dtype == torch.float16 and diff <= 1e-3, f"{diff:.1e}")
+        sel = ref._select(h, img)
+        out = fus(h, img)
+        check(f"fused leaves unselected positions bit-exact ({positions})",
+              torch.equal(out[~sel], h[~sel]) and bool((~sel[0, 0])))
+    # end to end on a tiny model: same greedy tokens, same logits, both paths
+    from test_smoke import fake_batch, tiny_model
+    from phoenix.acab import generate
+    torch.manual_seed(0)
+    lm = tiny_model()
+    tmp = Path(tempfile.mkdtemp())
+    try:
+        tiny_corrector_file(tmp / "c.pt")
+        b = fake_batch()
+        img = b["input_ids"] == lm.image_token_id
+        outs = {}
+        for fused in (False, True):
+            corr, _ = LT.load(tmp / "c.pt", lm.device, lm.dtype, fused=fused)
+            LT.attach_hidden(lm.layers, corr)
+            with steer_mask(img):
+                r = generate(lm, {"input_ids": b["input_ids"]}, None, max_new_tokens=8)
+            with steer_mask(img):
+                logits = lm.model(input_ids=b["input_ids"]).logits
+            outs[fused] = (r["sequences"], logits)
+            LT.detach_hidden(lm.layers)
+        check("tiny model: fused and default generate the same tokens",
+              torch.equal(outs[False][0], outs[True][0]))
+        check("tiny model: logits match", torch.allclose(outs[False][1], outs[True][1], atol=1e-4),
+              f"{(outs[False][1] - outs[True][1]).abs().max():.1e}")
+        corr, _ = LT.load(tmp / "c.pt", lm.device, lm.dtype)
+        LT.attach_hidden(lm.layers, corr)
+        LT.set_fused(lm.layers, True)
+        check("set_fused switches attached correctors", all(c.fused for c in corr.values()))
+        with steer_mask(img), steer_enabled(False):
+            off = lm.model(input_ids=b["input_ids"]).logits
+        LT.detach_hidden(lm.layers)
+        with steer_mask(img):
+            plain = lm.model(input_ids=b["input_ids"]).logits
+        check("steer_enabled(False) still disables the fused path", torch.equal(off, plain))
+    finally:
+        shutil.rmtree(tmp)
+
+
 def main():
     test_grid()
     test_cholesky_fallback()
@@ -474,6 +539,7 @@ def main():
     test_packed()
     test_fdr_and_presets()
     test_ladder_backends()
+    test_fused_corrector()
     print("\n" + "=" * 60)
     if _failures:
         print(f"{len(_failures)} FAILED: {_failures}")

@@ -27,6 +27,12 @@ norm gate, left uncorrected at inference.
 
 Decode overhead: two skinny matmuls per layer per token (2 * d * r MACs).
 
+Fused path (`set_fused(layers, True)`, default off): instead of gathering the selected
+rows (a boolean index, a host sync, h.clone() and a scatter), the correction is
+computed densely for every position in the model dtype and blended in with
+torch.where on the same position/norm mask. Unselected positions stay bit-exact; the
+corrected ones differ from the default path only by fp16 matmul rounding.
+
 Ablation (positions="all"): the same corrector, same rank and layers, fitted and
 applied at EVERY position, image tokens included -- what a placement-agnostic
 low-rank correction (QwT-style, but rank-limited) would do. Comparing the two at equal
@@ -52,7 +58,7 @@ POSITIONS = ("text", "all")
 
 class HiddenCorrector(nn.Module):
     def __init__(self, A, B, bias, max_norm: float, scale: float = 1.0,
-                 positions: str = "text"):
+                 positions: str = "text", fused: bool = False):
         super().__init__()
         if positions not in POSITIONS:
             raise ValueError(f"positions must be one of {POSITIONS}, got {positions!r}")
@@ -62,16 +68,35 @@ class HiddenCorrector(nn.Module):
         self.register_buffer("bias", bias, persistent=True)
         self.max_norm = float(max_norm)
         self.scale = float(scale)
+        self.fused = bool(fused)
+
+    def _f32(self):
+        key = (self.A.data_ptr(), self.B.data_ptr(), self.bias.data_ptr(), self.A.device)
+        if getattr(self, "_f32_key", None) != key:
+            self._f32_cache = (self.A.float(), self.B.float(), self.bias.float())
+            self._f32_key = key
+        return self._f32_cache
+
+    def _select(self, h: torch.Tensor, image_mask: torch.Tensor | None) -> torch.Tensor:
+        """Positions to correct: text (or all) positions whose norm is not massive."""
+        norm_ok = h.float().norm(dim=-1) <= self.max_norm
+        if (self.positions == "text" and image_mask is not None and h.dim() == 3
+                and h.shape[:2] == image_mask.shape):
+            return norm_ok & ~image_mask          # prefill: every non-image position
+        return norm_ok                            # decode, or the all-positions ablation
 
     def forward(self, h: torch.Tensor, image_mask: torch.Tensor | None) -> torch.Tensor:
         if self.scale == 0.0 or not SteerContext.enabled:
             return h
-        if (self.positions == "text" and image_mask is not None and h.dim() == 3
-                and h.shape[:2] == image_mask.shape):
-            sel = ~image_mask                    # prefill: every non-image position
-        else:                                    # decode, or the all-positions ablation
-            sel = torch.ones(h.shape[:-1], dtype=torch.bool, device=h.device)  # decode
-        sel = sel & (h.float().norm(dim=-1) <= self.max_norm)
+        sel = self._select(h, image_mask)
+        if self.fused:
+            # dense low-rank correction + masked blend: no gather, no clone, no host sync.
+            # fp32 arithmetic like the default path (one rounding to h.dtype), with
+            # cached fp32 copies of A / B / bias.
+            A, B, b = self._f32()
+            x = h.float()
+            corr = torch.addmm(b, (x @ A).reshape(-1, A.shape[1]), B).view_as(x)
+            return torch.where(sel[..., None], (x + self.scale * corr).to(h.dtype), h)
         if not bool(sel.any()):
             return h
         x = h[sel].float()
@@ -109,6 +134,14 @@ def detach_hidden(layers: nn.ModuleList) -> None:
             layer._loras_t = None
 
 
+def set_fused(layers: nn.ModuleList, fused: bool) -> None:
+    """Switch every attached corrector to the fused (dense + masked blend) path."""
+    for layer in layers:
+        c = getattr(layer, "_loras_t", None)
+        if c is not None:
+            c.fused = bool(fused)
+
+
 def set_scale(layers: nn.ModuleList, scale: float) -> None:
     for layer in layers:
         c = getattr(layer, "_loras_t", None)
@@ -124,12 +157,12 @@ def save(path, correctors: dict[int, HiddenCorrector], meta: dict) -> None:
                 "meta": meta}, path)
 
 
-def load(path, device, dtype) -> tuple[dict[int, HiddenCorrector], dict]:
+def load(path, device, dtype, fused: bool = False) -> tuple[dict[int, HiddenCorrector], dict]:
     blob = torch.load(path, map_location="cpu", weights_only=False)
     # files written before the ablation existed carry no "positions": text-only
     out = {int(li): HiddenCorrector(t["A"].to(device, dtype), t["B"].to(device, dtype),
                                     t["bias"].to(device, dtype), t["max_norm"],
-                                    positions=t.get("positions", "text"))
+                                    positions=t.get("positions", "text"), fused=fused)
            for li, t in blob["state"].items()}
     return out, blob["meta"]
 
