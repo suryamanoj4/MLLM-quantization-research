@@ -11,6 +11,9 @@
   * the gate4bit presets, Benjamini-Hochberg FDR, and the ladder end to end with
     sim / bnb / packed rows tagged
   * the fused LoRAS-T corrector path matches the default path (atol 1e-3 in fp16)
+  * the latency harness: forced-length decode ignores EOS and reproduces greedy
+    generate(), TPOT excludes the prefill, weight bytes, summaries, and
+    scripts/15_latency.py end to end (tiny LLaVA, CPU clocks) incl. --resume
 """
 from __future__ import annotations
 
@@ -532,6 +535,117 @@ def test_fused_corrector():
         shutil.rmtree(tmp)
 
 
+def test_latency_harness():
+    print("\n== latency harness ==")
+    from PIL import Image
+    import numpy as np
+    from test_fixes import tiny_llava
+    from phoenix import latency as Lt
+    from phoenix.acab import generate
+    lm = tiny_llava()
+    img = Image.fromarray(np.random.RandomState(0).randint(0, 255, (40, 40, 3), dtype=np.uint8))
+    batch = lm.processor(images=[img], text=["describe"])
+    clock = Lt.Clock("cpu")
+    f = Lt.forced_decode(lm, batch, 12, clock)
+    g = generate(lm, batch, None, max_new_tokens=12)
+    n = g["sequences"].shape[1]
+    check("forced decode == greedy generate() tokens (same cache path)",
+          torch.equal(f["tokens"][:, :n], g["sequences"]), f"{n} tokens compared")
+    check("forced decode always returns exactly n tokens", f["tokens"].shape == (1, 12))
+    check("TPOT = decode-only time / (n-1); e2e = TTFT + decode (prefill not in TPOT)",
+          abs(f["tpot_ms"] * 11 - f["decode_ms"]) < 1e-9 and abs(f["e2e_ms"] - f["ttft_ms"] - f["decode_ms"]) < 1e-9)
+    tok = lm.processor.tokenizer
+    old = tok.eos_token_id
+    try:
+        tok.eos_token_id = int(f["tokens"][0, 0])        # EOS = the first generated token
+        f2 = Lt.forced_decode(lm, batch, 12, clock)
+        nat = Lt.natural_decode(lm, batch, 12, clock)
+        check("forced length ignores EOS; natural length stops at it",
+              f2["tokens"].shape[1] == 12 and nat["len"] == [0], f"natural len {nat['len']}")
+    finally:
+        tok.eos_token_id = old
+    check("natural_length counts tokens before the first EOS",
+          Lt.natural_length(torch.tensor([[5, 6, 2, 2], [5, 6, 7, 8]]), 2) == [2, 4])
+    feats = Lt.vision_forward(lm, batch)
+    feats = feats[0] if isinstance(feats, (list, tuple)) else feats
+    check("vision_forward = encoder + projector output (text hidden size)",
+          feats.shape[-1] == 64, str(tuple(feats.shape)))
+    wb = Lt.weight_bytes(lm.model)
+    manual = sum(t.numel() * t.element_size() for t in
+                 {id(t): t for t in list(lm.model.parameters()) + list(lm.model.buffers())}.values())
+    check("weight_bytes = parameter + buffer bytes", wb == manual, f"{wb} vs {manual}")
+    sm = Lt.summarize([1, 2, 3, 4, 100])
+    check("summaries: median and p90", sm["median"] == 3 and abs(sm["p90"] - 61.6) < 1e-9, str(sm))
+    check("energy reader degrades to None without NVML/CUDA",
+          not Lt.Energy("cpu").ok and Lt.Energy("cpu").read() is None)
+
+
+def test_latency_script():
+    print("\n== scripts/15_latency.py end to end (tiny LLaVA, CPU) ==")
+    import importlib.util
+    from test_fixes import tiny_llava
+    from test_ladder import build_coco
+    sp = importlib.util.spec_from_file_location("lat", ROOT / "scripts" / "15_latency.py")
+    lat = importlib.util.module_from_spec(sp)
+    sp.loader.exec_module(lat)
+    tmp = Path(tempfile.mkdtemp())
+    try:
+        root = tmp / "coco"
+        build_coco(root, n_images=12)
+        loads = []
+
+        def fake_load(spec, args):
+            loads.append(spec)
+            lm = tiny_llava()
+            cfg = QuantConfig.from_ladder(spec)
+            if cfg.backend == "packed":
+                packify(lm)
+            return lm, cfg, {"method": spec}
+        lat.load_row_model = fake_load
+        tiny_corrector_file(tmp / "c.pt", d=64, n_layers=4)
+        base = ["15_latency.py", "--coco-root", str(root), "--device", "cpu", "--dtype", "float32",
+                "--n-warmup", "1", "--n-images", "4", "--repeats", "1", "--max-new-tokens", "5",
+                "--batch-sweep", "1,2", "--sweep-repeats", "1", "--out", str(tmp / "lat"),
+                "--name", "tiny", "--lorast", str(tmp / "c.pt")]
+        sys.argv = base + ["--rows", "fp16,w4a16:backend=packed:ckpt=org/fake-awq"]
+        with redirect_stdout(io.StringIO()):
+            lat.main()
+        d = json.loads((tmp / "lat" / "tiny.json").read_text())
+        rows = d["rows"]
+        check("rows: each config without, with and fused LoRAS-T", list(rows) == [
+            "fp16", "fp16+lorast", "fp16+lorast_fused",
+            "org_fake-awq", "org_fake-awq+lorast", "org_fake-awq+lorast_fused"], str(list(rows)))
+        r = rows["fp16+lorast"]
+        check("row has every metric with median and p90",
+              all(r[k]["median"] is not None and r[k]["p90"] is not None for k in
+                  ("vision_ms", "prefill_ms", "ttft_ms", "tpot_ms", "e2e_forced_ms",
+                   "e2e_natural_ms", "len_natural")))
+        check("batch sweep recorded (TPOT and throughput)",
+              set(r["sweep"]) == {"1", "2"} and r["sweep"]["2"]["decode_tok_s"]["median"] > 0)
+        check("LoRAS-T adds its corrector bytes to the weights",
+              rows["fp16+lorast"]["weights_gb"] > rows["fp16"]["weights_gb"])
+        check("backend tags fp16 / packed", rows["fp16"]["backend"] == "fp16"
+              and rows["org_fake-awq"]["backend"] == "packed")
+        check("versions logged", "torch" in d["versions"] and "driver" in d["versions"])
+        md = (tmp / "lat" / "tiny.md").read_text()
+        check("markdown table written", "| fp16+lorast_fused |" in md and "TPOT" in md)
+        n0 = len(loads)
+        sys.argv = base + ["--rows", "fp16,w4a16:backend=packed:ckpt=org/fake-awq", "--resume"]
+        with redirect_stdout(io.StringIO()):
+            lat.main()
+        check("--resume skips finished rows (no model loaded)", len(loads) == n0)
+        sys.argv = base + ["--rows", "w4a16:wfmt=nvfp4"]
+        refused = False
+        try:
+            with redirect_stdout(io.StringIO()):
+                lat.main()
+        except SystemExit as e:
+            refused = "never timed" in str(e)
+        check("a simulated rung is refused (never timed)", refused)
+    finally:
+        shutil.rmtree(tmp)
+
+
 def main():
     test_grid()
     test_cholesky_fallback()
@@ -540,6 +654,8 @@ def main():
     test_fdr_and_presets()
     test_ladder_backends()
     test_fused_corrector()
+    test_latency_harness()
+    test_latency_script()
     print("\n" + "=" * 60)
     if _failures:
         print(f"{len(_failures)} FAILED: {_failures}")
