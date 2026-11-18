@@ -6,10 +6,19 @@
   * grid=ref (GPTQ reference grid) for RTN and GPTQ; the default grid is unchanged
   * GPTQ Cholesky fallback: damp x10 up to 3 retries, then raise
   * NVFP4 / MXFP4 weight and activation formats against hand-computed values
+  * backend=packed: spec validation, nothing wrapped, clear errors for the sim-only
+    experiments, LoRAS-T hooks + steer_mask on non-nn.Linear (packed-style) layers
+  * the gate4bit presets, Benjamini-Hochberg FDR, and the ladder end to end with
+    sim / bnb / packed rows tagged
 """
 from __future__ import annotations
 
+import io
+import json
+import shutil
 import sys
+import tempfile
+from contextlib import redirect_stdout
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -238,10 +247,233 @@ def test_fp4():
                                    "w3a16:gs=128": 3 + 19 / 128}, str(eb))
 
 
+class PackedLinear(torch.nn.Module):
+    """Stands in for a packed-kernel layer (AWQ WQLinear / bnb Linear4bit are not
+    nn.Linear): quantize_model must leave it alone, LoRAS-T must still hook around it."""
+
+    def __init__(self, lin: torch.nn.Linear):
+        super().__init__()
+        self.register_buffer("qweight", lin.weight.data.clone())
+        self.bias = lin.bias
+
+    def forward(self, x):
+        return torch.nn.functional.linear(x, self.qweight, self.bias)
+
+
+def packify(lm):
+    for layer in lm.layers:
+        for mod in list(layer.modules()):
+            for n, ch in list(mod.named_children()):
+                if isinstance(ch, torch.nn.Linear):
+                    setattr(mod, n, PackedLinear(ch))
+    return lm
+
+
+def tiny_corrector_file(path, d=64, n_layers=4, rank=4, seed=0):
+    from phoenix import loras_text as LT
+    g = torch.Generator().manual_seed(seed)
+    corr = {li: LT.HiddenCorrector(0.05 * torch.randn(d, rank, generator=g),
+                                   0.05 * torch.randn(rank, d, generator=g),
+                                   0.01 * torch.randn(d, generator=g), max_norm=1e9)
+            for li in range(n_layers)}
+    LT.save(path, corr, {"precision": "w3a16", "rank": rank, "params": 0})
+    return corr
+
+
+def test_packed():
+    print("\n== backend=packed ==")
+    from phoenix import loras_text as LT
+    from phoenix.loras import steer_mask
+    from phoenix.ptq import load_quantized
+    from phoenix.quant import iter_fq, quantize_model
+    spec = "w4a16:backend=packed:ckpt=Qwen/Qwen2.5-VL-7B-Instruct-AWQ"
+    c = QuantConfig.from_ladder(spec)
+    check("packed spec parses (ckpt with a slash)",
+          (c.backend, c.ckpt) == ("packed", "Qwen/Qwen2.5-VL-7B-Instruct-AWQ"))
+    check("row tags: fp16 / sim / bnb / packed",
+          [QuantConfig.from_ladder(x).row_backend for x in ("fp16", "w4a16", "bnb-nf4", spec)]
+          == ["fp16", "sim", "bnb", "packed"])
+    check("only fp16 / bnb / packed rows may be timed",
+          [QuantConfig.from_ladder(x).real_kernels for x in ("fp16", "w4a16", "bnb-nf4", spec)]
+          == [True, False, True, True])
+    errs = {}
+    for s_ in ("w4a16:backend=packed", spec + ":wtok=text", "w4a4:backend=packed:ckpt=x:abits_image=8",
+               "w4a16:backend=packed:ckpt=x:abits_text=8", "w4a16:backend=packed:ckpt=x:method=gptq",
+               "w4a16:ckpt=x"):
+        try:
+            QuantConfig.from_ladder(s_)
+            errs[s_] = None
+        except KeyError as e:
+            errs[s_] = str(e)
+    check("packed refuses: no ckpt, wtok=, abits_image/text, method=, ckpt without packed",
+          all(errs.values()), str([k for k, v in errs.items() if not v]))
+    check("the wtok error says why", "no FP16 weights" in (errs[spec + ":wtok=text"] or ""))
+
+    from test_smoke import fake_batch, tiny_model
+    torch.manual_seed(0)
+    lm = packify(tiny_model())
+    with redirect_stdout(io.StringIO()):
+        wrapped = quantize_model(lm.model, c)
+    check("quantize_model wraps nothing for packed", wrapped == [] and not list(iter_fq(lm.model)))
+    raised = ""
+    try:
+        load_quantized("llava-hf/llava-1.5-7b-hf", spec, keep_fp=True)
+    except ValueError as e:
+        raised = str(e)
+    check("calibrating against a packed checkpoint is refused", "FP16 shadow" in raised, raised[:60])
+
+    # LoRAS-T forward hooks + steer_mask on the packed-style model
+    tmp = Path(tempfile.mkdtemp())
+    try:
+        corr = tiny_corrector_file(tmp / "c.pt")
+        loaded, _ = LT.load(tmp / "c.pt", lm.device, lm.dtype)
+        b = fake_batch()
+        ids = b["input_ids"]
+        img = ids == lm.image_token_id
+        with steer_mask(img):
+            base = lm.model(input_ids=ids, output_hidden_states=True).hidden_states
+        LT.attach_hidden(lm.layers, loaded)
+        with steer_mask(img):
+            out = lm.model(input_ids=ids, output_hidden_states=True).hidden_states
+        # layer-0 output: correction at text positions only, image positions untouched
+        h0 = base[1]
+        A, B_, bias = corr[0].A, corr[0].B, corr[0].bias
+        exp_text = h0[~img] + (h0[~img] @ A) @ B_ + bias
+        check("LoRAS-T hook runs on packed-style layers: text positions corrected",
+              torch.allclose(out[1][~img], exp_text, atol=1e-5))
+        check("... image positions untouched under steer_mask",
+              torch.allclose(out[1][img], h0[img], atol=1e-6))
+        LT.detach_hidden(lm.layers)
+    finally:
+        shutil.rmtree(tmp)
+
+
+def test_fdr_and_presets():
+    print("\n== BH-FDR and presets ==")
+    from phoenix.stats import benjamini_hochberg
+    q = benjamini_hochberg([0.01, 0.04, 0.03, 0.005])
+    # sorted .005,.01,.03,.04 -> x4/1,4/2,4/3,4/4 = .02,.02,.04,.04 (monotone from the top)
+    check("BH q-values, hand-computed", all(abs(a - b) < 1e-12 for a, b in
+                                            zip(q, [0.02, 0.04, 0.04, 0.02])), str(q))
+    check("BH caps at 1 and keeps order", benjamini_hochberg([0.9, 0.8]) == [0.9, 0.9]
+          and benjamini_hochberg([1.0, 1.0, 0.5]) == [1.0, 1.0, 1.0] and benjamini_hochberg([]) == [])
+    import importlib.util
+    sp = importlib.util.spec_from_file_location("ladder", ROOT / "scripts" / "00_precision_ladder.py")
+    lad = importlib.util.module_from_spec(sp)
+    sp.loader.exec_module(lad)
+    g = lad.PRESETS["gate4bit"]
+    ok = True
+    for r in lad.PRESETS["gate4bit-qwen"]:
+        try:
+            QuantConfig.from_ladder(r, group_size=128)
+        except KeyError as e:
+            ok = False
+            print("   bad rung", r, e)
+    check("every gate4bit(-qwen) rung parses", ok)
+    gs = sorted(QuantConfig.from_ladder(r, group_size=128).group_size for r in g
+                if r.startswith("w4a16:method=gptq") and "targets" not in r and "wsym" not in r)
+    check("gate4bit: GPTQ at gs 32/64/128 on the reference grid", gs == [32, 64, 128]
+          and all(QuantConfig.from_ladder(r).w_grid == "ref" for r in g if "gptq:calib=wiki:grid" in r))
+    check("gate4bit spans 16 -> 4 -> 3 bits with the Gate-2 anchors",
+          g[0] == "fp16" and "w3a16" in g and "w3a16:method=gptq:calib=wiki" in g
+          and "w4a4:method=rot+gptq:calib=wiki" in g and "bnb-nf4" in g)
+    check("gate4bit-qwen = gate4bit + the official AWQ checkpoint",
+          lad.PRESETS["gate4bit-qwen"][:-1] == g
+          and QuantConfig.from_ladder(lad.PRESETS["gate4bit-qwen"][-1]).backend == "packed")
+    # add_fdr on hand-built cells
+    cells = {"a": {"pope_f1": {"p": 0.001, "significant": True, "delta": -0.1},
+                   "chair_i": {"p": 0.04, "significant": True, "delta": 0.01},
+                   "blind_ppl_ratio": 1.0},
+             "b": {"coverage": {"p": 0.5, "significant": False, "delta": 0.0}}}
+    n = lad.add_fdr(cells)
+    check("add_fdr: family = table metrics only, q annotated",
+          n == 3 and cells["a"]["pope_f1"]["significant_fdr"]
+          and not cells["a"]["chair_i"]["significant_fdr"]     # 0.04*3/2 = 0.06
+          and abs(cells["a"]["chair_i"]["q_bh"] - 0.06) < 1e-12)
+
+
+def test_ladder_backends():
+    print("\n== ladder end to end: sim / bnb / packed rows ==")
+    from test_ladder import build_coco, fake_loader, load_ladder_module
+    tmp = Path(tempfile.mkdtemp())
+    try:
+        root = tmp / "coco"
+        build_coco(root)
+        mod = load_ladder_module()
+        base_loader, calls = fake_loader()
+        seen = []
+
+        def loader(model_id, dtype=None, device="cpu", **kw):
+            seen.append((model_id, kw))
+            lm = base_loader(model_id, dtype, device, **kw)
+            return packify(lm) if kw.get("packed") else lm
+        mod.load_model = loader
+        tiny_corrector_file(tmp / "c.pt")
+        packed = "w4a16:backend=packed:ckpt=org/fake-awq"
+        out = tmp / "ladder"
+        sys.argv = ["00_precision_ladder.py", "--coco-root", str(root), "--out", str(out),
+                    "--ladder", f"fp16,w4a16:wfmt=nvfp4,w4a4:wfmt=nvfp4:afmt=nvfp4,"
+                    f"w4a16:method=gptq:ncal=4:grid=ref,bnb-nf4,{packed},{packed}+lorast={tmp / 'c.pt'}",
+                    "--n-pope-images", "6", "--n-chair-images", "4", "--max-new-tokens", "6",
+                    "--device", "cpu", "--dtype", "float32", "--n-boot", "200",
+                    "--n-blind-captions", "4"]
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            mod.main()
+        log = buf.getvalue()
+        data = json.loads((out / "ladder.json").read_text())
+        rep = json.loads((out / "ladder_report.json").read_text())
+        tags = {k: v["backend"] for k, v in data["table"].items()}
+        check("every row tagged fp16 | sim | bnb | packed", tags == {
+            "fp16": "fp16", "w4a16:wfmt=nvfp4": "sim", "w4a4:wfmt=nvfp4:afmt=nvfp4": "sim",
+            "w4a16:method=gptq:ncal=4:grid=ref": "sim", "bnb-nf4": "bnb", packed: "packed",
+            f"{packed}+lorast={tmp / 'c.pt'}": "packed"}, str(tags))
+        pk = [kw for mid, kw in seen if mid == "org/fake-awq"]
+        check("packed rung loads ckpt as-is with the base model's processor",
+              len(pk) == 2 and all(k.get("packed") and k.get("processor_id") ==
+                                   "llava-hf/llava-1.5-7b-hf" for k in pk))
+        check("packed rung skips PTQ and wraps nothing",
+              "packed checkpoint org/fake-awq -- runs its own kernels" in log
+              and "packed checkpoint" in data["table"][packed]["ptq"]["method"])
+        check("LoRAS-T attaches to a packed rung", "lorast" in
+              data["table"][f"{packed}+lorast={tmp / 'c.pt'}"]["ptq"])
+        check("versions logged in ladder.json and ladder_report.json",
+              "torch" in data["versions"] and "bitsandbytes" in rep["versions"]
+              and "driver" in rep["versions"])
+        check("effective bits recorded", data["table"]["w4a16:wfmt=nvfp4"]["eff_wbits"] == 4.5
+              and data["table"]["fp16"]["eff_wbits"] == 16.0)
+        qs = [c.get("q_bh") for s in rep["summary"].values()
+              for k, c in s["vs_reference"].items() if k in rep["fdr"]["metrics"]]
+        check("report carries BH q-values next to the unadjusted CIs",
+              qs and all(q is not None for q in qs) and rep["fdr"]["n_tests"] == len(qs))
+        check("table prints both markers' legend", "Benjamini-Hochberg q <" in log
+              and "packed" in log.split("paired comparison")[1])
+        # reuse: copy identical rungs from another ladder instead of re-running
+        n0 = calls["n"]
+        out2 = tmp / "ladder2"
+        sys.argv = ["00_precision_ladder.py", "--coco-root", str(root), "--out", str(out2),
+                    "--ladder", "fp16,w4a16:wfmt=nvfp4,w4a16:wfmt=mxfp4",
+                    "--reuse-from", str(out / "ladder.json"),
+                    "--n-pope-images", "6", "--n-chair-images", "4", "--max-new-tokens", "6",
+                    "--device", "cpu", "--dtype", "float32", "--n-boot", "200",
+                    "--n-blind-captions", "4"]
+        with redirect_stdout(io.StringIO()):
+            mod.main()
+        d2 = json.loads((out2 / "ladder.json").read_text())
+        check("--reuse-from copies identical rungs and runs only the new one",
+              calls["n"] - n0 == 1 and d2["table"]["fp16"].get("reused_from")
+              and "reused_from" not in d2["table"]["w4a16:wfmt=mxfp4"])
+    finally:
+        shutil.rmtree(tmp)
+
+
 def main():
     test_grid()
     test_cholesky_fallback()
     test_fp4()
+    test_packed()
+    test_fdr_and_presets()
+    test_ladder_backends()
     print("\n" + "=" * 60)
     if _failures:
         print(f"{len(_failures)} FAILED: {_failures}")

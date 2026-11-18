@@ -37,6 +37,11 @@ Published PTQ methods (phoenix/ptq) are rungs too -- this is the Gate-1 study:
     python scripts/00_precision_ladder.py --coco-root data/coco-mini --preset gate1 \
         --out runs/gate1 --n-pope-images 100 --n-chair-images 100 --resume
 
+4-bit study (gate4bit / gate4bit-qwen): group sizes, the GPTQ reference grid, NVFP4 /
+MXFP4, wider targets, and real-kernel rows (bnb-nf4; a packed checkpoint via
+`w4a16:backend=packed:ckpt=<hf id>`, loaded as-is with its own kernels). Every row is
+tagged backend = fp16 | sim | bnb | packed; only fp16 / bnb / packed rows may be timed.
+
 Besides F1 and CHAIR, every rung is scored on what separates the two failure modes:
 POPE precision / recall / yes-ratio (pooled over splits), caption coverage and length,
 and the language model's health with no image at all (blind perplexity). The report
@@ -63,10 +68,10 @@ from phoenix.evaluate import run_captions, run_pope
 from phoenix.model import DEFAULT_MODEL, load_model
 from phoenix.probes import blind_captions, blind_fluency
 from phoenix.ptq import apply_ptq
-from phoenix.quant import QuantConfig, quantize_model, release_fp_weights
-from phoenix.stats import (auroc, compare_auroc, compare_chair, compare_mean, compare_pope,
-                           compare_ratio, fmt_delta)
-from phoenix.utils import human_env, resolve_dtype, save_json, set_seed
+from phoenix.quant import QuantConfig, effective_wbits, quantize_model, release_fp_weights
+from phoenix.stats import (auroc, benjamini_hochberg, compare_auroc, compare_chair,
+                           compare_mean, compare_pope, compare_ratio, fmt_delta)
+from phoenix.utils import human_env, resolve_dtype, save_json, set_seed, versions
 
 # Gate 1: does practical quantization change grounding, and in which direction?
 PRESETS = {
@@ -108,7 +113,26 @@ PRESETS = {
     ],
     "diagnostic": ["fp16", "w4a8", "w4a6", "w4a5", "w4a4", "w4a4:abits_text=8",
                    "w4a4:abits_image=8"],
+    # 4-bit study (runs_4bit/): run with --n-pope-images 100 --n-chair-images 300.
+    # GPTQ uses the reference grid here (grid=ref); RTN keeps the original grid. The W3
+    # anchors keep their Gate-2 names so the table spans 16 -> 4 -> 3 bits.
+    "gate4bit": (
+        ["fp16"]
+        + [f"w4a16:gs={g}" for g in (32, 64, 128)]
+        + [f"w4a16:method=gptq:calib=wiki:grid=ref:gs={g}" for g in (32, 64, 128)]
+        + [f"w4a16:method=awq:calib=wiki:gs={g}" for g in (32, 64, 128)]
+        + ["w4a16:wsym=1:gs=128", "w4a16:method=gptq:calib=wiki:grid=ref:wsym=1:gs=128",
+           "w4a16:wfmt=nvfp4", "w4a16:wfmt=mxfp4", "w4a4:wfmt=nvfp4:afmt=nvfp4",
+           "w4a8:method=sq+gptq:calib=wiki",
+           "w4a16:method=gptq:calib=wiki:grid=ref:gs=128:targets=language+projector",
+           "w4a16:method=gptq:calib=wiki:grid=ref:gs=128:targets=language+projector+vision",
+           "w4a4:method=rot+gptq:calib=wiki",
+           "bnb-nf4",
+           "w3a16", "w3a16:method=gptq:calib=wiki"]),
 }
+# Qwen only: the official AWQ checkpoint, real kernels
+PRESETS["gate4bit-qwen"] = PRESETS["gate4bit"] + [
+    "w4a16:backend=packed:ckpt=Qwen/Qwen2.5-VL-7B-Instruct-AWQ"]
 BLIND_PPL_LIMIT = 1.10      # blind PPL more than 10% above the reference = LM damaged
 
 # health thresholds -- deliberately loose: they flag collapse, not mild damage
@@ -165,6 +189,9 @@ def main():
     p.add_argument("--resume", action="store_true",
                    help="skip rungs already present in <out>/ladder.json")
     p.add_argument("--synonyms", default=None)
+    p.add_argument("--reuse-from", default="",
+                   help="another ladder.json: rows of identical rungs scored with identical "
+                        "settings are copied (tagged reused_from) instead of re-run")
     args = p.parse_args()
 
     set_seed(args.seed)
@@ -205,10 +232,26 @@ def main():
         else:
             print("[resume] settings differ from the saved ladder; starting fresh")
 
+    if args.reuse_from:
+        src = json.loads(Path(args.reuse_from).read_text())
+        keys = ("n_pope_images", "n_chair_images", "max_new_tokens", "pope_splits", "seed",
+                "group_size", "quant_targets", "eval_subset", "model_id", "dtype")
+        diff = {k: (src["config"].get(k), getattr(args, k)) for k in keys
+                if src["config"].get(k) != getattr(args, k)}
+        if diff:
+            raise SystemExit(f"[reuse] {args.reuse_from} was run with other settings: {diff}")
+        for name in rungs:
+            if name not in table and name in src["table"]:
+                table[name] = {**src["table"][name], "reused_from": args.reuse_from}
+                print(f"[reuse] {name} copied from {args.reuse_from}")
+
     tq = tuple(t.strip() for t in args.quant_targets.split(",") if t.strip())
+    env_versions = versions()
+    print("[versions]", env_versions, flush=True)
 
     def save(complete: bool):
-        save_json({"config": vars(args), "table": table, "complete": complete}, out_file)
+        save_json({"config": vars(args), "versions": env_versions, "table": table,
+                   "complete": complete}, out_file)
 
     for prec in rungs:
         if prec in table:
@@ -218,10 +261,23 @@ def main():
         t_rung = time.perf_counter()
         base_spec, lorast = split_rung(prec)
         cfg = QuantConfig.from_ladder(base_spec, group_size=args.group_size, targets=tq)
+        eff_bits = effective_wbits(cfg)
         if cfg.backend == "bnb":
             lm = load_model(args.model_id, dtype=resolve_dtype(args.dtype), device=args.device,
                             bnb_4bit=tuple(cfg.targets))
             ptq_info = {"method": "bitsandbytes nf4 (real kernels)"}
+        elif cfg.backend == "packed":
+            # loaded as-is: no PTQ, nothing wrapped (quantize_model is a no-op)
+            lm = load_model(cfg.ckpt, dtype=resolve_dtype(args.dtype), device=args.device,
+                            packed=True, processor_id=args.model_id)
+            quantize_model(lm.model, cfg)
+            qc = getattr(lm.model.config, "quantization_config", None)
+            qc = qc if isinstance(qc, dict) else (qc.to_dict() if qc is not None else {})
+            ptq_info = {"method": f"packed checkpoint {cfg.ckpt} (real kernels)",
+                        "quantization_config": qc, "dtype": str(lm.dtype)}
+            if qc.get("bits") and qc.get("group_size"):
+                b, g = int(qc["bits"]), int(qc["group_size"])
+                eff_bits = b + (16 if qc.get("sym") else 16 + b) / g
         else:
             lm = load_model(args.model_id, dtype=resolve_dtype(args.dtype), device=args.device)
             ptq_info = apply_ptq(lm, cfg, coco_root=args.coco_root, seed=args.seed)
@@ -242,6 +298,7 @@ def main():
                   f"scale {lorast[1]}) from {lorast[0]}", flush=True)
 
         row = {"spec": prec, "quant": {k: v for k, v in cfg.__dict__.items()},
+               "backend": cfg.row_backend, "eff_wbits": eff_bits,
                "ptq": ptq_info, "splits": splits, "pope": {}}
         for split in splits:
             samples = get_pope(args.coco_root, args.eval_subset, split,
@@ -293,7 +350,7 @@ def main():
         torch.cuda.empty_cache() if torch.cuda.is_available() else None
 
     save(True)
-    report(table, rungs, splits, args.n_boot, out_dir)
+    report(table, rungs, splits, args.n_boot, out_dir, env_versions)
 
 
 def split_rung(name: str):
@@ -367,21 +424,56 @@ def direction(cells: dict) -> str:
     return "mixed" if fb and om else "fallback" if fb else "omission" if om else "none"
 
 
-def report(table: dict, rungs: list, splits: list, n_boot: int, out_dir: Path):
+FDR_ALPHA = 0.05
+# the metrics printed in the table: the family the FDR adjustment is taken over
+TABLE_METRICS = ("pope_f1", "pope_auroc", "pope_precision", "pope_recall", "pope_yes",
+                 "chair_i", "coverage", "length")
+
+
+def row_backend(row: dict) -> str:
+    """fp16 | sim | bnb | packed (rows from before the tag existed are derived)."""
+    if row.get("backend"):
+        return row["backend"]
+    try:
+        return QuantConfig.from_ladder(split_rung(row["spec"])[0]).row_backend
+    except Exception:                                   # noqa: BLE001
+        return "sim"
+
+
+def add_fdr(all_cells: dict, alpha: float = FDR_ALPHA) -> int:
+    """Benjamini-Hochberg over every (rung, table metric) test; annotates q_bh /
+    significant_fdr in place. Returns the number of tests in the family."""
+    keys = [(n, k) for n, cells in all_cells.items() for k in TABLE_METRICS
+            if k in cells and isinstance(cells[k], dict) and "p" in cells[k]]
+    qs = benjamini_hochberg([all_cells[n][k]["p"] for n, k in keys])
+    for (n, k), q in zip(keys, qs):
+        all_cells[n][k]["q_bh"] = q
+        all_cells[n][k]["significant_fdr"] = bool(q < alpha)
+    return len(keys)
+
+
+def report(table: dict, rungs: list, splits: list, n_boot: int, out_dir: Path,
+           env_versions: dict | None = None):
     order = [r for r in rungs if r in table] + [r for r in table if r not in rungs]
     ref_name = order[0]
     ref = table[ref_name]
-    print("\n" + "=" * 141)
+    all_cells = {name: (compare_rows(table[name], ref, splits, n_boot) if name != ref_name else {})
+                 for name in order}
+    n_fdr = add_fdr(all_cells)
+    w = max([34] + [len(n) + 2 for n in order])
+    print("\n" + "=" * (w + 125))
     print(f"paired comparison vs '{ref_name}' (95% CI from an image-clustered bootstrap, "
-          f"* = CI excludes 0; POPE pooled over {len(splits)} splits)")
-    hdr = (f"{'rung':<34}{'dF1':>9}{'dAUROC':>9}{'dPrec':>9}{'dRecall':>9}{'dYes':>9}{'dCHAIR_i':>10}"
-           f"{'dCover':>9}{'dLen':>8}{'blindPPL':>10}  direction  verdict")
+          f"* = CI excludes 0, unadjusted; + = Benjamini-Hochberg q < {FDR_ALPHA} over "
+          f"{n_fdr} tests; POPE pooled over {len(splits)} splits)")
+    hdr = (f"{'rung':<{w}}{'backend':>8}{'bits':>6}{'dF1':>10}{'dAUROC':>10}{'dPrec':>10}"
+           f"{'dRecall':>10}{'dYes':>10}{'dCHAIR_i':>11}"
+           f"{'dCover':>10}{'dLen':>9}{'blindPPL':>10}  direction  verdict")
     print(hdr)
     summary = {}
     for name in order:
         row = table[name]
         status, why = health(row, ref)
-        cells = compare_rows(row, ref, splits, n_boot) if name != ref_name else {}
+        cells = all_cells[name]
         sig_bad = lambda k, neg=True: (k in cells and cells[k]["significant"]
                                        and (cells[k]["delta"] < 0) == neg)
         dirn = direction(cells) if status != "BROKEN" else "n/a"
@@ -401,20 +493,29 @@ def report(table: dict, rungs: list, splits: list, n_boot: int, out_dir: Path):
             if k not in cells:
                 return f"{'-':>{w}}"
             r = cells[k]
-            return f"{r['delta']:+.3f}{'*' if r['significant'] else ' '}".rjust(w)
+            return (f"{r['delta']:+.3f}{'*' if r['significant'] else ' '}"
+                    f"{'+' if r.get('significant_fdr') else ' '}").rjust(w)
         bp = (f"{cells['blind_ppl_ratio']:.2f}x" if "blind_ppl_ratio" in cells
               else (f"{row['blind']['ppl']:.1f}" if "blind" in row else "-"))
-        print(f"{name:<34}{c('pope_f1', 9)}{c('pope_auroc', 9)}{c('pope_precision', 9)}{c('pope_recall', 9)}"
-              f"{c('pope_yes', 9)}{c('chair_i', 10)}{c('coverage', 9)}{c('length', 8)}"
-              f"{bp:>10}  {dirn:<9}  {verdict}")
+        be = row_backend(row)
+        eb = row.get("eff_wbits")
+        print(f"{name:<{w}}{be:>8}{(f'{eb:.2f}' if eb else '-'):>6}"
+              f"{c('pope_f1', 10)}{c('pope_auroc', 10)}{c('pope_precision', 10)}"
+              f"{c('pope_recall', 10)}{c('pope_yes', 10)}{c('chair_i', 11)}{c('coverage', 10)}"
+              f"{c('length', 9)}{bp:>10}  {dirn:<9}  {verdict}")
         summary[name] = {"verdict": verdict, "direction": dirn, "health_reasons": why,
                          "lm_damaged": lm_hurt, "vs_reference": cells,
+                         "backend": be, "eff_wbits": eb, "wall_min": row.get("wall_min"),
+                         "reused_from": row.get("reused_from"),
                          "ptq": row.get("ptq", {})}
 
     n_cmp = max(len(order) - 1, 0) * 8
-    print(f"\nCIs are unadjusted: across {n_cmp} comparisons expect ~{0.05 * n_cmp:.0f} "
+    print(f"\n* CIs are unadjusted: across {n_cmp} comparisons expect ~{0.05 * n_cmp:.0f} "
           "false stars. Trust a direction that repeats across methods/bit widths, and "
           "confirm any single star at a larger n before building on it.")
+    print(f"+ marks the changes that survive Benjamini-Hochberg FDR control at "
+          f"{FDR_ALPHA} over all {n_fdr} rung x metric tests in this table. Verdicts and "
+          "directions use the unadjusted CIs, as before.")
     candidates = [n for n, s in summary.items() if s["verdict"].startswith("degraded")]
     specific = [n for n in candidates if not summary[n]["lm_damaged"]]
     print()
@@ -434,7 +535,10 @@ def report(table: dict, rungs: list, splits: list, n_boot: int, out_dir: Path):
             print(f"  The model is fine at {healthy[-1]} and broken at {broken[0]}: "
                   "add rungs between them.")
     save_json({"reference": ref_name, "summary": summary, "candidates": candidates,
-               "grounding_specific": specific}, out_dir / "ladder_report.json")
+               "grounding_specific": specific,
+               "fdr": {"method": "benjamini-hochberg", "alpha": FDR_ALPHA, "n_tests": n_fdr,
+                       "metrics": list(TABLE_METRICS)},
+               "versions": env_versions or versions()}, out_dir / "ladder_report.json")
     print(f"\nwritten to {out_dir/'ladder.json'} and {out_dir/'ladder_report.json'}")
 
 
